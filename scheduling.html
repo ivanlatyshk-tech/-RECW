@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scheduling Grid – Prototype</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;display:flex;flex-direction:column;height:100vh;overflow:hidden;background:#f0f0f0;font-size:13px}
+.topbar{background:#000;color:#fff;padding:0 20px;height:46px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:20}
+.topbar-brand{font-size:15px;font-weight:700}
+.topbar-brand span{color:#999;font-weight:400;font-size:13px;margin-left:10px;border-left:1px solid #333;padding-left:10px}
+.btn-logout{background:#0076CE;color:#fff;border:none;padding:6px 16px;font-size:12px;cursor:pointer;border-radius:2px;font-family:inherit}
+.app{display:flex;flex:1;overflow:hidden}
+/* Sidebar */
+.sidebar{width:200px;background:#111;color:#bbb;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.nav-group{padding:6px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;font-size:12.5px;color:#bbb;user-select:none}
+.nav-item:hover{background:#1e1e1e;color:#fff}
+.nav-item.active{background:#0076CE;color:#fff}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;stroke-width:1.8}
+.nav-item .chevron{margin-left:auto;font-size:9px;color:#666}
+.nav-sub .nav-item{padding-left:38px;font-size:12px;color:#888}
+.nav-sub .nav-item:hover{color:#fff}
+.nav-sub .nav-item.active{background:#0076CE;color:#fff}
+.nav-divider{border-top:1px solid #222;margin:4px 0}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.content{flex:1;overflow-y:auto;padding:20px 24px;background:#f2f2f2;display:flex;flex-direction:column;gap:14px}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+.page-title{font-size:20px;font-weight:600;color:#111}
+.page-subtitle{font-size:12px;color:#777;margin-top:2px}
+.project-bar{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.project-bar label{font-size:12.5px;color:#555;font-weight:500}
+.select{padding:6px 10px;border:1px solid #ccc;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff;color:#111;cursor:pointer}
+.select:focus{outline:none;border-color:#0076CE}
+/* Tabs */
+.tabs{display:flex;border-bottom:2px solid #e0e0e0;flex-shrink:0}
+.tab{padding:9px 20px;font-size:13px;cursor:pointer;color:#666;background:none;border:none;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-2px}
+.tab.active{color:#0076CE;font-weight:600;border-bottom-color:#0076CE}
+/* Grid card */
+.grid-card{background:#fff;border:1px solid #e0e0e0;border-radius:3px;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.grid-toolbar{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #eee;flex-shrink:0}
+.staged-badge{font-size:11.5px;color:#e65100;font-weight:500;display:flex;align-items:center;gap:5px}
+.unsaved-dot{width:7px;height:7px;border-radius:50%;background:#e65100;display:inline-block}
+/* Buttons */
+.btn{padding:7px 16px;font-size:12.5px;cursor:pointer;border-radius:2px;border:none;font-family:inherit}
+.btn-primary{background:#0076CE;color:#fff}
+.btn-primary:hover:not(:disabled){background:#0065b3}
+.btn-primary:disabled{background:#ccc;cursor:not-allowed}
+.btn-secondary{background:#fff;color:#333;border:1px solid #ccc}
+.btn-secondary:hover{background:#f5f5f5}
+.btn-sm{padding:5px 10px;font-size:11.5px}
+.icon-btn{background:none;border:none;cursor:pointer;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;border-radius:3px;font-size:14px;color:#aaa;padding:0;vertical-align:middle}
+.icon-btn:hover:not(:disabled){background:#f0f0f0;color:#333}
+.icon-btn:disabled{opacity:0.25;cursor:not-allowed}
+.icon-btn.confirm{color:#2e7d32}
+.icon-btn.confirm:hover:not(:disabled){background:#e8f5e9}
+.icon-btn.xbtn{color:#c62828}
+.icon-btn.xbtn:hover:not(:disabled){background:#ffebee}
+/* Schedule table */
+.schedule-wrap{overflow-x:auto;flex:1;min-height:0}
+.schedule-table{border-collapse:collapse;width:100%;min-width:1000px}
+.schedule-table th{position:sticky;top:0;z-index:10;background:#f7f7f7;text-align:left;padding:8px 10px;font-size:11px;font-weight:700;color:#555;border-bottom:2px solid #e0e0e0;white-space:nowrap}
+.schedule-table td{padding:6px 10px;font-size:12.5px;color:#222;border-bottom:1px solid #f3f3f3;vertical-align:middle;white-space:nowrap}
+th.col-num,td.col-num{width:44px;position:sticky;left:0;z-index:11;background:inherit}
+th.col-num{z-index:12}
+td.col-drag,th.col-drag{width:28px;padding:0 4px!important;text-align:center}
+th.col-name,td.col-name{min-width:180px;max-width:220px;white-space:normal;position:sticky;left:44px;z-index:11;background:inherit}
+th.col-name{z-index:12}
+th.col-pred,td.col-pred{width:110px}
+th.col-start,td.col-start,th.col-fin,td.col-fin{width:95px}
+th.col-dur,td.col-dur{width:76px}
+th.col-stat,td.col-stat{width:115px}
+th.col-pct,td.col-pct{width:68px}
+th.col-asgn,td.col-asgn{width:100px}
+th.col-act,td.col-act{width:68px;text-align:right}
+/* Phase rows */
+.phase-row td{background:#f3f3f3;font-weight:600;color:#333;border-top:1px solid #ddd;border-bottom:1px solid #ddd}
+.phase-row td.col-num{color:#bbb;font-weight:400;font-size:11px;text-align:center}
+.phase-name{display:flex;align-items:center;gap:5px}
+.rollup-val{font-weight:400;color:#999;font-size:11.5px}
+/* Task rows */
+.task-row td{background:#fff}
+.task-row:hover td{background:#f8f9ff}
+.task-row.in-edit td{background:#f0f7ff}
+.task-indent{padding-left:26px!important}
+.drag-h{cursor:grab;color:#ccc;font-size:15px;user-select:none}
+.drag-h:hover{color:#999}
+/* Add task row */
+.add-task-row td{background:#fafafa;padding:2px 0!important}
+.add-btn{background:none;border:none;color:#0076CE;cursor:pointer;font-size:12px;padding:5px 10px 5px 36px;font-family:inherit;display:flex;align-items:center;gap:4px}
+.add-btn:hover{text-decoration:underline}
+.add-btn:disabled{opacity:0.35;cursor:not-allowed;text-decoration:none}
+/* Status */
+.sbadge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;white-space:nowrap}
+.sns{background:#f0f0f0;color:#666}
+.sip{background:#e3f0fc;color:#0055a5}
+.sdn{background:#e8f5e9;color:#2e7d32}
+/* Avatars */
+.avatars{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.av{width:23px;height:23px;border-radius:50%;background:#0076CE;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.av-wrap{position:relative;display:inline-block}
+.av-x{display:none;position:absolute;top:-4px;right:-4px;width:13px;height:13px;border-radius:50%;background:#c62828;color:#fff;font-size:8px;align-items:center;justify-content:center;cursor:pointer;border:none;padding:0}
+.av-wrap:hover .av-x{display:flex}
+.av-add{width:23px;height:23px;border-radius:50%;background:#e8e8e8;color:#666;display:inline-flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;border:none;padding:0;line-height:1}
+.av-add:hover{background:#d0d0d0}
+/* Predecessor chips */
+.pchips{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.pchip{display:inline-flex;align-items:center;gap:2px;background:#e3f0fc;color:#0055a5;padding:2px 6px;border-radius:9px;font-size:11px;font-weight:500;white-space:nowrap}
+.pchip button{background:none;border:none;cursor:pointer;color:#0055a5;padding:0;font-size:10px;line-height:1}
+.pchip button:hover{color:#c62828}
+.pred-open{background:none;border:1px solid #ccc;border-radius:3px;padding:2px 6px;font-size:11px;cursor:pointer;color:#555;flex-shrink:0}
+.pred-open:hover{background:#f0f0f0}
+/* Edit inputs */
+.ei{padding:4px 6px;border:1.5px solid #0076CE;border-radius:2px;font-size:12px;font-family:inherit;background:#fff;width:100%}
+.ei:focus{outline:none;box-shadow:0 0 0 2px rgba(0,118,206,0.15)}
+.ei-date{width:92px}
+.ei-num{width:52px;text-align:center}
+.ei-sel{padding:4px 6px;border:1.5px solid #0076CE;border-radius:2px;font-size:12px;font-family:inherit;background:#fff;width:100%}
+/* Milestone */
+.ms-icon{color:#5e35b1;font-size:10px;margin-right:2px}
+.dur-ms{color:#5e35b1;font-weight:700}
+/* Hidden */
+.hidden{display:none!important}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;display:flex;align-items:center;justify-content:center}
+.modal-box{background:#fff;border-radius:3px;box-shadow:0 4px 24px rgba(0,0,0,0.2);overflow:hidden}
+.modal-hd{padding:14px 18px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between}
+.modal-ttl{font-size:14px;font-weight:600;color:#111}
+.modal-x{background:none;border:none;font-size:17px;cursor:pointer;color:#888;padding:0}
+.modal-bd{padding:18px}
+.modal-ft{padding:12px 18px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:8px}
+.fl{display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.fi{padding:7px 10px;border:1px solid #ccc;border-radius:2px;font-size:12.5px;font-family:inherit;width:100%}
+.fi:focus{outline:none;border-color:#0076CE}
+.fhint{font-size:11px;color:#aaa;margin-top:3px}
+.fgrid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.fgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.fmb{margin-bottom:14px}
+/* Pred modal */
+.pred-line{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:#f9f9f9;border:1px solid #eee;border-radius:2px}
+.pred-line.empty-line{background:#fff;border:1px dashed #ddd}
+.pred-line select{flex:1;padding:5px 8px;border:1px solid #ccc;border-radius:2px;font-size:12px;font-family:inherit}
+.pred-line .pl-type{width:145px;flex-shrink:0}
+.pred-rm{background:none;border:none;cursor:pointer;color:#c62828;font-size:16px;padding:0 2px;line-height:1;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-brand">Nexora. <span>Real Estate Insights</span></div>
+  <button class="btn-logout">Log out</button>
+</div>
+<div class="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="nav-group">
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>Maps</div>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-group">
+      <div class="nav-item" onclick="tnav('nav-db',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Dashboards<span class="chevron">&#9660;</span></div>
+      <div id="nav-db" class="nav-sub hidden"><div class="nav-item">Portfolio Level</div><div class="nav-item">Project Level</div></div>
+      <div class="nav-item" onclick="tnav('nav-gr',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Grids<span class="chevron">&#9650;</span></div>
+      <div id="nav-gr" class="nav-sub">
+        <div class="nav-item">Portfolio Level</div>
+        <div class="nav-item active">Project Level</div>
+      </div>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-group">
+      <div class="nav-item" onclick="tnav('nav-rm',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Resource Mgmt<span class="chevron">&#9660;</span></div>
+      <div id="nav-rm" class="nav-sub hidden"><div class="nav-item">Resources</div><div class="nav-item">Schedule</div></div>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-group">
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Data changes log</div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>Settings</div>
+    </div>
+  </div>
+  <!-- Main -->
+  <div class="main">
+    <div class="content">
+      <div class="page-header">
+        <div><div class="page-title">Project Level Grid</div><div class="page-subtitle">Financial and scheduling data for the selected project</div></div>
+      </div>
+      <div class="project-bar">
+        <label>Project:</label>
+        <select class="select" style="width:340px" onchange="onProjChange()">
+          <option>SNY00142 &#8211; 11 Corporate Woods, GPS Project Office</option>
+          <option>SNY00089 &#8211; Downtown HQ Renovation</option>
+          <option>SNY00201 &#8211; West Coast Hub Build-out</option>
+        </select>
+      </div>
+      <div class="tabs">
+        <button class="tab" onclick="switchTab('fin',this)">Financial</button>
+        <button class="tab active" onclick="switchTab('sched',this)">Scheduling</button>
+      </div>
+      <div class="grid-card">
+        <div class="grid-toolbar">
+          <div id="staged-badge" class="staged-badge hidden"><span class="unsaved-dot"></span>Unsaved changes</div>
+          <button class="btn btn-primary" id="save-btn" disabled onclick="doSave()">Save Changes</button>
+        </div>
+        <div class="schedule-wrap">
+          <table class="schedule-table">
+            <thead><tr>
+              <th class="col-num">#</th>
+              <th class="col-drag"></th>
+              <th class="col-name">Task Name</th>
+              <th class="col-pred">Predecessors</th>
+              <th class="col-start">Start</th>
+              <th class="col-fin">Finish</th>
+              <th class="col-dur">Duration</th>
+              <th class="col-stat">Status</th>
+              <th class="col-pct">% Done</th>
+              <th class="col-asgn">Assigned To</th>
+              <th class="col-act"></th>
+            </tr></thead>
+            <tbody>
+
+<!-- PHASE 1 -->
+<tr class="phase-row"><td class="col-num" style="text-align:center;font-size:10px">&#8212;</td><td class="col-drag"></td>
+<td class="col-name task-indent"><div class="phase-name"><button class="icon-btn" style="font-size:10px;color:#888;width:16px;height:16px;flex-shrink:0" onclick="tph('ph1tasks',this)">&#9660;</button><strong>Strategy &amp; Planning</strong><span class="rollup-val" style="margin-left:6px">01/06 &#8211; 01/30 &nbsp;&#183;&nbsp; 19d</span></div></td>
+<td style="color:#aaa">&#8212;</td><td class="rollup-val">01/06/26</td><td class="rollup-val">01/30/26</td><td class="rollup-val">19</td><td style="color:#aaa">&#8212;</td><td class="rollup-val">80%</td>
+<td><div class="avatars"><span class="av" title="Brian Holloway">BH</span><span class="av" style="background:#00838f" title="Andy Chen">AK</span><span class="av" style="background:#2e7d32" title="Rachel Kim">RK</span></div></td>
+<td class="col-act"></td></tr>
+
+<tbody id="ph1tasks">
+<!-- Row 1 -->
+<tr class="task-row" id="row-1">
+<td class="col-num">1</td><td class="col-drag"><span class="drag-h">&#8942;</span></td>
+<td class="col-name task-indent"><span id="r1nr">Site Assessment</span><input id="r1ne" class="ei hidden" value="Site Assessment"></td>
+<td class="col-pred"><span id="r1pr" style="color:#aaa">&#8212;</span><span id="r1pe" class="hidden"><span style="color:#aaa;font-size:11px">None</span>&nbsp;<button class="pred-open" onclick="openPred(1,'Site Assessment')">+ Add</button></span></td>
+<td><span id="r1str">01/06/26</span><input id="r1ste" type="date" class="ei ei-date hidden" value="2026-01-06"></td>
+<td><span id="r1fnr">01/15/26</span><input id="r1fne" type="date" class="ei ei-date hidden" value="2026-01-15"></td>
+<td><span id="r1dur">8</span><input id="r1due" type="number" class="ei ei-num hidden" value="8" min="0"></td>
+<td><span id="r1str2"><span class="sbadge sdn">Completed</span></span><select id="r1ste2" class="ei-sel hidden"><option>Not Started</option><option>In Progress</option><option selected>Completed</option></select></td>
+<td><span id="r1pcr">100%</span><input id="r1pce" type="number" class="ei ei-num hidden" value="100" min="0" max="100"></td>
+<td><span id="r1avr"><div class="avatars"><span class="av" title="Brian Holloway">BH</span></div></span><span id="r1ave" class="hidden"><div class="avatars"><div class="av-wrap"><span class="av">BH</span><button class="av-x">&#10005;</button></div><button class="av-add">+</button></div></span></td>
+<td class="col-act"><span id="r1actr"><button class="icon-btn" title="Edit" onclick="enterEdit(1)">&#9998;</button><button class="icon-btn" title="Delete" onclick="delRow(1)">&#128465;</button></span><span id="r1acte" class="hidden"><button class="icon-btn confirm" title="Confirm" onclick="confirmEdit(1)">&#10003;</button><button class="icon-btn xbtn" title="Cancel" onclick="cancelEdit(1)">&#10005;</button></span></td>
+</tr>
+<!-- Row 2 - EDIT MODE default -->
+<tr class="task-row in-edit" id="row-2">
+<td class="col-num">2</td><td class="col-drag"><span class="drag-h">&#8942;</span></td>
+<td class="col-name task-indent"><span id="r2nr" class="hidden">Concept Design</span><input id="r2ne" class="ei" value="Concept Design"></td>
+<td class="col-pred">
+  <span id="r2pr" class="hidden">1FS</span>
+  <span id="r2pe"><div class="pchips"><span class="pchip">1FS<button onclick="rmChip(this)">&#10005;</button></span><button class="pred-open" onclick="openPred(2,'Concept Design')">&#8230;</button></div></span>
+</td>
+<td><span id="r2str" class="hidden">01/16/26</span><input id="r2ste" type="date" class="ei ei-date" value="2026-01-16"></td>
+<td><span id="r2fnr" class="hidden">01/30/26</span><input id="r2fne" type="date" class="ei ei-date" value="2026-01-30"></td>
+<td><span id="r2dur" class="hidden">11</span><input id="r2due" type="number" class="ei ei-num" value="11" min="0"></td>
+<td><span id="r2str2" class="hidden"><span class="sbadge sip">In Progress</span></span><select id="r2ste2" class="ei-sel"><option>Not Started</option><option selected>In Progress</option><option>Completed</option></select></td>
+<td><span id="r2pcr" class="hidden">60%</span><input id="r2pce" type="number" class="ei ei-num" value="60" min="0" max="100"></td>
+<td><span id="r2avr" class="hidden"><div class="avatars"><span class="av" style="background:#00838f">AK</span><span class="av" style="background:#2e7d32">RK</span></div></span>
+<span id="r2ave"><div class="avatars"><div class="av-wrap"><span class="av" style="background:#00838f">AK</span><button class="av-x">&#10005;</button></div><div class="av-wrap"><span class="av" style="background:#2e7d32">RK</span><button class="av-x">&#10005;</button></div><button class="av-add">+</button></div></span></td>
+<td class="col-act"><span id="r2actr" class="hidden"><button class="icon-btn" onclick="enterEdit(2)">&#9998;</button><button class="icon-btn" onclick="delRow(2)">&#128465;</button></span><span id="r2acte"><button class="icon-btn confirm" onclick="confirmEdit(2)">&#10003;</button><button class="icon-btn xbtn" onclick="cancelEdit(2)">&#10005;</button></span></td>
+</tr>
+<tr class="add-task-row"><td colspan="11"><button class="add-btn" id="addb1" onclick="openAdd('Strategy &amp; Planning')">+ Add Task</button></td></tr>
+</tbody><!-- /ph1tasks -->
+
+<!-- PHASE 2 -->
+<tr class="phase-row"><td class="col-num" style="text-align:center;font-size:10px">&#8212;</td><td class="col-drag"></td>
+<td class="col-name task-indent"><div class="phase-name"><button class="icon-btn" style="font-size:10px;color:#888;width:16px;height:16px;flex-shrink:0" onclick="tph('ph2tasks',this)">&#9660;</button><strong>Design</strong><span class="rollup-val" style="margin-left:6px">02/02 &#8211; 03/27 &nbsp;&#183;&nbsp; 40d</span></div></td>
+<td style="color:#aaa">&#8212;</td><td class="rollup-val">02/02/26</td><td class="rollup-val">03/27/26</td><td class="rollup-val">40</td><td style="color:#aaa">&#8212;</td><td class="rollup-val">0%</td><td></td><td class="col-act"></td></tr>
+
+<tbody id="ph2tasks">
+<!-- Row 3 -->
+<tr class="task-row" id="row-3">
+<td class="col-num">3</td><td class="col-drag"><span class="drag-h">&#8942;</span></td>
+<td class="col-name task-indent"><span id="r3nr">Schematic Design</span><input id="r3ne" class="ei hidden" value="Schematic Design"></td>
+<td class="col-pred"><span id="r3pr">2FS</span><span id="r3pe" class="hidden"><div class="pchips"><span class="pchip">2FS<button onclick="rmChip(this)">&#10005;</button></span><button class="pred-open" onclick="openPred(3,'Schematic Design')">&#8230;</button></div></span></td>
+<td><span id="r3str">02/02/26</span><input id="r3ste" type="date" class="ei ei-date hidden" value="2026-02-02"></td>
+<td><span id="r3fnr">02/27/26</span><input id="r3fne" type="date" class="ei ei-date hidden" value="2026-02-27"></td>
+<td><span id="r3dur">20</span><input id="r3due" type="number" class="ei ei-num hidden" value="20" min="0"></td>
+<td><span id="r3str2"><span class="sbadge sns">Not Started</span></span><select id="r3ste2" class="ei-sel hidden"><option selected>Not Started</option><option>In Progress</option><option>Completed</option></select></td>
+<td><span id="r3pcr">0%</span><input id="r3pce" type="number" class="ei ei-num hidden" value="0" min="0" max="100"></td>
+<td><span id="r3avr"></span><span id="r3ave" class="hidden"><div class="avatars"><button class="av-add">+</button></div></span></td>
+<td class="col-act"><span id="r3actr"><button class="icon-btn" onclick="enterEdit(3)">&#9998;</button><button class="icon-btn" onclick="delRow(3)">&#128465;</button></span><span id="r3acte" class="hidden"><button class="icon-btn confirm" onclick="confirmEdit(3)">&#10003;</button><button class="icon-btn xbtn" onclick="cancelEdit(3)">&#10005;</button></span></td>
+</tr>
+<!-- Row 4 -->
+<tr class="task-row" id="row-4">
+<td class="col-num">4</td><td class="col-drag"><span class="drag-h">&#8942;</span></td>
+<td class="col-name task-indent"><span id="r4nr">Design Development</span><input id="r4ne" class="ei hidden" value="Design Development"></td>
+<td class="col-pred"><span id="r4pr">3FS</span><span id="r4pe" class="hidden"><div class="pchips"><span class="pchip">3FS<button onclick="rmChip(this)">&#10005;</button></span><button class="pred-open" onclick="openPred(4,'Design Development')">&#8230;</button></div></span></td>
+<td><span id="r4str">03/02/26</span><input id="r4ste" type="date" class="ei ei-date hidden" value="2026-03-02"></td>
+<td><span id="r4fnr">03/27/26</span><input id="r4fne" type="date" class="ei ei-date hidden" value="2026-03-27"></td>
+<td><span id="r4dur">20</span><input id="r4due" type="number" class="ei ei-num hidden" value="20" min="0"></td>
+<td><span id="r4str2"><span class="sbadge sns">Not Started</span></span><select id="r4ste2" class="ei-sel hidden"><option selected>Not Started</option><option>In Progress</option><option>Completed</option></select></td>
+<td><span id="r4pcr">0%</span><input id="r4pce" type="number" class="ei ei-num hidden" value="0" min="0" max="100"></td>
+<td><span id="r4avr"></span><span id="r4ave" class="hidden"><div class="avatars"><button class="av-add">+</button></div></span></td>
+<td class="col-act"><span id="r4actr"><button class="icon-btn" onclick="enterEdit(4)">&#9998;</button><button class="icon-btn" onclick="delRow(4)">&#128465;</button></span><span id="r4acte" class="hidden"><button class="icon-btn confirm" onclick="confirmEdit(4)">&#10003;</button><button class="icon-btn xbtn" onclick="cancelEdit(4)">&#10005;</button></span></td>
+</tr>
+<tr class="add-task-row"><td colspan="11"><button class="add-btn" id="addb2" onclick="openAdd('Design')">+ Add Task</button></td></tr>
+</tbody><!-- /ph2tasks -->
+
+<!-- PHASE 3 -->
+<tr class="phase-row"><td class="col-num" style="text-align:center;font-size:10px">&#8212;</td><td class="col-drag"></td>
+<td class="col-name task-indent"><div class="phase-name"><button class="icon-btn" style="font-size:10px;color:#888;width:16px;height:16px;flex-shrink:0" onclick="tph('ph3tasks',this)">&#9660;</button><strong>Construction</strong><span class="rollup-val" style="margin-left:6px">04/01 &#8211; 06/30 &nbsp;&#183;&nbsp; 65d</span></div></td>
+<td style="color:#aaa">&#8212;</td><td class="rollup-val">04/01/26</td><td class="rollup-val">06/30/26</td><td class="rollup-val">65</td><td style="color:#aaa">&#8212;</td><td class="rollup-val">0%</td><td></td><td class="col-act"></td></tr>
+
+<tbody id="ph3tasks">
+<!-- Row 5 MILESTONE -->
+<tr class="task-row" id="row-5" style="font-style:italic">
+<td class="col-num">5</td><td class="col-drag"><span class="drag-h">&#8942;</span></td>
+<td class="col-name task-indent"><span id="r5nr"><span class="ms-icon">&#9670;</span>Permit Approved</span><input id="r5ne" class="ei hidden" value="Permit Approved"></td>
+<td class="col-pred"><span id="r5pr" style="color:#aaa">&#8212;</span><span id="r5pe" class="hidden"><span style="color:#aaa;font-size:11px">None</span>&nbsp;<button class="pred-open" onclick="openPred(5,'Permit Approved')">+ Add</button></span></td>
+<td><span id="r5str">04/01/26</span><input id="r5ste" type="date" class="ei ei-date hidden" value="2026-04-01"></td>
+<td><span id="r5fnr">04/01/26</span><input id="r5fne" type="date" class="ei ei-date hidden" value="2026-04-01"></td>
+<td><span id="r5dur"><span class="dur-ms">0 &#9670;</span></span><input id="r5due" type="number" class="ei ei-num hidden" value="0" min="0"></td>
+<td><span id="r5str2"><span class="sbadge sns">Not Started</span></span><select id="r5ste2" class="ei-sel hidden"><option selected>Not Started</option><option>In Progress</option><option>Completed</option></select></td>
+<td><span id="r5pcr">0%</span><input id="r5pce" type="number" class="ei ei-num hidden" value="0" min="0" max="100"></td>
+<td><span id="r5avr"></span><span id="r5ave" class="hidden"><div class="avatars"><button class="av-add">+</button></div></span></td>
+<td class="col-act"><span id="r5actr"><button class="icon-btn" onclick="enterEdit(5)">&#9998;</button><button class="icon-btn" onclick="delRow(5)">&#128465;</button></span><span id="r5acte" class="hidden"><button class="icon-btn confirm" onclick="confirmEdit(5)">&#10003;</button><button class="icon-btn xbtn" onclick="cancelEdit(5)">&#10005;</button></span></td>
+</tr>
+<!-- Row 6 -->
+<tr class="task-row" id="row-6">
+<td class="col-num">6</td><td class="col-drag"><span class="drag-h">&#8942;</span></td>
+<td class="col-name task-indent"><span id="r6nr">Construction Work</span><input id="r6ne" class="ei hidden" value="Construction Work"></td>
+<td class="col-pred"><span id="r6pr">5SF</span><span id="r6pe" class="hidden"><div class="pchips"><span class="pchip">5SF<button onclick="rmChip(this)">&#10005;</button></span><button class="pred-open" onclick="openPred(6,'Construction Work')">&#8230;</button></div></span></td>
+<td><span id="r6str">04/06/26</span><input id="r6ste" type="date" class="ei ei-date hidden" value="2026-04-06"></td>
+<td><span id="r6fnr">06/30/26</span><input id="r6fne" type="date" class="ei ei-date hidden" value="2026-06-30"></td>
+<td><span id="r6dur">61</span><input id="r6due" type="number" class="ei ei-num hidden" value="61" min="0"></td>
+<td><span id="r6str2"><span class="sbadge sns">Not Started</span></span><select id="r6ste2" class="ei-sel hidden"><option selected>Not Started</option><option>In Progress</option><option>Completed</option></select></td>
+<td><span id="r6pcr">0%</span><input id="r6pce" type="number" class="ei ei-num hidden" value="0" min="0" max="100"></td>
+<td><span id="r6avr"></span><span id="r6ave" class="hidden"><div class="avatars"><button class="av-add">+</button></div></span></td>
+<td class="col-act"><span id="r6actr"><button class="icon-btn" onclick="enterEdit(6)">&#9998;</button><button class="icon-btn" onclick="delRow(6)">&#128465;</button></span><span id="r6acte" class="hidden"><button class="icon-btn confirm" onclick="confirmEdit(6)">&#10003;</button><button class="icon-btn xbtn" onclick="cancelEdit(6)">&#10005;</button></span></td>
+</tr>
+<tr class="add-task-row"><td colspan="11"><button class="add-btn" id="addb3" onclick="openAdd('Construction')">+ Add Task</button></td></tr>
+</tbody><!-- /ph3tasks -->
+
+<!-- PHASE 4 -->
+<tr class="phase-row"><td class="col-num" style="text-align:center;font-size:10px">&#8212;</td><td class="col-drag"></td>
+<td class="col-name task-indent"><div class="phase-name"><button class="icon-btn" style="font-size:10px;color:#888;width:16px;height:16px;flex-shrink:0" onclick="tph('ph4tasks',this)">&#9660;</button><strong>Closeout</strong><span class="rollup-val" style="margin-left:6px">07/01 &#8211; 07/17 &nbsp;&#183;&nbsp; 13d</span></div></td>
+<td style="color:#aaa">&#8212;</td><td class="rollup-val">07/01/26</td><td class="rollup-val">07/17/26</td><td class="rollup-val">13</td><td style="color:#aaa">&#8212;</td><td class="rollup-val">0%</td><td></td><td class="col-act"></td></tr>
+
+<tbody id="ph4tasks">
+<!-- Row 7 -->
+<tr class="task-row" id="row-7">
+<td class="col-num">7</td><td class="col-drag"><span class="drag-h">&#8942;</span></td>
+<td class="col-name task-indent"><span id="r7nr">Final Inspection</span><input id="r7ne" class="ei hidden" value="Final Inspection"></td>
+<td class="col-pred"><span id="r7pr">6FS</span><span id="r7pe" class="hidden"><div class="pchips"><span class="pchip">6FS<button onclick="rmChip(this)">&#10005;</button></span><button class="pred-open" onclick="openPred(7,'Final Inspection')">&#8230;</button></div></span></td>
+<td><span id="r7str">07/01/26</span><input id="r7ste" type="date" class="ei ei-date hidden" value="2026-07-01"></td>
+<td><span id="r7fnr">07/10/26</span><input id="r7fne" type="date" class="ei ei-date hidden" value="2026-07-10"></td>
+<td><span id="r7dur">8</span><input id="r7due" type="number" class="ei ei-num hidden" value="8" min="0"></td>
+<td><span id="r7str2"><span class="sbadge sns">Not Started</span></span><select id="r7ste2" class="ei-sel hidden"><option selected>Not Started</option><option>In Progress</option><option>Completed</option></select></td>
+<td><span id="r7pcr">0%</span><input id="r7pce" type="number" class="ei ei-num hidden" value="0" min="0" max="100"></td>
+<td><span id="r7avr"></span><span id="r7ave" class="hidden"><div class="avatars"><button class="av-add">+</button></div></span></td>
+<td class="col-act"><span id="r7actr"><button class="icon-btn" onclick="enterEdit(7)">&#9998;</button><button class="icon-btn" onclick="delRow(7)">&#128465;</button></span><span id="r7acte" class="hidden"><button class="icon-btn confirm" onclick="confirmEdit(7)">&#10003;</button><button class="icon-btn xbtn" onclick="cancelEdit(7)">&#10005;</button></span></td>
+</tr>
+<!-- Row 8 -->
+<tr class="task-row" id="row-8">
+<td class="col-num">8</td><td class="col-drag"><span class="drag-h">&#8942;</span></td>
+<td class="col-name task-indent"><span id="r8nr">Punch List</span><input id="r8ne" class="ei hidden" value="Punch List"></td>
+<td class="col-pred"><span id="r8pr">7FS</span><span id="r8pe" class="hidden"><div class="pchips"><span class="pchip">7FS<button onclick="rmChip(this)">&#10005;</button></span><button class="pred-open" onclick="openPred(8,'Punch List')">&#8230;</button></div></span></td>
+<td><span id="r8str">07/13/26</span><input id="r8ste" type="date" class="ei ei-date hidden" value="2026-07-13"></td>
+<td><span id="r8fnr">07/17/26</span><input id="r8fne" type="date" class="ei ei-date hidden" value="2026-07-17"></td>
+<td><span id="r8dur">5</span><input id="r8due" type="number" class="ei ei-num hidden" value="5" min="0"></td>
+<td><span id="r8str2"><span class="sbadge sns">Not Started</span></span><select id="r8ste2" class="ei-sel hidden"><option selected>Not Started</option><option>In Progress</option><option>Completed</option></select></td>
+<td><span id="r8pcr">0%</span><input id="r8pce" type="number" class="ei ei-num hidden" value="0" min="0" max="100"></td>
+<td><span id="r8avr"></span><span id="r8ave" class="hidden"><div class="avatars"><button class="av-add">+</button></div></span></td>
+<td class="col-act"><span id="r8actr"><button class="icon-btn" onclick="enterEdit(8)">&#9998;</button><button class="icon-btn" onclick="delRow(8)">&#128465;</button></span><span id="r8acte" class="hidden"><button class="icon-btn confirm" onclick="confirmEdit(8)">&#10003;</button><button class="icon-btn xbtn" onclick="cancelEdit(8)">&#10005;</button></span></td>
+</tr>
+<tr class="add-task-row"><td colspan="11"><button class="add-btn" id="addb4" onclick="openAdd('Closeout')">+ Add Task</button></td></tr>
+</tbody><!-- /ph4tasks -->
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TASK MODAL -->
+<div id="modal-add" class="modal-overlay hidden">
+  <div class="modal-box" style="width:480px">
+    <div class="modal-hd"><div class="modal-ttl">Add Task &#8212; <span id="add-phase-lbl"></span></div><button class="modal-x" onclick="closeAdd()">&#10005;</button></div>
+    <div class="modal-bd">
+      <div class="fmb"><label class="fl">Task Name <span style="color:#c62828">*</span></label><input class="fi" id="add-name" placeholder="Enter task name..."></div>
+      <div class="fgrid3">
+        <div><label class="fl">Start</label><input type="date" class="fi"></div>
+        <div><label class="fl">Finish</label><input type="date" class="fi"></div>
+        <div><label class="fl">Duration (days)</label><input type="number" class="fi" placeholder="0&#8211;99999" min="0"><div class="fhint">Auto-calc from 2 of 3 fields</div></div>
+      </div>
+      <div class="fgrid2">
+        <div><label class="fl">Status</label><select class="fi" style="padding:6px 10px"><option>Not Started</option><option>In Progress</option><option>Completed</option></select></div>
+        <div><label class="fl">% Complete</label><input type="number" class="fi" placeholder="0" min="0" max="100"></div>
+      </div>
+      <div class="fmb"><label class="fl">Assigned To</label>
+        <select class="fi" style="padding:6px 10px"><option value="">Select user&#8230;</option><option>Brian Holloway</option><option>Andy Chen</option><option>Rachel Kim</option><option>Monica Reyes</option><option>Greg Borak</option></select>
+        <div class="fhint">Multi-select in full app</div>
+      </div>
+    </div>
+    <div class="modal-ft"><button class="btn btn-secondary" onclick="closeAdd()">Cancel</button><button class="btn btn-primary" onclick="saveAdd()">Save Task</button></div>
+  </div>
+</div>
+
+<!-- PREDECESSOR MODAL -->
+<div id="modal-pred" class="modal-overlay hidden">
+  <div class="modal-box" style="width:500px">
+    <div class="modal-hd"><div class="modal-ttl">Predecessors &#8212; <span id="pred-lbl"></span></div><button class="modal-x" onclick="closePred()">&#10005;</button></div>
+    <div class="modal-bd">
+      <div style="font-size:12px;color:#666;margin-bottom:12px">Select a task and dependency type. SF = Start to Finish, FS = Finish to Start. Max 5 predecessors.</div>
+      <div id="pred-lines">
+        <div class="pred-line" id="pline-1">
+          <select style="flex:1;padding:5px 8px;border:1px solid #ccc;border-radius:2px;font-size:12px;font-family:inherit">
+            <option value="">Enter row # or task name</option>
+            <option selected>1 &#8212; Site Assessment</option>
+            <option>2 &#8212; Concept Design</option><option>3 &#8212; Schematic Design</option><option>4 &#8212; Design Development</option><option>5 &#8212; Permit Approved</option><option>6 &#8212; Construction Work</option><option>7 &#8212; Final Inspection</option><option>8 &#8212; Punch List</option>
+          </select>
+          <select class="pl-type" style="width:155px;flex-shrink:0;padding:5px 8px;border:1px solid #ccc;border-radius:2px;font-size:12px;font-family:inherit">
+            <option>FS &#8211; Finish to Start</option><option>SF &#8211; Start to Finish</option>
+          </select>
+          <button class="pred-rm" onclick="this.closest('.pred-line').remove()">&#10005;</button>
+        </div>
+        <div class="pred-line empty-line" id="pline-empty">
+          <select style="flex:1;padding:5px 8px;border:1px dashed #ccc;border-radius:2px;font-size:12px;font-family:inherit;color:#aaa">
+            <option value="" selected>Enter row # or task name</option>
+            <option>1 &#8212; Site Assessment</option><option>2 &#8212; Concept Design</option><option>3 &#8212; Schematic Design</option><option>4 &#8212; Design Development</option><option>5 &#8212; Permit Approved</option><option>6 &#8212; Construction Work</option><option>7 &#8212; Final Inspection</option><option>8 &#8212; Punch List</option>
+          </select>
+          <select style="width:155px;flex-shrink:0;padding:5px 8px;border:1px dashed #ccc;border-radius:2px;font-size:12px;font-family:inherit;color:#aaa">
+            <option>SF &#8211; Start to Finish</option><option>FS &#8211; Finish to Start</option>
+          </select>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#aaa;margin-top:6px;font-style:italic">Select a task to add another predecessor line automatically.</div>
+    </div>
+    <div class="modal-ft"><button class="btn btn-secondary" onclick="closePred()">Cancel</button><button class="btn btn-primary" onclick="closePred()">Save</button></div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div id="modal-del" class="modal-overlay hidden">
+  <div class="modal-box" style="width:360px">
+    <div class="modal-hd"><div class="modal-ttl">Delete Task</div><button class="modal-x" onclick="document.getElementById('modal-del').classList.add('hidden')">&#10005;</button></div>
+    <div class="modal-bd"><p style="font-size:13px;color:#333">Are you sure you want to delete this task? This action cannot be undone.</p></div>
+    <div class="modal-ft">
+      <button class="btn btn-secondary" onclick="document.getElementById('modal-del').classList.add('hidden')">Cancel</button>
+      <button class="btn btn-primary" style="background:#c62828" onclick="doDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- UNSAVED MODAL -->
+<div id="modal-unsaved" class="modal-overlay hidden">
+  <div class="modal-box" style="width:380px">
+    <div class="modal-hd"><div class="modal-ttl">Unsaved Changes</div></div>
+    <div class="modal-bd"><p style="font-size:13px;color:#333">You have unsaved changes. If you continue, your changes will be lost.</p></div>
+    <div class="modal-ft">
+      <button class="btn btn-secondary" onclick="document.getElementById('modal-unsaved').classList.add('hidden')">Cancel</button>
+      <button class="btn btn-primary" onclick="discardAll()">Continue without saving</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var curEdit=2, staged=false, delTarget=null;
+var FIELDS=['nr','pr','str','fnr','dur','str2','pcr','avr','actr'];
+var FEDIT=['ne','pe','ste','fne','due','ste2','pce','ave','acte'];
+
+function enterEdit(n){
+  if(curEdit!==null&&curEdit!==n){if(!confirm('Unsaved changes on row '+curEdit+' will be lost. Continue?'))return;exitEdit(curEdit,false);}
+  curEdit=n;
+  document.getElementById('row-'+n).classList.add('in-edit');
+  tog(n,true);
+  document.querySelectorAll('.icon-btn[onclick*="enterEdit"]').forEach(b=>{const m=b.getAttribute('onclick').match(/\d+/);if(m&&parseInt(m[0])!==n)b.disabled=true;});
+  document.querySelectorAll('.icon-btn[onclick*="delRow"]').forEach(b=>b.disabled=true);
+  document.querySelectorAll('.add-btn').forEach(b=>b.disabled=true);
+}
+function confirmEdit(n){exitEdit(n,true);staged=true;document.getElementById('save-btn').disabled=false;document.getElementById('staged-badge').classList.remove('hidden');}
+function cancelEdit(n){exitEdit(n,false);}
+function exitEdit(n,save){
+  document.getElementById('row-'+n).classList.remove('in-edit');
+  tog(n,false);curEdit=null;
+  document.querySelectorAll('.icon-btn').forEach(b=>b.disabled=false);
+  document.querySelectorAll('.add-btn').forEach(b=>b.disabled=false);
+}
+function tog(n,edit){
+  FIELDS.forEach(f=>{var e=document.getElementById('r'+n+f);if(e)e.classList.toggle('hidden',edit);});
+  FEDIT.forEach(f=>{var e=document.getElementById('r'+n+f);if(e)e.classList.toggle('hidden',!edit);});
+}
+function delRow(n){delTarget=n;document.getElementById('modal-del').classList.remove('hidden');}
+function doDelete(){
+  if(delTarget){var r=document.getElementById('row-'+delTarget);if(r)r.remove();staged=true;document.getElementById('save-btn').disabled=false;document.getElementById('staged-badge').classList.remove('hidden');delTarget=null;}
+  document.getElementById('modal-del').classList.add('hidden');
+}
+function doSave(){staged=false;document.getElementById('save-btn').disabled=true;document.getElementById('staged-badge').classList.add('hidden');alert('Changes saved successfully.');}
+function onProjChange(){if(staged){document.getElementById('modal-unsaved').classList.remove('hidden');}}
+function discardAll(){staged=false;document.getElementById('save-btn').disabled=true;document.getElementById('staged-badge').classList.add('hidden');document.getElementById('modal-unsaved').classList.add('hidden');}
+function openAdd(ph){document.getElementById('add-phase-lbl').textContent=ph;document.getElementById('add-name').value='';document.getElementById('modal-add').classList.remove('hidden');}
+function closeAdd(){document.getElementById('modal-add').classList.add('hidden');}
+function saveAdd(){var n=document.getElementById('add-name').value.trim();if(!n){document.getElementById('add-name').style.borderColor='#c62828';document.getElementById('add-name').focus();return;}closeAdd();staged=true;document.getElementById('save-btn').disabled=false;document.getElementById('staged-badge').classList.remove('hidden');}
+function openPred(n,name){document.getElementById('pred-lbl').textContent=n+' \u2014 '+name;document.getElementById('modal-pred').classList.remove('hidden');}
+function closePred(){document.getElementById('modal-pred').classList.add('hidden');}
+function rmChip(btn){btn.closest('.pchip').remove();}
+function tph(id,btn){var t=document.getElementById(id);t.classList.toggle('hidden');btn.textContent=t.classList.contains('hidden')?'\u25B6':'\u25BC';}
+function tnav(id,trigger){var el=document.getElementById(id);el.classList.toggle('hidden');var ch=trigger.querySelector('.chevron');if(ch)ch.innerHTML=el.classList.contains('hidden')?'&#9660;':'&#9650;';}
+function switchTab(t,btn){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');if(t==='fin')alert('Financial Grid \u2013 covered by a separate story.');}
+// Init: row 2 already in edit mode via HTML
+document.querySelectorAll('.icon-btn[onclick*="enterEdit"]').forEach(b=>{const m=b.getAttribute('onclick').match(/\d+/);if(m&&parseInt(m[0])!==2)b.disabled=true;});
+document.querySelectorAll('.icon-btn[onclick*="delRow"]').forEach(b=>b.disabled=true);
+document.querySelectorAll('.add-btn').forEach(b=>b.disabled=true);
+</script>
+</body>
+</html>
