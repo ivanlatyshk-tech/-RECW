@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resource Management – Prototype</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;display:flex;flex-direction:column;height:100vh;overflow:hidden;background:#f0f0f0;font-size:13px}
+.topbar{background:#000;color:#fff;padding:0 20px;height:46px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:20}
+.topbar-brand{font-size:15px;font-weight:700}
+.topbar-brand span{color:#999;font-weight:400;font-size:13px;margin-left:10px;border-left:1px solid #333;padding-left:10px}
+.btn-logout{background:#0076CE;color:#fff;border:none;padding:6px 16px;font-size:12px;cursor:pointer;border-radius:2px;font-family:inherit}
+.app{display:flex;flex:1;overflow:hidden}
+.sidebar{width:200px;background:#111;color:#bbb;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.nav-group{padding:6px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;font-size:12.5px;color:#bbb;user-select:none;transition:background .1s}
+.nav-item:hover{background:#1e1e1e;color:#fff}
+.nav-item.active{background:#0076CE;color:#fff}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;stroke-width:1.8}
+.nav-item .chevron{margin-left:auto;font-size:9px;color:#666}
+.nav-sub .nav-item{padding-left:38px;font-size:12px;color:#888}
+.nav-sub .nav-item:hover{color:#fff}
+.nav-sub .nav-item.active{background:#0076CE;color:#fff}
+.nav-divider{border-top:1px solid #222;margin:4px 0}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.content{flex:1;overflow-y:auto;padding:24px;background:#f2f2f2}
+.page-header{margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between}
+.page-title{font-size:20px;font-weight:600;color:#111}
+.page-subtitle{font-size:12px;color:#777;margin-top:3px}
+.breadcrumb{font-size:11px;color:#888;margin-bottom:8px}
+.breadcrumb a{color:#0076CE;cursor:pointer;text-decoration:none}
+.breadcrumb a:hover{text-decoration:underline}
+.breadcrumb span{color:#aaa}
+.card{background:#fff;border:1px solid #e0e0e0;border-radius:3px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #eee}
+.toolbar-left{display:flex;align-items:center;gap:10px}
+.btn{padding:7px 16px;font-size:12.5px;cursor:pointer;border-radius:2px;border:none;font-family:inherit;line-height:1}
+.btn-primary{background:#0076CE;color:#fff}
+.btn-primary:hover{background:#0065b3}
+.btn-secondary{background:#fff;color:#333;border:1px solid #ccc}
+.btn-secondary:hover{background:#f5f5f5}
+.btn-danger{background:#fff;color:#c62828;border:1px solid #e57373}
+.btn-sm{padding:5px 10px;font-size:11.5px}
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:#aaa;pointer-events:none;width:13px;height:13px}
+.input{padding:6px 10px;border:1px solid #ccc;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff;color:#111}
+.input:focus{outline:none;border-color:#0076CE}
+.input-search{padding-left:28px;width:240px}
+.select{padding:6px 10px;border:1px solid #ccc;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff;color:#111;cursor:pointer}
+table{width:100%;border-collapse:collapse}
+th{background:#f7f7f7;text-align:left;padding:9px 14px;font-size:11.5px;font-weight:600;color:#555;border-bottom:2px solid #e0e0e0;white-space:nowrap}
+td{padding:9px 14px;font-size:12.5px;color:#222;border-bottom:1px solid #f3f3f3}
+tr.row-link{cursor:pointer}
+tr.row-link:hover td{background:#f5f9ff}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
+.badge-person{background:#e3f0fc;color:#0055a5}
+.badge-company{background:#fff3e0;color:#bf5a00}
+.table-footer{padding:10px 14px;font-size:11.5px;color:#888;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between}
+/* Profile */
+.profile-wrap{max-width:640px}
+.profile-card{background:#fff;border:1px solid #e0e0e0;border-radius:3px;padding:24px}
+.avatar{width:52px;height:52px;border-radius:50%;background:#0076CE;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0}
+.avatar-company{background:#bf5a00}
+.profile-name{font-size:17px;font-weight:600;color:#111}
+.profile-email{font-size:12px;color:#666;margin-top:2px}
+.profile-divider{border:none;border-top:1px solid #eee;margin:18px 0}
+.field-group{margin-bottom:14px}
+.field-label{font-size:10.5px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.field-value{font-size:13px;color:#222}
+.field-readonly{background:#f7f7f7;padding:7px 10px;border:1px solid #e5e5e5;border-radius:2px;font-size:12.5px;color:#555}
+.field-hint{font-size:11px;color:#aaa;margin-top:3px}
+.rets-tag{display:inline-block;font-size:10px;background:#e8f4fd;color:#0076CE;padding:1px 6px;border-radius:3px;margin-left:6px;font-weight:600;vertical-align:middle}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.form-hint{font-size:11px;color:#aaa;margin-top:3px}
+/* Contact person in company profile */
+.contact-row{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #f3f3f3}
+.contact-row:last-child{border-bottom:none}
+/* Schedule */
+.schedule-toggle{display:inline-flex;border:1px solid #ccc;border-radius:2px;overflow:hidden;margin-bottom:16px}
+.toggle-btn{padding:7px 18px;font-size:12.5px;cursor:pointer;background:#fff;border:none;font-family:inherit;color:#444}
+.toggle-btn.active{background:#0076CE;color:#fff}
+.project-select-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.gantt-wrap{background:#fff;border:1px solid #e0e0e0;border-radius:3px;overflow-x:auto}
+.gantt-head{display:flex;border-bottom:2px solid #e0e0e0;background:#f7f7f7}
+.gantt-label-col{width:210px;flex-shrink:0;padding:9px 14px;font-size:11px;font-weight:700;color:#555;border-right:1px solid #e0e0e0}
+.gantt-months{flex:1;display:flex;min-width:600px}
+.gantt-month{flex:1;text-align:center;padding:9px 4px;font-size:10.5px;font-weight:600;color:#666;border-right:1px solid #eee}
+.gantt-row{display:flex;border-bottom:1px solid #f3f3f3;min-height:46px;align-items:center}
+.gantt-row:hover{background:#f8f9ff}
+.gantt-row-label{width:210px;flex-shrink:0;padding:8px 14px;border-right:1px solid #e8e8e8}
+.gantt-row-name{font-size:12.5px;font-weight:500;color:#222}
+.gantt-row-sub{font-size:11px;color:#888;margin-top:1px}
+.gantt-track{flex:1;position:relative;height:46px;min-width:600px}
+.gantt-bar{position:absolute;height:22px;top:12px;border-radius:2px;display:flex;align-items:center;padding:0 8px;font-size:10.5px;color:#fff;font-weight:500;white-space:nowrap;overflow:hidden}
+.b-blue{background:#0076CE}.b-teal{background:#00838f}.b-green{background:#2e7d32}.b-orange{background:#e65100}.b-purple{background:#5e35b1}
+.phase-label{padding:6px 14px;font-size:10.5px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;background:#fafafa;border-bottom:1px solid #ececec;border-top:1px solid #ececec}
+.person-row-label{width:210px;flex-shrink:0;padding:8px 14px;border-right:1px solid #e8e8e8;display:flex;flex-direction:column;justify-content:center}
+.person-alloc{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;padding:2px 6px;border-radius:8px;background:#e3f0fc;color:#0055a5;font-weight:500;margin-top:3px;width:fit-content}
+.person-alloc.over{background:#ffebee;color:#c62828}
+.person-alloc.none{background:#f5f5f5;color:#aaa}
+.overalloc-dot{width:7px;height:7px;border-radius:50%;background:#c62828;display:inline-block}
+/* Fixed modal overlay */
+.modal-fixed{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal{background:#fff;border-radius:3px;box-shadow:0 4px 24px rgba(0,0,0,0.18);overflow:hidden}
+.modal-header{padding:14px 18px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:14px;font-weight:600;color:#111}
+.modal-close{background:none;border:none;font-size:16px;cursor:pointer;color:#888;padding:2px}
+.modal-body{padding:18px}
+.modal-footer{padding:12px 18px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:8px}
+/* Search results */
+.search-results-list{border:1px solid #e0e0e0;border-radius:2px;margin-top:4px;max-height:180px;overflow-y:auto;background:#fff}
+.search-item{padding:9px 12px;cursor:pointer;border-bottom:1px solid #f5f5f5}
+.search-item:hover{background:#f0f7ff}
+.search-item:last-child{border-bottom:none}
+.search-item-name{font-size:12.5px;font-weight:500;color:#222}
+.search-item-email{font-size:11.5px;color:#888;margin-top:1px}
+.selected-box{background:#f0f7ff;border:1px solid #b3d4f5;border-radius:2px;padding:10px 14px;margin-top:10px}
+.selected-box-label{font-size:10.5px;font-weight:700;color:#0055a5;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+/* Account type radio */
+.type-radio-group{display:flex;gap:20px;margin-top:6px}
+.type-radio-label{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:#333;user-select:none}
+.type-radio-label input{cursor:pointer;accent-color:#0076CE;width:14px;height:14px}
+/* Utilities */
+.hidden{display:none!important}
+.text-muted{color:#888}
+.flex{display:flex}
+.gap-8{gap:8px}
+.gap-12{gap:12px}
+.mb-16{margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">Nexora. <span>Real Estate Insights</span></div>
+  <button class="btn-logout">Log out</button>
+</div>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="nav-group">
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>Maps</div>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-group">
+      <div class="nav-item" onclick="toggleNav('nav-db',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Dashboards<span class="chevron">&#9660;</span></div>
+      <div id="nav-db" class="nav-sub hidden"><div class="nav-item">Portfolio Level</div><div class="nav-item">Project Level</div></div>
+      <div class="nav-item" onclick="toggleNav('nav-gr',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Grids<span class="chevron">&#9660;</span></div>
+      <div id="nav-gr" class="nav-sub hidden"><div class="nav-item">Portfolio Level</div><div class="nav-item">Project Level</div></div>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-group">
+      <div class="nav-item" onclick="toggleNav('nav-rm',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Resource Mgmt<span class="chevron">&#9650;</span></div>
+      <div id="nav-rm" class="nav-sub">
+        <div class="nav-item active" id="nav-resources" onclick="setPage('resources')">Resources</div>
+        <div class="nav-item" id="nav-schedule" onclick="setPage('schedule-projects')">Schedule</div>
+      </div>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-group">
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Data changes log</div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>Settings</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="content">
+
+      <!-- RESOURCES LIST -->
+      <div id="page-resources">
+        <div class="page-header">
+          <div><div class="page-title">Resources List</div><div class="page-subtitle">All resources in the Resource Management module</div></div>
+          <button class="btn btn-primary" onclick="openAddModal()">+ Add Resource</button>
+        </div>
+        <div class="card">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <div class="search-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input class="input input-search" placeholder="Search by name or email...">
+              </div>
+              <select class="select"><option>All Types</option><option>Person</option><option>Company</option></select>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Name &#8597;</th><th>Email</th><th>Type</th><th>Role</th><th></th></tr></thead>
+            <tbody>
+              <tr class="row-link" onclick="setPage('profile-view')">
+                <td><strong>Brian Holloway</strong></td><td class="text-muted">b.holloway@nexora.com</td>
+                <td><span class="badge badge-person">Person</span></td><td>Program Manager</td>
+                <td><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();setPage('profile-view')">View</button></td>
+              </tr>
+              <tr class="row-link" onclick="setPage('profile-view')">
+                <td><strong>Andy Chen</strong></td><td class="text-muted">a.chen@nexora.com</td>
+                <td><span class="badge badge-person">Person</span></td><td>Portfolio Leader</td>
+                <td><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();setPage('profile-view')">View</button></td>
+              </tr>
+              <tr class="row-link">
+                <td><strong>Rachel Kim</strong></td><td class="text-muted">r.kim@nexora.com</td>
+                <td><span class="badge badge-person">Person</span></td><td>Project Manager</td>
+                <td><button class="btn btn-sm btn-secondary">View</button></td>
+              </tr>
+              <tr class="row-link" onclick="setPage('company-profile')">
+                <td><strong>Meridian Services LLC</strong></td><td class="text-muted">philips@nexora.com</td>
+                <td><span class="badge badge-company">Company</span></td><td>External PM</td>
+                <td><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();setPage('company-profile')">View</button></td>
+              </tr>
+              <tr class="row-link">
+                <td><strong>Monica Reyes</strong></td><td class="text-muted">m.reyes@nexora.com</td>
+                <td><span class="badge badge-person">Person</span></td><td>Portfolio Leader</td>
+                <td><button class="btn btn-sm btn-secondary">View</button></td>
+              </tr>
+              <tr class="row-link">
+                <td><strong>Greg Borak</strong></td><td class="text-muted">g.borak@nexora.com</td>
+                <td><span class="badge badge-person">Person</span></td><td>Project Manager</td>
+                <td><button class="btn btn-sm btn-secondary">View</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="table-footer"><span>6 resources</span><span class="text-muted">Sorted by name A &#8594; Z</span></div>
+        </div>
+      </div>
+
+      <!-- PROFILE VIEW -->
+      <div id="page-profile-view" class="hidden">
+        <div class="breadcrumb"><a onclick="setPage('resources')">Resources List</a><span> / Brian Holloway</span></div>
+        <div class="page-header">
+          <div><div class="page-title">Resource Profile</div></div>
+          <div class="flex gap-8">
+            <button class="btn btn-secondary btn-sm" onclick="setPage('resources')">&#8592; Back</button>
+            <button class="btn btn-primary btn-sm" onclick="setPage('profile-edit')">Edit Profile</button>
+          </div>
+        </div>
+        <div class="profile-wrap">
+          <div class="profile-card">
+            <div class="flex gap-12" style="align-items:flex-start;margin-bottom:20px">
+              <div class="avatar">BH</div>
+              <div><div class="profile-name">Brian Holloway</div><div class="profile-email">b.holloway@nexora.com</div><div style="margin-top:8px"><span class="badge badge-person">Person</span></div></div>
+            </div>
+            <div class="profile-divider"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div class="field-group">
+                <div class="field-label">Full Name <span class="rets-tag">RETS</span></div>
+                <div class="field-readonly">Brian Holloway</div>
+                <div class="field-hint">Read-only &#183; sourced from RETS</div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">Email <span class="rets-tag">RETS</span></div>
+                <div class="field-readonly">b.holloway@nexora.com</div>
+                <div class="field-hint">Read-only &#183; sourced from RETS</div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">RETS ID <span class="rets-tag">RETS</span></div>
+                <div class="field-readonly">USR-004821</div>
+                <div class="field-hint">Read-only &#183; sourced from RETS</div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">Primary Organization <span class="rets-tag">RETS</span></div>
+                <div class="field-readonly" style="color:#aaa;font-style:italic">&#8212; (internal staff)</div>
+                <div class="field-hint">Empty = internal</div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">Functional Role <span class="rets-tag">RETS</span></div>
+                <div class="field-readonly">Program Manager</div>
+                <div class="field-hint">Read-only &#183; sourced from RETS</div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">Work Phone <span class="rets-tag">RETS</span></div>
+                <div class="field-readonly">+1 (202) 555-0134</div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">RM Role</div>
+                <div class="field-value">Program Manager</div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">Type</div>
+                <div class="field-value"><span class="badge badge-person">Person</span></div>
+              </div>
+            </div>
+            <div class="profile-divider"></div>
+            <button class="btn btn-danger btn-sm">Deactivate Resource</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE EDIT -->
+      <div id="page-profile-edit" class="hidden">
+        <div class="breadcrumb"><a onclick="setPage('resources')">Resources List</a><span> / </span><a onclick="setPage('profile-view')">Brian Holloway</a><span> / Edit</span></div>
+        <div class="page-header"><div><div class="page-title">Edit Profile</div></div></div>
+        <div class="profile-wrap">
+          <div class="profile-card">
+            <div class="flex gap-12" style="align-items:flex-start;margin-bottom:20px">
+              <div class="avatar">BH</div>
+              <div><div class="profile-name">Brian Holloway</div><div class="profile-email">b.holloway@nexora.com</div></div>
+            </div>
+            <div class="profile-divider"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+              <div class="form-group">
+                <label class="form-label">Full Name <span class="rets-tag">RETS</span></label>
+                <div class="field-readonly">Brian Holloway</div>
+                <div class="form-hint">Read-only &#183; sourced from RETS</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email <span class="rets-tag">RETS</span></label>
+                <div class="field-readonly">b.holloway@nexora.com</div>
+                <div class="form-hint">Read-only &#183; sourced from RETS</div>
+              </div>
+            </div>
+            <div class="form-group" style="max-width:280px">
+              <label class="form-label">RM Role <span style="color:#c62828">*</span></label>
+              <select class="select" style="width:100%">
+                <option value="">Select a role...</option>
+                <option selected>Program Manager</option>
+                <option>Portfolio Leader</option>
+                <option>Project Manager</option>
+                <option>Financial Analyst</option>
+                <option>Real Estate Advisor</option>
+                <option>Facilities Manager</option>
+              </select>
+              <div class="form-hint">Select from predefined list. Free text is not allowed.</div>
+            </div>
+            <div class="profile-divider"></div>
+            <div class="flex gap-8">
+              <button class="btn btn-primary" onclick="setPage('profile-view')">Save Changes</button>
+              <button class="btn btn-secondary" onclick="setPage('profile-view')">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPANY PROFILE -->
+      <div id="page-company-profile" class="hidden">
+        <div class="breadcrumb"><a onclick="setPage('resources')">Resources List</a><span> / Meridian Services LLC</span></div>
+        <div class="page-header">
+          <div><div class="page-title">Company Profile</div></div>
+          <div class="flex gap-8">
+            <button class="btn btn-secondary btn-sm" onclick="setPage('resources')">&#8592; Back</button>
+            <button class="btn btn-primary btn-sm">Edit</button>
+          </div>
+        </div>
+        <div class="profile-wrap" style="max-width:700px">
+          <div class="profile-card">
+            <div class="flex gap-12" style="align-items:flex-start;margin-bottom:20px">
+              <div class="avatar avatar-company" style="font-size:13px;font-weight:700">MS</div>
+              <div><div class="profile-name">Meridian Services LLC</div><div class="profile-email">philips@nexora.com</div><div style="margin-top:8px"><span class="badge badge-company">Company</span></div></div>
+            </div>
+            <div class="profile-divider"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+              <div class="field-group">
+                <div class="field-label">Company Name</div>
+                <div class="field-value">Meridian Services LLC</div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">Company Type</div>
+                <div class="field-value"><span class="badge badge-company">External PM</span></div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">Email <span class="rets-tag">RETS</span></div>
+                <div class="field-readonly">philips@nexora.com</div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">RETS ID <span class="rets-tag">RETS</span></div>
+                <div class="field-readonly">ORG-001142</div>
+              </div>
+            </div>
+            <div class="profile-divider"></div>
+            <div style="margin-bottom:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <div><div style="font-size:12px;font-weight:700;color:#333">Point of Contact</div><div class="field-hint" style="margin-top:2px">Key contact person on the vendor side</div></div>
+                <button class="btn btn-sm btn-secondary">+ Add Contact</button>
+              </div>
+              <div style="border:1px solid #e0e0e0;border-radius:2px">
+                <div class="contact-row">
+                  <div><div style="font-size:12.5px;font-weight:500">Sarah Mitchell</div><div style="font-size:11.5px;color:#888">s.mitchell@meridian.com &#183; Project Lead</div></div>
+                  <div class="flex gap-8"><button class="btn btn-sm btn-secondary">Edit</button><button class="btn btn-sm btn-danger">Remove</button></div>
+                </div>
+              </div>
+            </div>
+            <div class="profile-divider"></div>
+            <div style="font-size:11.5px;color:#888;margin-bottom:12px">Active assignments: SNY00142, SNY00089</div>
+            <button class="btn btn-danger btn-sm">Deactivate Company</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEDULE - PROJECTS -->
+      <div id="page-schedule-projects" class="hidden">
+        <div class="page-header"><div><div class="page-title">Schedule</div><div class="page-subtitle">Resource timeline by project or by person</div></div></div>
+        <div class="schedule-toggle">
+          <button class="toggle-btn active">Projects Schedule</button>
+          <button class="toggle-btn" onclick="setPage('schedule-people')">People Schedule</button>
+        </div>
+        <div class="project-select-row">
+          <label style="font-size:12.5px;color:#555;font-weight:500">Project:</label>
+          <select class="select" style="width:340px"><option>SNY00142 &#8211; 11 Corporate Woods, GPS Project Office</option><option>SNY00089 &#8211; Downtown HQ Renovation</option></select>
+        </div>
+        <div class="gantt-wrap">
+          <div class="gantt-head">
+            <div class="gantt-label-col">Resource / Phase</div>
+            <div class="gantt-months">
+              <div class="gantt-month">Jan '25</div><div class="gantt-month">Feb '25</div><div class="gantt-month">Mar '25</div>
+              <div class="gantt-month">Apr '25</div><div class="gantt-month">May '25</div><div class="gantt-month">Jun '25</div>
+              <div class="gantt-month">Jul '25</div><div class="gantt-month">Aug '25</div><div class="gantt-month">Sep '25</div>
+              <div class="gantt-month">Oct '25</div><div class="gantt-month">Nov '25</div><div class="gantt-month">Dec '25</div>
+            </div>
+          </div>
+          <div class="phase-label">Phase 1 &#8211; Design &amp; Planning</div>
+          <div class="gantt-row"><div class="gantt-row-label"><div class="gantt-row-name">Brian Holloway</div><div class="gantt-row-sub">Program Manager</div></div><div class="gantt-track"><div class="gantt-bar b-blue" style="left:0%;width:25%">50%</div></div></div>
+          <div class="gantt-row"><div class="gantt-row-label"><div class="gantt-row-name">Rachel Kim</div><div class="gantt-row-sub">Project Manager</div></div><div class="gantt-track"><div class="gantt-bar b-blue" style="left:0%;width:33%">75%</div></div></div>
+          <div class="phase-label">Phase 2 &#8211; Construction</div>
+          <div class="gantt-row"><div class="gantt-row-label"><div class="gantt-row-name">Andy Chen</div><div class="gantt-row-sub">Portfolio Leader</div></div><div class="gantt-track"><div class="gantt-bar b-teal" style="left:25%;width:50%">100%</div></div></div>
+          <div class="gantt-row"><div class="gantt-row-label"><div class="gantt-row-name">Meridian Services LLC</div><div class="gantt-row-sub">External PM</div></div><div class="gantt-track"><div class="gantt-bar b-orange" style="left:25%;width:50%">100%</div></div></div>
+          <div class="phase-label">Phase 3 &#8211; Closeout</div>
+          <div class="gantt-row"><div class="gantt-row-label"><div class="gantt-row-name">Rachel Kim</div><div class="gantt-row-sub">Project Manager</div></div><div class="gantt-track"><div class="gantt-bar b-green" style="left:75%;width:25%">50%</div></div></div>
+          <div style="padding:8px 14px;font-size:11px;color:#aaa;border-top:1px solid #f0f0f0">Phase-level view &#183; MVP</div>
+        </div>
+      </div>
+
+      <!-- SCHEDULE - PEOPLE -->
+      <div id="page-schedule-people" class="hidden">
+        <div class="page-header"><div><div class="page-title">Schedule</div><div class="page-subtitle">Resource timeline by project or by person</div></div></div>
+        <div class="schedule-toggle">
+          <button class="toggle-btn" onclick="setPage('schedule-projects')">Projects Schedule</button>
+          <button class="toggle-btn active">People Schedule</button>
+        </div>
+        <div class="gantt-wrap">
+          <div class="gantt-head">
+            <div class="gantt-label-col">Person / Allocation</div>
+            <div class="gantt-months">
+              <div class="gantt-month">Jan '25</div><div class="gantt-month">Feb '25</div><div class="gantt-month">Mar '25</div>
+              <div class="gantt-month">Apr '25</div><div class="gantt-month">May '25</div><div class="gantt-month">Jun '25</div>
+              <div class="gantt-month">Jul '25</div><div class="gantt-month">Aug '25</div><div class="gantt-month">Sep '25</div>
+              <div class="gantt-month">Oct '25</div><div class="gantt-month">Nov '25</div><div class="gantt-month">Dec '25</div>
+            </div>
+          </div>
+          <div class="gantt-row" style="min-height:56px"><div class="person-row-label"><div class="gantt-row-name">Brian Holloway</div><div class="person-alloc">100%</div></div><div class="gantt-track" style="height:56px"><div class="gantt-bar b-blue" style="left:0%;width:25%;top:8px;font-size:10px">SNY00142 Ph.1 &#183; 50%</div><div class="gantt-bar b-teal" style="left:25%;width:42%;top:8px;font-size:10px">SNY00142 Ph.2 &#183; 50%</div></div></div>
+          <div class="gantt-row" style="min-height:64px"><div class="person-row-label"><div class="gantt-row-name">Andy Chen</div><div class="person-alloc over"><span class="overalloc-dot"></span> 120% overallocated</div></div><div class="gantt-track" style="height:64px"><div class="gantt-bar b-teal" style="left:25%;width:50%;top:6px;font-size:10px">SNY00142 Ph.2 &#183; 100%</div><div class="gantt-bar b-purple" style="left:33%;width:25%;top:32px;font-size:10px">SNY00089 &#183; 20%</div></div></div>
+          <div class="gantt-row" style="min-height:56px"><div class="person-row-label"><div class="gantt-row-name">Rachel Kim</div><div class="person-alloc">75%</div></div><div class="gantt-track" style="height:56px"><div class="gantt-bar b-blue" style="left:0%;width:33%;top:8px;font-size:10px">SNY00142 Ph.1 &#183; 75%</div><div class="gantt-bar b-green" style="left:75%;width:25%;top:8px;font-size:10px">SNY00142 Ph.3 &#183; 50%</div></div></div>
+          <div class="gantt-row" style="min-height:46px"><div class="person-row-label"><div class="gantt-row-name">Monica Reyes</div><div class="person-alloc none">No assignments</div></div><div class="gantt-track" style="display:flex;align-items:center;padding-left:14px"><span style="font-size:11.5px;color:#bbb;font-style:italic">No assignments</span></div></div>
+          <div style="padding:8px 14px;font-size:11px;color:#aaa;border-top:1px solid #f0f0f0">Overallocation threshold: 100% combined allocation</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ADD RESOURCE MODAL (fixed overlay) -->
+<div id="modal-add-resource" class="modal-fixed hidden">
+  <div class="modal" style="width:460px">
+    <div class="modal-header">
+      <div class="modal-title">Add Resource</div>
+      <button class="modal-close" onclick="closeAddModal()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Search by name or email</label>
+        <div class="search-wrap" style="position:relative">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:#aaa"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="input" style="width:100%;padding-left:28px" placeholder="e.g. Kevin Park or k.park@nexora.com" oninput="handleSearch(this.value)" id="add-search-input">
+        </div>
+        <div class="form-hint" style="margin-top:4px">Searches the RETS contact database. Only users in RETS can be added.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Account Type</label>
+        <div class="type-radio-group">
+          <label class="type-radio-label">
+            <input type="radio" name="acct-type" value="person" checked onchange="onTypeChange('person')"> Person
+          </label>
+          <label class="type-radio-label">
+            <input type="radio" name="acct-type" value="company" onchange="onTypeChange('company')"> Company
+          </label>
+        </div>
+        <div class="form-hint" id="type-hint" style="margin-top:4px">Internal staff and individual contacts.</div>
+      </div>
+
+      <div id="search-results-wrap" class="hidden">
+        <div style="font-size:11.5px;color:#666;margin-bottom:4px">Select to add:</div>
+        <div class="search-results-list">
+          <div class="search-item" onclick="selectUser('Kevin Park','k.park@nexora.com')">
+            <div class="search-item-name">Kevin Park</div><div class="search-item-email">k.park@nexora.com</div>
+          </div>
+          <div class="search-item" onclick="selectUser('Rob Sanchez','r.sanchez@nexora.com')">
+            <div class="search-item-name">Rob Sanchez</div><div class="search-item-email">r.sanchez@nexora.com</div>
+          </div>
+          <div class="search-item" onclick="selectUser('Carrie Moon','c.moon@nexora.com')">
+            <div class="search-item-name">Carrie Moon</div><div class="search-item-email">c.moon@nexora.com</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="search-no-results" class="hidden" style="font-size:12px;color:#888;padding:8px 0">No results found. Check the name or email and try again.</div>
+
+      <div id="selected-user" class="hidden">
+        <div class="selected-box">
+          <div class="selected-box-label">Selected</div>
+          <div style="font-size:13px;font-weight:500;color:#111" id="sel-name"></div>
+          <div style="font-size:11.5px;color:#666" id="sel-email"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAdd()">Add to Resources List</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PAGES=['resources','profile-view','profile-edit','company-profile','schedule-projects','schedule-people'];
+
+function setPage(id){
+  PAGES.forEach(p=>{const el=document.getElementById('page-'+p);if(el)el.classList.add('hidden');});
+  const t=document.getElementById('page-'+id);if(t)t.classList.remove('hidden');
+  document.querySelectorAll('#nav-resources,#nav-schedule').forEach(el=>el.classList.remove('active'));
+  if(['resources','profile-view','profile-edit','company-profile'].includes(id))
+    document.getElementById('nav-resources').classList.add('active');
+  else if(['schedule-projects','schedule-people'].includes(id))
+    document.getElementById('nav-schedule').classList.add('active');
+}
+
+function toggleNav(id,trigger){
+  const el=document.getElementById(id);
+  el.classList.toggle('hidden');
+  const ch=trigger.querySelector('.chevron');
+  if(ch)ch.innerHTML=el.classList.contains('hidden')?'&#9660;':'&#9650;';
+}
+
+function openAddModal(){
+  document.getElementById('add-search-input').value='';
+  document.getElementById('search-results-wrap').classList.add('hidden');
+  document.getElementById('search-no-results').classList.add('hidden');
+  document.getElementById('selected-user').classList.add('hidden');
+  document.querySelector('input[name="acct-type"][value="person"]').checked=true;
+  document.getElementById('type-hint').textContent='Internal staff and individual contacts.';
+  document.getElementById('modal-add-resource').classList.remove('hidden');
+}
+
+function closeAddModal(){
+  document.getElementById('modal-add-resource').classList.add('hidden');
+}
+
+function handleSearch(val){
+  const r=document.getElementById('search-results-wrap');
+  const n=document.getElementById('search-no-results');
+  document.getElementById('selected-user').classList.add('hidden');
+  if(val.length<2){r.classList.add('hidden');n.classList.add('hidden');return;}
+  if(val.toLowerCase().includes('zzz')){r.classList.add('hidden');n.classList.remove('hidden');}
+  else{r.classList.remove('hidden');n.classList.add('hidden');}
+}
+
+function selectUser(name,email){
+  document.getElementById('sel-name').textContent=name;
+  document.getElementById('sel-email').textContent=email;
+  document.getElementById('selected-user').classList.remove('hidden');
+  document.getElementById('search-results-wrap').classList.add('hidden');
+}
+
+function onTypeChange(type){
+  const hint=document.getElementById('type-hint');
+  hint.textContent=type==='company'
+    ? 'Company accounts have an organisation email (e.g. philips@nexora.com).'
+    : 'Internal staff and individual contacts.';
+}
+
+function confirmAdd(){alert('Resource added to list.');closeAddModal();}
+
+setPage('resources');
+</script>
+</body>
+</html>
