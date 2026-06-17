@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scheduling Grid – Prototype</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;display:flex;flex-direction:column;height:100vh;overflow:hidden;background:#f0f0f0;font-size:13px}
+.topbar{background:#000;color:#fff;padding:0 20px;height:46px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:20}
+.topbar-brand{font-size:15px;font-weight:700}
+.topbar-brand span{color:#999;font-weight:400;font-size:13px;margin-left:10px;border-left:1px solid #333;padding-left:10px}
+.btn-logout{background:#0076CE;color:#fff;border:none;padding:6px 16px;font-size:12px;cursor:pointer;border-radius:2px;font-family:inherit}
+.app{display:flex;flex:1;overflow:hidden}
+.sidebar{width:200px;background:#111;color:#bbb;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.nav-group{padding:6px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;font-size:12.5px;color:#bbb;user-select:none}
+.nav-item:hover{background:#1e1e1e;color:#fff}
+.nav-item.active{background:#0076CE;color:#fff}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;stroke-width:1.8}
+.nav-item .chevron{margin-left:auto;font-size:9px;color:#666}
+.nav-sub .nav-item{padding-left:38px;font-size:12px;color:#888}
+.nav-sub .nav-item:hover{color:#fff}
+.nav-sub .nav-item.active{background:#0076CE;color:#fff}
+.nav-divider{border-top:1px solid #222;margin:4px 0}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.content{flex:1;overflow-y:auto;padding:20px 24px;background:#f2f2f2;display:flex;flex-direction:column;gap:14px}
+.page-title{font-size:20px;font-weight:600;color:#111}
+.page-subtitle{font-size:12px;color:#777;margin-top:2px}
+.project-bar{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.project-bar label{font-size:12.5px;color:#555;font-weight:500}
+.select{padding:6px 10px;border:1px solid #ccc;border-radius:2px;font-size:12.5px;font-family:inherit;background:#fff;color:#111;cursor:pointer}
+.tabs{display:flex;border-bottom:2px solid #e0e0e0;flex-shrink:0}
+.tab{padding:9px 20px;font-size:13px;cursor:pointer;color:#666;background:none;border:none;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-2px}
+.tab.active{color:#0076CE;font-weight:600;border-bottom-color:#0076CE}
+.grid-card{background:#fff;border:1px solid #e0e0e0;border-radius:3px;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.grid-toolbar{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #eee;flex-shrink:0}
+.grid-info{font-size:12px;color:#888}
+.staged-badge{font-size:11.5px;color:#e65100;font-weight:500;display:flex;align-items:center;gap:5px}
+.unsaved-dot{width:7px;height:7px;border-radius:50%;background:#e65100;display:inline-block}
+.btn{padding:7px 16px;font-size:12.5px;cursor:pointer;border-radius:2px;border:none;font-family:inherit}
+.btn-primary{background:#0076CE;color:#fff}
+.btn-primary:hover:not(:disabled){background:#0065b3}
+.btn-primary:disabled{background:#ccc;cursor:not-allowed}
+.btn-secondary{background:#fff;color:#333;border:1px solid #ccc}
+.btn-secondary:hover{background:#f5f5f5}
+.icon-btn{background:none;border:none;cursor:pointer;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;border-radius:3px;font-size:14px;color:#aaa;padding:0;vertical-align:middle}
+.icon-btn:hover{background:#f0f0f0;color:#333}
+/* Table */
+.schedule-wrap{overflow-x:auto;flex:1;min-height:0}
+.schedule-table{border-collapse:collapse;width:100%;min-width:1100px}
+.schedule-table th{position:sticky;top:0;z-index:10;background:#f7f7f7;text-align:left;padding:8px 10px;font-size:11.5px;font-weight:600;color:#555;border-bottom:2px solid #e0e0e0;white-space:nowrap}
+.schedule-table td{padding:2px 4px;font-size:12.5px;color:#222;border-bottom:1px solid #f0f0f0;vertical-align:middle;white-space:nowrap}
+/* Sticky */
+th.cn,td.cn{width:44px;position:sticky;left:0;z-index:11;background:inherit;padding:8px 10px!important;text-align:center;font-size:11.5px;color:#aaa}
+th.cn{z-index:12}
+th.cd,td.cd{width:28px;padding:0 4px!important;text-align:center;position:sticky;left:44px;z-index:11;background:inherit}
+th.cd{z-index:12}
+th.ctname,td.ctname{min-width:200px;max-width:240px;white-space:normal;position:sticky;left:72px;z-index:11;background:inherit}
+th.ctname{z-index:12}
+th.cdur,td.cdur{width:88px}
+th.cstart,td.cstart,th.cfin,td.cfin{width:110px}
+th.casgn,td.casgn{width:110px;padding:4px 10px!important}
+th.cpred,td.cpred{width:115px;padding:4px 10px!important}
+th.calloc,td.calloc{width:95px;padding:4px 10px!important}
+th.cpct,td.cpct{width:110px}
+th.cstat,td.cstat{width:125px}
+th.cact,td.cact{width:44px;text-align:center;padding:4px!important}
+/* Phase rows */
+.phase-row td{background:#f5f5f5;font-weight:600;color:#333;border-top:1px solid #ddd;border-bottom:1px solid #ddd;padding:7px 10px!important}
+.phase-row td.cn{color:#bbb;font-weight:400;font-size:11px}
+.phn{display:flex;align-items:center;gap:5px}
+.rv{font-weight:400;color:#999;font-size:11.5px}
+/* Task rows */
+.task-row td{background:#fff}
+.task-row:hover td{background:#f8faff}
+.task-row.has-changes td{background:#fffbf5}
+.ti{padding-left:30px!important}
+.drag-h{cursor:grab;color:#ccc;font-size:15px;user-select:none;display:block;text-align:center}
+.drag-h:hover{color:#999}
+/* Add task row */
+.add-task-row td{background:#fafafa;padding:1px 0!important}
+.add-btn{background:none;border:none;color:#0076CE;cursor:pointer;font-size:12px;padding:5px 10px 5px 36px;font-family:inherit}
+.add-btn:hover{text-decoration:underline}
+/* FREE INLINE EDITING - cell inputs */
+.cell-inp{border:1px solid transparent;background:transparent;padding:5px 7px;font-family:'Segoe UI',Arial,sans-serif;font-size:12.5px;color:#222;border-radius:2px;width:100%;transition:border-color .1s,background .1s}
+.task-row:hover .cell-inp{border-color:#e8e8e8;background:#fafafa}
+.cell-inp:focus{border-color:#0076CE!important;background:#fff!important;outline:none;box-shadow:0 0 0 2px rgba(0,118,206,.12)}
+.cell-inp:hover{border-color:#ccc;background:#f5f5f5}
+.cell-sel{border:1px solid transparent;background:transparent;padding:5px 4px;font-family:'Segoe UI',Arial,sans-serif;font-size:12.5px;color:#222;border-radius:2px;width:100%;cursor:pointer;transition:border-color .1s,background .1s}
+.task-row:hover .cell-sel{border-color:#e8e8e8;background:#fafafa}
+.cell-sel:focus{border-color:#0076CE!important;background:#fff!important;outline:none}
+.cell-sel:hover{border-color:#ccc}
+.cell-date{width:100px}
+.cell-num{width:46px;text-align:right}
+.dur-wrap{display:flex;align-items:center;gap:2px}
+.dur-sfx{font-size:11.5px;color:#888;flex-shrink:0}
+/* Status via select - highlight options */
+.stat-completed{color:#2e7d32}
+.stat-inprogress{color:#0076CE}
+/* Milestone */
+.ms-icon{color:#5e35b1;font-size:10px;margin-right:2px}
+.dur-ms{color:#5e35b1;font-weight:700}
+/* Avatars */
+.avatars{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.av{width:24px;height:24px;border-radius:4px;background:#0076CE;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.av-add{width:24px;height:24px;border-radius:4px;background:#e8e8e8;color:#666;display:inline-flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;border:none;padding:0}
+.av-add:hover{background:#d0d0d0}
+/* Pred chips (read-only in this story) */
+.pchip{display:inline-flex;align-items:center;gap:2px;background:#e3f0fc;color:#0055a5;padding:2px 6px;border-radius:9px;font-size:11px;font-weight:500}
+.pred-open{background:none;border:1px solid #ccc;border-radius:3px;padding:2px 6px;font-size:11px;cursor:pointer;color:#555}
+.pred-open:hover{background:#f0f0f0}
+/* Mini progress bar */
+.pbar-wrap{display:flex;align-items:center;gap:6px}
+.pbar-track{width:40px;height:4px;background:#e8e8e8;border-radius:2px;overflow:hidden;flex-shrink:0}
+.pbar-fill{height:100%;background:#0076CE;border-radius:2px;transition:width .15s}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center}
+.modal-box{background:#fff;border-radius:3px;box-shadow:0 4px 24px rgba(0,0,0,.2);overflow:hidden}
+.modal-hd{padding:14px 18px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between}
+.modal-ttl{font-size:14px;font-weight:600;color:#111}
+.modal-x{background:none;border:none;font-size:17px;cursor:pointer;color:#888;padding:0}
+.modal-bd{padding:18px}
+.modal-ft{padding:12px 18px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:8px}
+.fl{display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.fi{padding:7px 10px;border:1px solid #ccc;border-radius:2px;font-size:12.5px;font-family:inherit;width:100%}
+.fi:focus{outline:none;border-color:#0076CE}
+.fhint{font-size:11px;color:#aaa;margin-top:3px}
+.fgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.fgrid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.fmb{margin-bottom:14px}
+.pred-line{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 10px;background:#f9f9f9;border:1px solid #eee;border-radius:2px}
+.pred-line.empty-line{background:#fff;border:1px dashed #ddd}
+.pred-line select{flex:1;padding:5px 8px;border:1px solid #ccc;border-radius:2px;font-size:12px;font-family:inherit}
+.pred-rm{background:none;border:none;cursor:pointer;color:#c62828;font-size:16px;padding:0 2px;line-height:1;flex-shrink:0}
+.hidden{display:none!important}
+/* Assignment popup */
+.assign-popup{position:fixed;background:#fff;border:1px solid #ddd;border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,.18);width:250px;z-index:500;display:none;overflow:hidden;}
+.assign-popup-search{width:100%;padding:8px 12px;border:none;border-bottom:1px solid #eee;font-size:12.5px;font-family:inherit;outline:none;color:#222;}
+.assign-popup-search::placeholder{color:#aaa;}
+.assign-list{max-height:220px;overflow-y:auto;}
+.assign-item{display:flex;align-items:center;gap:9px;padding:7px 12px;cursor:pointer;font-size:12.5px;transition:background .1s;}
+.assign-item:hover{background:#f0f5ff;}
+.assign-item.is-assigned{background:#f0f7ff;}
+.assign-item-meta{flex:1;min-width:0;}
+.assign-item-name{font-weight:500;color:#111;font-size:12px;}
+.assign-item-role{font-size:10.5px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.assign-check{color:#0076CE;font-size:13px;flex-shrink:0;}
+.assign-empty{padding:12px;font-size:12px;color:#aaa;text-align:center;}
+.av-rm{position:relative;cursor:pointer;}
+.av-rm::after{content:'×';position:absolute;inset:0;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:13px;font-weight:700;opacity:0;transition:opacity .12s;display:none;}
+.av-rm:hover::after{opacity:1;display:flex;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-brand">Nexora. <span>Real Estate Insights</span></div>
+  <button class="btn-logout">Log out</button>
+</div>
+<div class="app">
+  <div class="sidebar">
+    <div class="nav-group">
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>Maps</div>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-group">
+      <div class="nav-item" onclick="tnav('nav-db',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Dashboards<span class="chevron">&#9660;</span></div>
+      <div id="nav-db" class="nav-sub hidden"><div class="nav-item">Portfolio Level</div><div class="nav-item">Project Level</div></div>
+      <div class="nav-item" onclick="tnav('nav-gr',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Grids<span class="chevron">&#9650;</span></div>
+      <div id="nav-gr" class="nav-sub"><div class="nav-item">Portfolio Level</div><div class="nav-item active">Project Level</div></div>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-group">
+      <div class="nav-item" onclick="tnav('nav-rm',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Resource Mgmt<span class="chevron">&#9660;</span></div>
+      <div id="nav-rm" class="nav-sub hidden"><div class="nav-item">Resources</div><div class="nav-item">Schedule</div></div>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-group">
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Data changes log</div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>Settings</div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="content">
+      <div><div class="page-title">Project Level Grid</div><div class="page-subtitle">Financial and scheduling data for the selected project</div></div>
+      <div class="project-bar">
+        <label>Project:</label>
+        <select class="select" style="width:340px" onchange="onProjChange()">
+          <option>SNY00142 &#8211; 11 Corporate Woods, GPS Project Office</option>
+          <option>SNY00089 &#8211; Downtown HQ Renovation</option>
+          <option>SNY00201 &#8211; West Coast Hub Build-out</option>
+        </select>
+      </div>
+      <div class="tabs">
+        <button class="tab" onclick="switchTab('fin',this)">Financial</button>
+        <button class="tab active" onclick="switchTab('sched',this)">Scheduling</button>
+        <button class="tab" onclick="switchTab('tl',this)">Schedule Timeline</button>
+      </div>
+      <div class="grid-card">
+        <div class="grid-toolbar">
+          <div style="display:flex;align-items:center;gap:14px">
+            <span class="grid-info">Showing 4 phases and 8 tasks</span>
+            <span id="staged-badge" class="staged-badge hidden"><span class="unsaved-dot"></span>Unsaved changes</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button class="btn btn-secondary" id="discard-btn" style="display:none" onclick="discardChanges()">Discard Changes</button>
+            <button class="btn btn-primary" id="save-btn" disabled onclick="doSave()">Save Changes</button>
+          </div>
+        </div>
+        <div class="schedule-wrap">
+          <table class="schedule-table">
+            <thead><tr>
+              <th class="cn">#</th>
+              <th class="cd"></th>
+              <th class="ctname">Task Name</th>
+              <th class="cdur">Duration</th>
+              <th class="cstart">Start</th>
+              <th class="cfin">Finish</th>
+              <th class="casgn">Assigned To</th>
+              <th class="cpred">Predecessors</th>
+              <th class="calloc">Allocation %</th>
+              <th class="cpct">% Complete</th>
+              <th class="cstat">Status</th>
+              <th class="cact"></th>
+            </tr></thead>
+            <tbody>
+
+<!-- PHASE 1 -->
+<tr class="phase-row">
+  <td class="cn">&#8212;</td><td class="cd"></td>
+  <td class="ctname ti"><div class="phn"><button class="icon-btn" style="font-size:10px;color:#888;width:16px;height:16px;flex-shrink:0" onclick="tph('ph1t',this)">&#9660;</button><strong>Strategy &amp; Planning</strong><span class="rv" style="margin-left:6px">01/06 &#8211; 01/30 &#183; 19d</span></div></td>
+  <td class="cdur"><span class="rv">19d</span></td>
+  <td class="cstart"><span class="rv">01/06/26</span></td><td class="cfin"><span class="rv">01/30/26</span></td>
+  <td class="casgn"><div class="avatars"><span class="av" title="Brian Holloway">BH</span><span class="av" style="background:#00838f">AK</span><span class="av" style="background:#2e7d32">RK</span></div></td>
+  <td class="cpred"></td><td class="calloc"><span class="rv">&#8212;</span></td><td class="cpct"><span class="rv">80%</span></td><td class="cstat"></td><td class="cact"></td>
+</tr>
+<tbody id="ph1t">
+<!-- Row 1 -->
+<tr class="task-row" id="row-1">
+  <td class="cn">1</td><td class="cd"><span class="drag-h">&#8942;</span></td>
+  <td class="ctname ti"><input class="cell-inp" value="Site Assessment" oninput="markStaged()"></td>
+  <td class="cdur"><div class="dur-wrap"><input type="number" class="cell-inp cell-num" value="8" min="0" oninput="markStaged()"><span class="dur-sfx">d</span></div></td>
+  <td class="cstart"><input type="date" class="cell-inp cell-date" value="2026-01-06" onchange="markStaged()"></td>
+  <td class="cfin"><input type="date" class="cell-inp cell-date" value="2026-01-15" onchange="markStaged()"></td>
+  <td class="casgn"><div class="avatars"><span class="av" title="Brian Holloway">BH</span><button class="av-add" title="Add">+</button></div></td>
+  <td class="cpred"><span class="pchip">&#8212;</span></td>
+  <td class="calloc"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" style="width:100%"></div></div><span style="font-size:12px">100%</span></div></td>
+  <td class="cpct"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" id="b1" style="width:100%"></div></div><input type="number" class="cell-inp cell-num" value="100" min="0" max="100" oninput="updBar(this,'b1');markStaged()"><span style="font-size:11px;color:#888">%</span></div></td>
+  <td class="cstat"><select class="cell-sel" onchange="markStaged()"><option>Not Started</option><option>In Progress</option><option selected>Completed</option></select></td>
+  <td class="cact"><button class="icon-btn" title="Delete" onclick="delRow(1)">&#128465;</button></td>
+</tr>
+<!-- Row 2 -->
+<tr class="task-row" id="row-2">
+  <td class="cn">2</td><td class="cd"><span class="drag-h">&#8942;</span></td>
+  <td class="ctname ti"><input class="cell-inp" value="Concept Design" oninput="markStaged()"></td>
+  <td class="cdur"><div class="dur-wrap"><input type="number" class="cell-inp cell-num" value="11" min="0" oninput="markStaged()"><span class="dur-sfx">d</span></div></td>
+  <td class="cstart"><input type="date" class="cell-inp cell-date" value="2026-01-16" onchange="markStaged()"></td>
+  <td class="cfin"><input type="date" class="cell-inp cell-date" value="2026-01-30" onchange="markStaged()"></td>
+  <td class="casgn"><div class="avatars"><span class="av" style="background:#00838f">AK</span><span class="av" style="background:#2e7d32">RK</span><button class="av-add">+</button></div></td>
+  <td class="cpred"><div style="display:flex;align-items:center;gap:4px"><span class="pchip">1FS</span><button class="pred-open" onclick="openPred(2,'Concept Design')">&#8230;</button></div></td>
+  <td class="calloc"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" style="width:75%"></div></div><span style="font-size:12px">75%</span></div></td>
+  <td class="cpct"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" id="b2" style="width:60%"></div></div><input type="number" class="cell-inp cell-num" value="60" min="0" max="100" oninput="updBar(this,'b2');markStaged()"><span style="font-size:11px;color:#888">%</span></div></td>
+  <td class="cstat"><select class="cell-sel" onchange="markStaged()"><option>Not Started</option><option selected>In Progress</option><option>Completed</option></select></td>
+  <td class="cact"><button class="icon-btn" title="Delete" onclick="delRow(2)">&#128465;</button></td>
+</tr>
+<tr class="add-task-row"><td colspan="12"><button class="add-btn" onclick="openAdd('Strategy &amp; Planning')">+ Add new task&#8230;</button></td></tr>
+</tbody>
+
+<!-- PHASE 2 -->
+<tr class="phase-row">
+  <td class="cn">&#8212;</td><td class="cd"></td>
+  <td class="ctname ti"><div class="phn"><button class="icon-btn" style="font-size:10px;color:#888;width:16px;height:16px;flex-shrink:0" onclick="tph('ph2t',this)">&#9660;</button><strong>Design</strong><span class="rv" style="margin-left:6px">02/02 &#8211; 03/27 &#183; 40d</span></div></td>
+  <td class="cdur"><span class="rv">40d</span></td>
+  <td class="cstart"><span class="rv">02/02/26</span></td><td class="cfin"><span class="rv">03/27/26</span></td>
+  <td class="casgn"></td><td class="cpred"></td><td class="calloc"><span class="rv">&#8212;</span></td><td class="cpct"><span class="rv">0%</span></td><td class="cstat"></td><td class="cact"></td>
+</tr>
+<tbody id="ph2t">
+<!-- Row 3 -->
+<tr class="task-row" id="row-3">
+  <td class="cn">3</td><td class="cd"><span class="drag-h">&#8942;</span></td>
+  <td class="ctname ti"><input class="cell-inp" value="Schematic Design" oninput="markStaged()"></td>
+  <td class="cdur"><div class="dur-wrap"><input type="number" class="cell-inp cell-num" value="20" min="0" oninput="markStaged()"><span class="dur-sfx">d</span></div></td>
+  <td class="cstart"><input type="date" class="cell-inp cell-date" value="2026-02-02" onchange="markStaged()"></td>
+  <td class="cfin"><input type="date" class="cell-inp cell-date" value="2026-02-27" onchange="markStaged()"></td>
+  <td class="casgn"><div class="avatars"><button class="av-add">+</button></div></td>
+  <td class="cpred"><div style="display:flex;align-items:center;gap:4px"><span class="pchip">2FS</span><button class="pred-open" onclick="openPred(3,'Schematic Design')">&#8230;</button></div></td>
+  <td class="calloc"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" style="width:0%"></div></div><span style="font-size:12px">0%</span></div></td>
+  <td class="cpct"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" id="b3" style="width:0%"></div></div><input type="number" class="cell-inp cell-num" value="0" min="0" max="100" oninput="updBar(this,'b3');markStaged()"><span style="font-size:11px;color:#888">%</span></div></td>
+  <td class="cstat"><select class="cell-sel" onchange="markStaged()"><option selected>Not Started</option><option>In Progress</option><option>Completed</option></select></td>
+  <td class="cact"><button class="icon-btn" onclick="delRow(3)">&#128465;</button></td>
+</tr>
+<!-- Row 4 -->
+<tr class="task-row" id="row-4">
+  <td class="cn">4</td><td class="cd"><span class="drag-h">&#8942;</span></td>
+  <td class="ctname ti"><input class="cell-inp" value="Design Development" oninput="markStaged()"></td>
+  <td class="cdur"><div class="dur-wrap"><input type="number" class="cell-inp cell-num" value="20" min="0" oninput="markStaged()"><span class="dur-sfx">d</span></div></td>
+  <td class="cstart"><input type="date" class="cell-inp cell-date" value="2026-03-02" onchange="markStaged()"></td>
+  <td class="cfin"><input type="date" class="cell-inp cell-date" value="2026-03-27" onchange="markStaged()"></td>
+  <td class="casgn"><div class="avatars"><button class="av-add">+</button></div></td>
+  <td class="cpred"><div style="display:flex;align-items:center;gap:4px"><span class="pchip">3FS</span><button class="pred-open" onclick="openPred(4,'Design Development')">&#8230;</button></div></td>
+  <td class="calloc"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" style="width:0%"></div></div><span style="font-size:12px">0%</span></div></td>
+  <td class="cpct"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" id="b4" style="width:0%"></div></div><input type="number" class="cell-inp cell-num" value="0" min="0" max="100" oninput="updBar(this,'b4');markStaged()"><span style="font-size:11px;color:#888">%</span></div></td>
+  <td class="cstat"><select class="cell-sel" onchange="markStaged()"><option selected>Not Started</option><option>In Progress</option><option>Completed</option></select></td>
+  <td class="cact"><button class="icon-btn" onclick="delRow(4)">&#128465;</button></td>
+</tr>
+<tr class="add-task-row"><td colspan="12"><button class="add-btn" onclick="openAdd('Design')">+ Add new task&#8230;</button></td></tr>
+</tbody>
+
+<!-- PHASE 3 -->
+<tr class="phase-row">
+  <td class="cn">&#8212;</td><td class="cd"></td>
+  <td class="ctname ti"><div class="phn"><button class="icon-btn" style="font-size:10px;color:#888;width:16px;height:16px;flex-shrink:0" onclick="tph('ph3t',this)">&#9660;</button><strong>Construction</strong><span class="rv" style="margin-left:6px">04/01 &#8211; 06/30 &#183; 65d</span></div></td>
+  <td class="cdur"><span class="rv">65d</span></td>
+  <td class="cstart"><span class="rv">04/01/26</span></td><td class="cfin"><span class="rv">06/30/26</span></td>
+  <td class="casgn"></td><td class="cpred"></td><td class="calloc"><span class="rv">&#8212;</span></td><td class="cpct"><span class="rv">0%</span></td><td class="cstat"></td><td class="cact"></td>
+</tr>
+<tbody id="ph3t">
+<!-- Row 5 MILESTONE -->
+<tr class="task-row" id="row-5" style="font-style:italic">
+  <td class="cn">5</td><td class="cd"><span class="drag-h">&#8942;</span></td>
+  <td class="ctname ti"><div style="display:flex;align-items:center;gap:4px"><span class="ms-icon">&#9670;</span><input class="cell-inp" value="Permit Approved" oninput="markStaged()" style="font-style:italic"></div></td>
+  <td class="cdur"><div class="dur-wrap"><span class="dur-ms">0d &#9670;</span></div></td>
+  <td class="cstart"><input type="date" class="cell-inp cell-date" value="2026-04-01" onchange="markStaged()"></td>
+  <td class="cfin"><input type="date" class="cell-inp cell-date" value="2026-04-01" onchange="markStaged()"></td>
+  <td class="casgn"><div class="avatars"><button class="av-add">+</button></div></td>
+  <td class="cpred"><span class="pchip" style="color:#aaa;background:#f5f5f5">&#8212;</span></td>
+  <td class="calloc"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" style="width:0%"></div></div><span style="font-size:12px">0%</span></div></td>
+  <td class="cpct"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" id="b5" style="width:0%"></div></div><input type="number" class="cell-inp cell-num" value="0" min="0" max="100" oninput="updBar(this,'b5');markStaged()"><span style="font-size:11px;color:#888">%</span></div></td>
+  <td class="cstat"><select class="cell-sel" onchange="markStaged()"><option selected>Not Started</option><option>In Progress</option><option>Completed</option></select></td>
+  <td class="cact"><button class="icon-btn" onclick="delRow(5)">&#128465;</button></td>
+</tr>
+<!-- Row 6 -->
+<tr class="task-row" id="row-6">
+  <td class="cn">6</td><td class="cd"><span class="drag-h">&#8942;</span></td>
+  <td class="ctname ti"><input class="cell-inp" value="Construction Work" oninput="markStaged()"></td>
+  <td class="cdur"><div class="dur-wrap"><input type="number" class="cell-inp cell-num" value="61" min="0" oninput="markStaged()"><span class="dur-sfx">d</span></div></td>
+  <td class="cstart"><input type="date" class="cell-inp cell-date" value="2026-04-06" onchange="markStaged()"></td>
+  <td class="cfin"><input type="date" class="cell-inp cell-date" value="2026-06-30" onchange="markStaged()"></td>
+  <td class="casgn"><div class="avatars"><button class="av-add">+</button></div></td>
+  <td class="cpred"><div style="display:flex;align-items:center;gap:4px"><span class="pchip">5SF</span><button class="pred-open" onclick="openPred(6,'Construction Work')">&#8230;</button></div></td>
+  <td class="calloc"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" style="width:0%"></div></div><span style="font-size:12px">0%</span></div></td>
+  <td class="cpct"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" id="b6" style="width:0%"></div></div><input type="number" class="cell-inp cell-num" value="0" min="0" max="100" oninput="updBar(this,'b6');markStaged()"><span style="font-size:11px;color:#888">%</span></div></td>
+  <td class="cstat"><select class="cell-sel" onchange="markStaged()"><option selected>Not Started</option><option>In Progress</option><option>Completed</option></select></td>
+  <td class="cact"><button class="icon-btn" onclick="delRow(6)">&#128465;</button></td>
+</tr>
+<tr class="add-task-row"><td colspan="12"><button class="add-btn" onclick="openAdd('Construction')">+ Add new task&#8230;</button></td></tr>
+</tbody>
+
+<!-- PHASE 4 -->
+<tr class="phase-row">
+  <td class="cn">&#8212;</td><td class="cd"></td>
+  <td class="ctname ti"><div class="phn"><button class="icon-btn" style="font-size:10px;color:#888;width:16px;height:16px;flex-shrink:0" onclick="tph('ph4t',this)">&#9660;</button><strong>Closeout</strong><span class="rv" style="margin-left:6px">07/01 &#8211; 07/17 &#183; 13d</span></div></td>
+  <td class="cdur"><span class="rv">13d</span></td>
+  <td class="cstart"><span class="rv">07/01/26</span></td><td class="cfin"><span class="rv">07/17/26</span></td>
+  <td class="casgn"></td><td class="cpred"></td><td class="calloc"><span class="rv">&#8212;</span></td><td class="cpct"><span class="rv">0%</span></td><td class="cstat"></td><td class="cact"></td>
+</tr>
+<tbody id="ph4t">
+<!-- Row 7 -->
+<tr class="task-row" id="row-7">
+  <td class="cn">7</td><td class="cd"><span class="drag-h">&#8942;</span></td>
+  <td class="ctname ti"><input class="cell-inp" value="Final Inspection" oninput="markStaged()"></td>
+  <td class="cdur"><div class="dur-wrap"><input type="number" class="cell-inp cell-num" value="8" min="0" oninput="markStaged()"><span class="dur-sfx">d</span></div></td>
+  <td class="cstart"><input type="date" class="cell-inp cell-date" value="2026-07-01" onchange="markStaged()"></td>
+  <td class="cfin"><input type="date" class="cell-inp cell-date" value="2026-07-10" onchange="markStaged()"></td>
+  <td class="casgn"><div class="avatars"><button class="av-add">+</button></div></td>
+  <td class="cpred"><div style="display:flex;align-items:center;gap:4px"><span class="pchip">6FS</span><button class="pred-open" onclick="openPred(7,'Final Inspection')">&#8230;</button></div></td>
+  <td class="calloc"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" style="width:0%"></div></div><span style="font-size:12px">0%</span></div></td>
+  <td class="cpct"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" id="b7" style="width:0%"></div></div><input type="number" class="cell-inp cell-num" value="0" min="0" max="100" oninput="updBar(this,'b7');markStaged()"><span style="font-size:11px;color:#888">%</span></div></td>
+  <td class="cstat"><select class="cell-sel" onchange="markStaged()"><option selected>Not Started</option><option>In Progress</option><option>Completed</option></select></td>
+  <td class="cact"><button class="icon-btn" onclick="delRow(7)">&#128465;</button></td>
+</tr>
+<!-- Row 8 -->
+<tr class="task-row" id="row-8">
+  <td class="cn">8</td><td class="cd"><span class="drag-h">&#8942;</span></td>
+  <td class="ctname ti"><input class="cell-inp" value="Punch List" oninput="markStaged()"></td>
+  <td class="cdur"><div class="dur-wrap"><input type="number" class="cell-inp cell-num" value="5" min="0" oninput="markStaged()"><span class="dur-sfx">d</span></div></td>
+  <td class="cstart"><input type="date" class="cell-inp cell-date" value="2026-07-13" onchange="markStaged()"></td>
+  <td class="cfin"><input type="date" class="cell-inp cell-date" value="2026-07-17" onchange="markStaged()"></td>
+  <td class="casgn"><div class="avatars"><button class="av-add">+</button></div></td>
+  <td class="cpred"><div style="display:flex;align-items:center;gap:4px"><span class="pchip">7FS</span><button class="pred-open" onclick="openPred(8,'Punch List')">&#8230;</button></div></td>
+  <td class="calloc"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" style="width:0%"></div></div><span style="font-size:12px">0%</span></div></td>
+  <td class="cpct"><div class="pbar-wrap"><div class="pbar-track"><div class="pbar-fill" id="b8" style="width:0%"></div></div><input type="number" class="cell-inp cell-num" value="0" min="0" max="100" oninput="updBar(this,'b8');markStaged()"><span style="font-size:11px;color:#888">%</span></div></td>
+  <td class="cstat"><select class="cell-sel" onchange="markStaged()"><option selected>Not Started</option><option>In Progress</option><option>Completed</option></select></td>
+  <td class="cact"><button class="icon-btn" onclick="delRow(8)">&#128465;</button></td>
+</tr>
+<tr class="add-task-row"><td colspan="12"><button class="add-btn" onclick="openAdd('Closeout')">+ Add new task&#8230;</button></td></tr>
+</tbody>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TASK MODAL -->
+<div id="modal-add" class="modal-overlay hidden">
+  <div class="modal-box" style="width:480px">
+    <div class="modal-hd"><div class="modal-ttl">Add Task &#8212; <span id="add-phase-lbl"></span></div><button class="modal-x" onclick="closeAdd()">&#10005;</button></div>
+    <div class="modal-bd">
+      <div class="fmb"><label class="fl">Task Name <span style="color:#c62828">*</span></label><input class="fi" id="add-name" placeholder="Enter task name..."></div>
+      <div class="fgrid3">
+        <div><label class="fl">Duration (days)</label><input type="number" class="fi" placeholder="0&#8211;99999" min="0"><div class="fhint">Auto-calc from 2 of 3 fields</div></div>
+        <div><label class="fl">Start</label><input type="date" class="fi"></div>
+        <div><label class="fl">Finish</label><input type="date" class="fi"></div>
+      </div>
+      <div class="fgrid2">
+        <div><label class="fl">Status</label><select class="fi" style="padding:6px 10px"><option>Not Started</option><option>In Progress</option><option>Completed</option></select></div>
+        <div><label class="fl">% Complete</label><input type="number" class="fi" placeholder="0" min="0" max="100"></div>
+      </div>
+      <div class="fmb"><label class="fl">Assigned To</label>
+        <select class="fi" id="add-assigned" style="padding:6px 10px"><option value="">Select resource…</option><option value="1">Laura Bennett — Portfolio Leader</option><option value="2">Daniel Reyes — Strategy Lead</option><option value="3">Sophie Marsh — Workplace Exp. Designer</option><option value="4">Chris Wade — Transaction Manager</option><option value="5">Ryan Kowalski — Architect</option><option value="6">Vantara Partners — External PM</option><option value="7">Stratford Design — Architecture Firm</option></select>
+      </div>
+    </div>
+    <div class="modal-ft"><button class="btn btn-secondary" onclick="closeAdd()">Cancel</button><button class="btn btn-primary" onclick="saveAdd()">Save Task</button></div>
+  </div>
+</div>
+
+<!-- PREDECESSOR MODAL -->
+<div id="modal-pred" class="modal-overlay hidden">
+  <div class="modal-box" style="width:500px">
+    <div class="modal-hd"><div class="modal-ttl">Predecessors &#8212; <span id="pred-lbl"></span></div><button class="modal-x" onclick="closePred()">&#10005;</button></div>
+    <div class="modal-bd">
+      <div style="font-size:12px;color:#666;margin-bottom:12px">Select a task and dependency type. FS = Finish to Start, SF = Start to Finish. Max 5 predecessors.</div>
+      <div class="pred-line">
+        <select style="flex:1;padding:5px 8px;border:1px solid #ccc;border-radius:2px;font-size:12px;font-family:inherit">
+          <option value="">Enter row # or task name</option>
+          <option selected>1 &#8212; Site Assessment</option>
+          <option>2 &#8212; Concept Design</option><option>3 &#8212; Schematic Design</option><option>4 &#8212; Design Development</option><option>5 &#8212; Permit Approved</option><option>6 &#8212; Construction Work</option><option>7 &#8212; Final Inspection</option><option>8 &#8212; Punch List</option>
+        </select>
+        <select style="width:155px;flex-shrink:0;padding:5px 8px;border:1px solid #ccc;border-radius:2px;font-size:12px;font-family:inherit">
+          <option>FS &#8211; Finish to Start</option><option>SF &#8211; Start to Finish</option>
+        </select>
+        <button class="pred-rm">&#10005;</button>
+      </div>
+      <div class="pred-line empty-line">
+        <select style="flex:1;padding:5px 8px;border:1px dashed #ccc;border-radius:2px;font-size:12px;font-family:inherit;color:#aaa"><option value="" selected>Enter row # or task name</option><option>1 &#8212; Site Assessment</option><option>2 &#8212; Concept Design</option><option>3 &#8212; Schematic Design</option><option>4 &#8212; Design Development</option><option>5 &#8212; Permit Approved</option><option>6 &#8212; Construction Work</option><option>7 &#8212; Final Inspection</option><option>8 &#8212; Punch List</option></select>
+        <select style="width:155px;flex-shrink:0;padding:5px 8px;border:1px dashed #ccc;border-radius:2px;font-size:12px;font-family:inherit;color:#aaa"><option>SF</option><option>FS</option></select>
+      </div>
+      <div style="font-size:11px;color:#aaa;margin-top:6px;font-style:italic">Select a task to add another predecessor line automatically.</div>
+    </div>
+    <div class="modal-ft"><button class="btn btn-secondary" onclick="closePred()">Cancel</button><button class="btn btn-primary" onclick="closePred()">Save</button></div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div id="modal-del" class="modal-overlay hidden">
+  <div class="modal-box" style="width:360px">
+    <div class="modal-hd"><div class="modal-ttl">Delete Task</div><button class="modal-x" onclick="document.getElementById('modal-del').classList.add('hidden')">&#10005;</button></div>
+    <div class="modal-bd"><p style="font-size:13px;color:#333">Are you sure you want to delete this task? This action cannot be undone.</p></div>
+    <div class="modal-ft"><button class="btn btn-secondary" onclick="document.getElementById('modal-del').classList.add('hidden')">Cancel</button><button class="btn btn-primary" style="background:#c62828" onclick="doDelete()">Delete</button></div>
+  </div>
+</div>
+
+<!-- DISCARD CHANGES MODAL -->
+<div id="modal-discard" class="modal-overlay hidden">
+  <div class="modal-box" style="width:380px">
+    <div class="modal-hd"><div class="modal-ttl">Discard Changes</div></div>
+    <div class="modal-bd"><p style="font-size:13px;color:#333">Are you sure? All unsaved changes will be lost.</p></div>
+    <div class="modal-ft">
+      <button class="btn btn-secondary" onclick="document.getElementById('modal-discard').classList.add('hidden')">Cancel</button>
+      <button class="btn btn-primary" style="background:#c62828" onclick="confirmDiscard()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- UNSAVED NAV MODAL -->
+<div id="modal-unsaved" class="modal-overlay hidden">
+  <div class="modal-box" style="width:380px">
+    <div class="modal-hd"><div class="modal-ttl">Unsaved Changes</div></div>
+    <div class="modal-bd"><p style="font-size:13px;color:#333">You have unsaved changes. If you continue, your changes will be lost.</p></div>
+    <div class="modal-ft"><button class="btn btn-secondary" onclick="document.getElementById('modal-unsaved').classList.add('hidden')">Cancel</button><button class="btn btn-primary" onclick="discardAll()">Continue without saving</button></div>
+  </div>
+</div>
+
+<!-- ASSIGN RESOURCE POPUP -->
+<div id="assign-popup" class="assign-popup">
+  <input type="text" id="assign-search" class="assign-popup-search" placeholder="Search resources...">
+  <div class="assign-list" id="assign-list"></div>
+</div>
+
+<script>
+var staged=false, delTarget=null;
+
+/* ── RESOURCES (shared with rm_poc) ─── */
+var resources=[
+  {id:1,name:'Laura Bennett',  initials:'LB',color:'#7C3AED',role:'Portfolio Leader'},
+  {id:2,name:'Daniel Reyes',   initials:'DR',color:'#EF4444',role:'Strategy Lead'},
+  {id:3,name:'Sophie Marsh',   initials:'SM',color:'#6D28D9',role:'Workplace Exp. Designer'},
+  {id:4,name:'Chris Wade',     initials:'CW',color:'#0D9488',role:'Transaction Manager'},
+  {id:5,name:'Ryan Kowalski',  initials:'RK',color:'#16A34A',role:'Architect'},
+  {id:6,name:'Vantara Partners',initials:'VP',color:'#EA580C',role:'External PM'},
+  {id:7,name:'Stratford Design',initials:'SD',color:'#3B82F6',role:'Architecture Firm'},
+];
+
+/* ── ASSIGNMENT POPUP ───────────────── */
+var currentAvatarsContainer=null;
+
+function openAssign(btn){
+  var container=btn.closest('.avatars');
+  currentAvatarsContainer=container;
+  var popup=document.getElementById('assign-popup');
+  var rect=btn.getBoundingClientRect();
+  var left=Math.min(rect.left, window.innerWidth-260);
+  popup.style.top=(rect.bottom+4)+'px';
+  popup.style.left=left+'px';
+  popup.style.display='block';
+  document.getElementById('assign-search').value='';
+  renderAssignList('');
+  setTimeout(function(){document.getElementById('assign-search').focus();},50);
+}
+
+function closeAssign(){
+  document.getElementById('assign-popup').style.display='none';
+  currentAvatarsContainer=null;
+}
+
+function renderAssignList(filter){
+  if(!currentAvatarsContainer){return;}
+  var assignedIds=getAssignedIds(currentAvatarsContainer);
+  var list=document.getElementById('assign-list');
+  var filtered=resources.filter(function(r){
+    return !filter||r.name.toLowerCase().indexOf(filter.toLowerCase())!==-1||r.role.toLowerCase().indexOf(filter.toLowerCase())!==-1;
+  });
+  if(!filtered.length){
+    list.innerHTML='<div class="assign-empty">No resources found</div>';return;
+  }
+  list.innerHTML=filtered.map(function(r){
+    var assigned=assignedIds.indexOf(r.id)!==-1;
+    return '<div class="assign-item'+(assigned?' is-assigned':'')+'" onclick="toggleAssign('+r.id+')">'+
+      '<div class="av" style="background:'+r.color+';width:24px;height:24px;font-size:8.5px;border-radius:4px;flex-shrink:0;">'+r.initials+'</div>'+
+      '<div class="assign-item-meta"><div class="assign-item-name">'+r.name+'</div><div class="assign-item-role">'+r.role+'</div></div>'+
+      (assigned?'<span class="assign-check">✓</span>':'')+
+    '</div>';
+  }).join('');
+}
+
+function getAssignedIds(container){
+  var ids=[];
+  container.querySelectorAll('.av[data-rid]').forEach(function(el){
+    ids.push(parseInt(el.getAttribute('data-rid')));
+  });
+  return ids;
+}
+
+function toggleAssign(rid){
+  if(!currentAvatarsContainer)return;
+  var existing=currentAvatarsContainer.querySelector('.av[data-rid="'+rid+'"]');
+  if(existing){
+    existing.remove();
+  } else {
+    var r=resources.find(function(x){return x.id===rid;});
+    if(!r)return;
+    var addBtn=currentAvatarsContainer.querySelector('.av-add');
+    var el=document.createElement('span');
+    el.className='av av-rm';
+    el.style.background=r.color;
+    el.setAttribute('data-rid',r.id);
+    el.title=r.name+' — click to remove';
+    el.textContent=r.initials;
+    el.onclick=function(e){e.stopPropagation();removeAvatar(el,r.name);};
+    currentAvatarsContainer.insertBefore(el,addBtn);
+    markStaged();
+  }
+  renderAssignList(document.getElementById('assign-search').value);
+}
+
+function removeAvatar(el,name){
+  if(confirm('Remove '+name+' from this task?')){el.remove();markStaged();}
+}
+
+/* close popup on outside click */
+document.addEventListener('click',function(e){
+  var popup=document.getElementById('assign-popup');
+  if(popup.style.display==='block'&&!popup.contains(e.target)&&!e.target.classList.contains('av-add')){
+    closeAssign();
+  }
+});
+
+document.getElementById('assign-search').addEventListener('input',function(){
+  renderAssignList(this.value);
+});
+
+/* wire up all existing + buttons */
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.av-add').forEach(function(btn){
+    btn.onclick=function(e){e.stopPropagation();openAssign(btn);};
+  });
+});
+
+/* ── EXISTING FUNCTIONS ─────────────── */
+function markStaged(){
+  if(!staged){
+    staged=true;
+    document.getElementById('save-btn').disabled=false;
+    document.getElementById('staged-badge').classList.remove('hidden');
+    document.getElementById('discard-btn').style.display='';
+  }
+}
+
+function updBar(inp,barId){
+  var v=Math.min(100,Math.max(0,parseInt(inp.value)||0));
+  var b=document.getElementById(barId);
+  if(b)b.style.width=v+'%';
+}
+
+function doSave(){
+  staged=false;
+  document.getElementById('save-btn').disabled=true;
+  document.getElementById('staged-badge').classList.add('hidden');
+  document.getElementById('discard-btn').style.display='none';
+  alert('Changes saved successfully.');
+}
+
+function discardChanges(){document.getElementById('modal-discard').classList.remove('hidden');}
+function confirmDiscard(){location.reload();}
+function discardAll(){
+  staged=false;
+  document.getElementById('save-btn').disabled=true;
+  document.getElementById('staged-badge').classList.add('hidden');
+  document.getElementById('discard-btn').style.display='none';
+  document.getElementById('modal-unsaved').classList.add('hidden');
+}
+
+function onProjChange(){if(staged)document.getElementById('modal-unsaved').classList.remove('hidden');}
+
+function delRow(n){delTarget=n;document.getElementById('modal-del').classList.remove('hidden');}
+function doDelete(){
+  if(delTarget){var r=document.getElementById('row-'+delTarget);if(r)r.remove();markStaged();delTarget=null;}
+  document.getElementById('modal-del').classList.add('hidden');
+}
+
+function openAdd(ph){
+  document.getElementById('add-phase-lbl').textContent=ph;
+  document.getElementById('add-name').value='';
+  document.getElementById('add-assigned').value='';
+  document.getElementById('modal-add').classList.remove('hidden');
+}
+function closeAdd(){document.getElementById('modal-add').classList.add('hidden');}
+function saveAdd(){
+  var n=document.getElementById('add-name').value.trim();
+  if(!n){document.getElementById('add-name').style.borderColor='#c62828';return;}
+  closeAdd();markStaged();
+}
+
+function openPred(n,name){document.getElementById('pred-lbl').textContent=n+' \u2014 '+name;document.getElementById('modal-pred').classList.remove('hidden');}
+function closePred(){document.getElementById('modal-pred').classList.add('hidden');}
+
+function tph(id,btn){var t=document.getElementById(id);t.classList.toggle('hidden');btn.textContent=t.classList.contains('hidden')?'\u25B6':'\u25BC';}
+function tnav(id,trigger){var el=document.getElementById(id);el.classList.toggle('hidden');var ch=trigger.querySelector('.chevron');if(ch)ch.innerHTML=el.classList.contains('hidden')?'&#9660;':'&#9650;';}
+function switchTab(t,btn){document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');if(t!=='sched')alert(btn.textContent+' \u2013 covered by a separate story.');}
+</script>
+</body>
+</html>
