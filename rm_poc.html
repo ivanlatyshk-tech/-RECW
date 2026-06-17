@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CW – Resource Management POC</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; background: #F3F4F6; color: #111827; display: flex; height: 100vh; overflow: hidden; }
+
+/* ── SIDEBAR ─────────────────────────────── */
+.sidebar { width: 220px; background: #111827; color: #9CA3AF; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; user-select: none; }
+.logo { padding: 18px 16px 14px; border-bottom: 1px solid #1F2937; }
+.logo-main { font-size: 15px; font-weight: 700; color: #fff; }
+.logo-sub { font-size: 11px; color: #4B5563; margin-top: 2px; }
+.nav-section { padding: 12px 0 4px; }
+.nav-label { padding: 4px 16px 6px; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #4B5563; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 16px; font-size: 12.5px; cursor: pointer; transition: background .12s; }
+.nav-item:hover { background: #1F2937; color: #E5E7EB; }
+.nav-item.active { background: #1D4ED8; color: #fff; }
+.nav-item.sub { padding-left: 40px; font-size: 12px; }
+.nav-icon { width: 15px; height: 15px; flex-shrink: 0; opacity: .7; }
+.nav-arrow { margin-left: auto; font-size: 9px; opacity: .5; }
+
+/* ── MAIN ────────────────────────────────── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #F3F4F6; }
+.page { display: none; flex-direction: column; height: 100%; overflow: hidden; }
+.page.active { display: flex; }
+
+/* ── PAGE HEADER ─────────────────────────── */
+.page-header { padding: 18px 24px 0; flex-shrink: 0; }
+.page-header h1 { font-size: 19px; font-weight: 600; color: #111827; }
+.page-header p { font-size: 12px; color: #6B7280; margin-top: 2px; }
+.header-actions { display: flex; align-items: flex-end; justify-content: space-between; padding: 12px 24px 0; flex-shrink: 0; }
+
+/* ── TOGGLE ──────────────────────────────── */
+.view-toggle { display: flex; background: #E5E7EB; border-radius: 6px; padding: 3px; width: fit-content; }
+.toggle-btn { padding: 5px 18px; border-radius: 4px; border: none; background: transparent; cursor: pointer; font-size: 12.5px; font-weight: 500; color: #6B7280; transition: all .14s; }
+.toggle-btn.active { background: #fff; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+/* ── TOOLBAR ─────────────────────────────── */
+.toolbar { padding: 10px 24px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.toolbar label { font-size: 12px; color: #6B7280; font-weight: 500; }
+.toolbar select { padding: 5px 10px; border: 1px solid #D1D5DB; border-radius: 5px; font-size: 12.5px; color: #111827; background: #fff; cursor: pointer; min-width: 280px; }
+
+/* ── FILTER BAR ──────────────────────────── */
+.filter-bar { padding: 8px 24px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.filter-bar label { font-size: 11px; color: #6B7280; font-weight: 500; }
+.filter-bar select { padding: 4px 8px; border: 1px solid #D1D5DB; border-radius: 4px; font-size: 12px; background: #fff; }
+.legend { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #6B7280; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+/* ── RESOURCE TABLE ──────────────────────── */
+.table-wrap { flex: 1; overflow: auto; margin: 0 24px 20px; background: #fff; border-radius: 8px; border: 1px solid #E5E7EB; }
+table.res-table { width: 100%; border-collapse: collapse; }
+table.res-table thead th { padding: 9px 14px; text-align: left; font-size: 11px; font-weight: 600; color: #6B7280; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid #E5E7EB; background: #F9FAFB; position: sticky; top: 0; white-space: nowrap; }
+table.res-table tbody td { padding: 9px 14px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
+table.res-table tbody tr:last-child td { border-bottom: none; }
+table.res-table tbody tr:hover td { background: #F9FAFB; }
+.res-name-cell { display: flex; align-items: center; gap: 9px; }
+
+/* ── AVATARS ─────────────────────────────── */
+.av { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-size: 9px; font-weight: 700; color: #fff; flex-shrink: 0; border: 2px solid #fff; }
+.av-group { display: flex; }
+.av-group .av { margin-left: -6px; }
+.av-group .av:first-child { margin-left: 0; }
+.av-sm { width: 22px; height: 22px; font-size: 8px; }
+.av-lg { width: 30px; height: 30px; font-size: 10px; }
+
+/* ── BADGES ──────────────────────────────── */
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.badge-person { background: #EFF6FF; color: #1D4ED8; }
+.badge-company { background: #F0FDF4; color: #15803D; }
+.badge-full { background: #DCFCE7; color: #15803D; }
+.badge-partial { background: #FEF3C7; color: #92400E; }
+.badge-none { background: #FEE2E2; color: #991B1B; }
+.badge-cov-full { background: #DCFCE7; color: #166534; font-size: 11px; }
+.badge-cov-partial { background: #FEF3C7; color: #92400E; font-size: 11px; }
+.badge-cov-none { background: #FEE2E2; color: #991B1B; font-size: 11px; }
+.badge-overalloc { background: #FEE2E2; color: #991B1B; font-size: 10px; padding: 2px 6px; }
+.badge-question { background: #F3F4F6; color: #6B7280; font-size: 10px; padding: 2px 6px; border: 1px dashed #D1D5DB; cursor: help; }
+
+/* ── STATUS ──────────────────────────────── */
+.status { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #6B7280; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.s-done .status-dot { background: #6B7280; }
+.s-prog .status-dot { background: #2563EB; }
+.s-not .status-dot { background: #D1D5DB; }
+
+/* ── SCHEDULE TABLE ──────────────────────── */
+.sched-wrap { flex: 1; overflow: auto; margin: 0 24px 20px; background: #fff; border-radius: 8px; border: 1px solid #E5E7EB; }
+table.sched-table { border-collapse: collapse; width: 100%; min-width: 1050px; }
+table.sched-table thead th { padding: 0; text-align: left; font-size: 10px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid #E5E7EB; background: #F9FAFB; white-space: nowrap; position: sticky; top: 0; z-index: 3; }
+table.sched-table thead th.th-info { padding: 9px 12px; }
+table.sched-table thead th.th-month { text-align: center; padding: 9px 0; border-left: 1px solid #E5E7EB; width: 60px; min-width: 60px; font-size: 10px; color: #9CA3AF; }
+.sticky1 { position: sticky; left: 0; z-index: 4; background: #F9FAFB; }
+.sticky2 { position: sticky; left: 200px; z-index: 4; background: #F9FAFB; }
+.sticky3 { position: sticky; left: 330px; z-index: 4; background: #F9FAFB; }
+.sticky4 { position: sticky; left: 420px; z-index: 4; background: #F9FAFB; }
+
+/* Phase row */
+.phase-tr td { background: #F9FAFB; border-bottom: 1px solid #E5E7EB; cursor: pointer; }
+.phase-tr:hover td { background: #F3F4F6; }
+.phase-td-info { padding: 7px 12px; position: sticky; background: #F9FAFB; }
+.phase-tr:hover .phase-td-info { background: #F3F4F6; }
+.phase-name-wrap { display: flex; align-items: center; gap: 7px; }
+.phase-name { font-weight: 600; font-size: 12.5px; color: #374151; }
+.expand-icon { font-size: 9px; color: #9CA3AF; width: 12px; text-align: center; }
+.phase-timeline-cell { padding: 0 !important; }
+
+/* Task row */
+.task-tr td { border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
+.task-tr:hover td { background: #FAFAFA; }
+.task-tr td.td-sticky { background: #fff; }
+.task-tr:hover td.td-sticky { background: #FAFAFA; }
+.task-name-td { padding: 6px 12px 6px 28px; position: sticky; }
+.task-name { font-size: 12px; color: #374151; }
+.td-assigned { padding: 6px 12px; }
+.td-alloc { padding: 6px 12px; }
+.td-status { padding: 6px 12px; }
+.td-timeline { padding: 0; }
+
+/* ── TIMELINE INNER ──────────────────────── */
+.tl-inner { position: relative; width: 100%; }
+.tl-grid { display: flex; position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.tl-month { flex: 1; border-left: 1px solid #F3F4F6; }
+.tl-month:first-child { border-left: none; }
+.tl-bar { position: absolute; border-radius: 3px; display: flex; align-items: center; padding: 0 6px; overflow: hidden; white-space: nowrap; font-size: 10px; font-weight: 600; color: #fff; cursor: pointer; z-index: 1; transition: opacity .13s, filter .13s; }
+.tl-bar:hover { opacity: .85; filter: brightness(1.08); }
+.bar-phase-bg { background: #CBD5E1; height: 8px; top: 50%; transform: translateY(-50%); border-radius: 2px; }
+.bar-task-full { background: #2563EB; }
+.bar-task-partial { background: #F59E0B; }
+.bar-task-unassigned { background: #E5E7EB; border: 1.5px dashed #CBD5E1; color: #9CA3AF; font-weight: 500; }
+.bar-available { background: transparent; color: #9CA3AF; font-size: 10px; font-weight: 400; border: none; }
+
+/* People schedule person row */
+.person-tr td { border-bottom: 1px solid #E5E7EB; vertical-align: middle; }
+.person-td-info { padding: 0 12px; position: sticky; background: #fff; }
+.person-info-inner { display: flex; align-items: center; gap: 9px; }
+.person-meta { display: flex; flex-direction: column; }
+.person-name { font-size: 12.5px; font-weight: 600; color: #111827; }
+.person-role { font-size: 11px; color: #6B7280; }
+.person-td-company { padding: 0 12px; font-size: 11px; color: #6B7280; position: sticky; background: #fff; }
+.person-td-timeline { padding: 0; }
+
+/* ── TOOLTIP ─────────────────────────────── */
+#tooltip { position: fixed; background: #1F2937; color: #F9FAFB; padding: 8px 12px; border-radius: 6px; font-size: 11.5px; line-height: 1.5; pointer-events: none; z-index: 1000; max-width: 240px; display: none; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+#tooltip.show { display: block; }
+#tooltip strong { display: block; font-size: 12px; margin-bottom: 2px; }
+
+/* ── BUTTONS ─────────────────────────────── */
+.btn-primary { padding: 6px 16px; background: #2563EB; color: #fff; border: none; border-radius: 5px; font-size: 12.5px; font-weight: 500; cursor: pointer; }
+.btn-primary:hover { background: #1D4ED8; }
+.btn-cancel { padding: 6px 16px; background: #fff; border: 1px solid #D1D5DB; border-radius: 5px; font-size: 12.5px; cursor: pointer; }
+.btn-cancel:hover { background: #F9FAFB; }
+
+/* ── MODAL ───────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 200; display: none; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 10px; width: 440px; padding: 24px; box-shadow: 0 20px 48px rgba(0,0,0,.2); }
+.modal h2 { font-size: 15px; font-weight: 600; margin-bottom: 18px; color: #111827; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 11.5px; font-weight: 500; color: #374151; margin-bottom: 4px; }
+.form-group input, .form-group select { width: 100%; padding: 6px 10px; border: 1px solid #D1D5DB; border-radius: 5px; font-size: 12.5px; color: #111827; }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #E5E7EB; }
+.type-select-row { display: flex; gap: 10px; margin-bottom: 16px; }
+.type-opt { flex: 1; border: 1.5px solid #E5E7EB; border-radius: 7px; padding: 10px; cursor: pointer; text-align: center; transition: all .13s; }
+.type-opt:hover { border-color: #93C5FD; background: #EFF6FF; }
+.type-opt.selected { border-color: #2563EB; background: #EFF6FF; }
+.type-opt-label { font-size: 12.5px; font-weight: 600; color: #374151; display: block; margin-top: 4px; }
+.type-opt-sub { font-size: 10.5px; color: #9CA3AF; }
+.divider { height: 1px; background: #E5E7EB; margin: 16px 0 14px; }
+.note-box { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 5px; padding: 8px 12px; font-size: 11px; color: #92400E; margin-bottom: 14px; }
+
+/* ── EMPTY STATE ─────────────────────────── */
+.empty-state { text-align: center; padding: 48px 24px; color: #9CA3AF; }
+.empty-state h3 { font-size: 14px; font-weight: 600; color: #6B7280; margin-bottom: 6px; }
+.empty-state p { font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="tooltip"></div>
+
+<!-- ── ADD RESOURCE MODAL ───────────────────────────── -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal">
+    <h2>Add Resource</h2>
+    <div class="type-select-row">
+      <div class="type-opt selected" id="type-person" onclick="selectType('Person')">
+        <div style="font-size:18px">👤</div>
+        <span class="type-opt-label">Person</span>
+        <span class="type-opt-sub">Individual resource</span>
+      </div>
+      <div class="type-opt" id="type-company" onclick="selectType('Company')">
+        <div style="font-size:18px">🏢</div>
+        <span class="type-opt-label">Company</span>
+        <span class="type-opt-sub">Firm or placeholder</span>
+      </div>
+    </div>
+    <div id="fields-person">
+      <div class="form-row">
+        <div class="form-group"><label>Full Name *</label><input type="text" placeholder="e.g. Jane Smith"></div>
+        <div class="form-group"><label>Email *</label><input type="email" placeholder="jane.smith@company.com"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Company *</label><input type="text" placeholder="e.g. Deloitte"></div>
+        <div class="form-group"><label>Role *</label>
+          <select><option value="">Select role...</option><option>Portfolio Leader</option><option>Strategy Lead</option><option>Transaction Manager</option><option>Workplace Experience Designer</option><option>Architect</option><option>External PM</option><option>Program Manager</option></select>
+        </div>
+      </div>
+    </div>
+    <div id="fields-company" style="display:none">
+      <div class="note-box">⚠ Company resources act as placeholders. They can be replaced with a named person later.</div>
+      <div class="form-row">
+        <div class="form-group"><label>Company Name *</label><input type="text" placeholder="e.g. JLL"></div>
+        <div class="form-group"><label>Role *</label>
+          <select><option value="">Select role...</option><option>External PM</option><option>Architecture Firm</option><option>Construction Manager</option><option>Legal Counsel</option><option>Broker</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="closeModal()">Save Resource</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── APP SHELL ──────────────────────────────────────── -->
+<div style="display:flex;height:100vh;width:100%;overflow:hidden;">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-main">Nexora.</div>
+      <div class="logo-sub">Real Estate Insights</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-item" onclick="goTo('resources','')">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Maps
+      </div>
+      <div class="nav-item" onclick="goTo('resources','')">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        Dashboards <span class="nav-arrow">▶</span>
+      </div>
+      <div class="nav-item" onclick="goTo('resources','')">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        Grids <span class="nav-arrow">▶</span>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Resource Mgmt</div>
+      <div class="nav-item sub" id="nav-resources" onclick="goTo('resources','')">
+        Resources
+      </div>
+      <div class="nav-item sub" id="nav-schedule" onclick="goTo('schedule','projects')">
+        Schedule
+      </div>
+    </div>
+    <div class="nav-section" style="margin-top:auto;padding-bottom:12px;">
+      <div class="nav-item">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Data changes log
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Settings
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- ── RESOURCES PAGE ───────────────────── -->
+    <div class="page" id="page-resources">
+      <div class="page-header">
+        <h1>Resources</h1>
+        <p>All people and companies available for project assignments</p>
+      </div>
+      <div class="header-actions">
+        <div style="font-size:12px;color:#6B7280;" id="res-count"></div>
+        <button class="btn-primary" onclick="openModal()">+ Add Resource</button>
+      </div>
+      <div class="table-wrap" style="margin-top:12px;">
+        <table class="res-table" id="res-table">
+          <thead><tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Email</th>
+            <th>Company</th>
+            <th>Role</th>
+          </tr></thead>
+          <tbody id="res-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── SCHEDULE PAGE ────────────────────── -->
+    <div class="page" id="page-schedule">
+      <div class="page-header">
+        <h1>Schedule</h1>
+        <p>Resource timeline by project or by person</p>
+      </div>
+      <div class="header-actions" style="padding-top:10px;">
+        <div class="view-toggle">
+          <button class="toggle-btn active" id="btn-proj" onclick="switchView('projects')">Projects Schedule</button>
+          <button class="toggle-btn" id="btn-people" onclick="switchView('people')">People Schedule</button>
+        </div>
+      </div>
+
+      <!-- Projects Schedule -->
+      <div id="view-projects">
+        <div class="toolbar">
+          <label>Project:</label>
+          <select id="project-select" onchange="renderProjectsSchedule(this.value)">
+            <option value="SNY00142">SNY00142 – 11 Corporate Woods, GPS Project Office</option>
+            <option value="CHI00089">CHI00089 – 350 N Orleans, Regional Hub</option>
+            <option value="DAL00231">DAL00231 – 2222 McKinney Ave, Talent Center</option>
+          </select>
+          <div class="legend" style="margin-left:auto;">
+            <div class="legend-item"><div class="legend-dot" style="background:#2563EB"></div>Assigned (100%)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div>Assigned (&lt;100%)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#E5E7EB;border:1.5px dashed #CBD5E1"></div>Unassigned</div>
+          </div>
+        </div>
+        <div class="sched-wrap">
+          <table class="sched-table" id="sched-table">
+            <thead id="sched-thead"></thead>
+            <tbody id="sched-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- People Schedule -->
+      <div id="view-people" style="display:none;flex-direction:column;flex:1;overflow:hidden;display:none;">
+        <div class="filter-bar">
+          <label>Filter:</label>
+          <select onchange="renderPeopleSchedule(this.value)">
+            <option value="all">All Types</option>
+            <option value="Person">People only</option>
+            <option value="Company">Companies only</option>
+          </select>
+          <label style="margin-left:8px;">Sort by:</label>
+          <select><option>Name</option><option>Role</option><option>Company</option></select>
+          <div class="legend" style="margin-left:auto;">
+            <div class="legend-item"><div class="legend-dot" style="background:#2563EB"></div>SNY00142</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#059669"></div>CHI00089</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#DC2626"></div>DAL00231</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#FEE2E2;border:1px solid #FECACA"></div>Overallocated</div>
+          </div>
+        </div>
+        <div class="sched-wrap">
+          <table class="sched-table" id="people-table">
+            <thead id="people-thead"></thead>
+            <tbody id="people-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   DATA
+══════════════════════════════════════════ */
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const resources = [
+  { id:1, name:'Sarah Johnson',    type:'Person',  email:'sarah.johnson@deloitte.com',  company:'Deloitte', role:'Portfolio Leader',              initials:'SJ',  color:'#7C3AED' },
+  { id:2, name:'Mike Chen',        type:'Person',  email:'mike.chen@deloitte.com',       company:'Deloitte', role:'Strategy Lead',                 initials:'MC',  color:'#EF4444' },
+  { id:3, name:'Emma Davis',       type:'Person',  email:'emma.davis@deloitte.com',      company:'Deloitte', role:'Workplace Experience Designer',  initials:'ED',  color:'#6D28D9' },
+  { id:4, name:'Tom Martinez',     type:'Person',  email:'tom.martinez@deloitte.com',    company:'Deloitte', role:'Transaction Manager',           initials:'TM',  color:'#0D9488' },
+  { id:5, name:'Alex Patel',       type:'Person',  email:'alex.patel@deloitte.com',      company:'Deloitte', role:'Architect',                     initials:'AP',  color:'#16A34A' },
+  { id:6, name:'JLL',             type:'Company', email:'—',                            company:'JLL',      role:'External PM (placeholder)',      initials:'JLL', color:'#EA580C' },
+  { id:7, name:'CBRE Architecture',type:'Company', email:'—',                            company:'CBRE',     role:'Architecture Firm',             initials:'CB',  color:'#3B82F6' },
+];
+
+const projectColors = { 'SNY00142':'#2563EB', 'CHI00089':'#059669', 'DAL00231':'#DC2626' };
+
+// Schedule data: phases with tasks (startMonth/endMonth = 0-based, 0=Jan 2026)
+const schedule = {
+  'SNY00142': [
+    { id:'ph1', name:'Strategy', startMonth:0, endMonth:1, tasks:[
+      { id:'t1', name:'Project Kickoff',            startMonth:0, endMonth:0, assigned:[1,2],   alloc:100, status:'Completed'   },
+      { id:'t2', name:'Prepare Launch Deck',        startMonth:0, endMonth:1, assigned:[2,3],   alloc:100, status:'In Progress' },
+      { id:'t3', name:'Project Launch w/ Locals',   startMonth:1, endMonth:1, assigned:[1,2,3], alloc:100, status:'Not Started' },
+    ]},
+    { id:'ph2', name:'Leasing', startMonth:1, endMonth:7, tasks:[
+      { id:'t4', name:'Engage Broker',  startMonth:1, endMonth:1, assigned:[2,4],   alloc:100, status:'Not Started' },
+      { id:'t5', name:'Long List',      startMonth:2, endMonth:3, assigned:[2,4,3], alloc:75,  status:'Not Started' },
+      { id:'t6', name:'Short List',     startMonth:4, endMonth:5, assigned:[4],     alloc:100, status:'Not Started' },
+    ]},
+    { id:'ph3', name:'Design', startMonth:4, endMonth:11, tasks:[
+      { id:'t7',  name:'Programming Validation', startMonth:4, endMonth:5, assigned:[5,3], alloc:100, status:'Not Started' },
+      { id:'t8',  name:'Test Fit',               startMonth:5, endMonth:7, assigned:[5,3], alloc:100, status:'Not Started' },
+      { id:'t9',  name:'CM RFP & Award',         startMonth:5, endMonth:8, assigned:[6],   alloc:50,  status:'Not Started' },
+      { id:'t10', name:'Permit Submission',       startMonth:8, endMonth:9, assigned:[],    alloc:0,   status:'Not Started' },
+    ]},
+  ],
+  'CHI00089': [
+    { id:'ph4', name:'Strategy', startMonth:1, endMonth:3, tasks:[
+      { id:'t11', name:'Project Kickoff',  startMonth:1, endMonth:1, assigned:[1,2], alloc:100, status:'Completed'   },
+      { id:'t12', name:'Site Assessment',  startMonth:2, endMonth:3, assigned:[2],   alloc:100, status:'In Progress' },
+    ]},
+    { id:'ph5', name:'Design', startMonth:4, endMonth:8, tasks:[
+      { id:'t13', name:'Programming Validation', startMonth:4, endMonth:5, assigned:[5],   alloc:100, status:'Not Started' },
+      { id:'t14', name:'Concept Design',         startMonth:5, endMonth:8, assigned:[],    alloc:0,   status:'Not Started' },
+    ]},
+  ],
+  'DAL00231': [
+    { id:'ph6', name:'Strategy', startMonth:3, endMonth:5, tasks:[
+      { id:'t15', name:'Kickoff & Discovery',    startMonth:3, endMonth:4, assigned:[1],   alloc:100, status:'Not Started' },
+      { id:'t16', name:'Stakeholder Alignment',  startMonth:4, endMonth:5, assigned:[],    alloc:0,   status:'Not Started' },
+    ]},
+  ],
+};
+
+// Expand state per phase
+const expanded = {};
+
+/* ═══════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════ */
+function getRes(id) { return resources.find(r => r.id === id); }
+
+function avHtml(ids, size='') {
+  if (!ids.length) return '<span style="font-size:11px;color:#9CA3AF;">—</span>';
+  return `<div class="av-group">${ids.map(id => {
+    const r = getRes(id);
+    return `<div class="av ${size}" style="background:${r.color}" title="${r.name}">${r.initials}</div>`;
+  }).join('')}</div>`;
+}
+
+function allocBadge(alloc, assigned) {
+  if (!assigned.length) return `<span class="badge badge-none">Unassigned</span>`;
+  if (alloc === 100) return `<span class="badge badge-full">${alloc}%</span>`;
+  return `<span class="badge badge-partial">${alloc}%</span>`;
+}
+
+function statusHtml(s) {
+  const cls = s==='Completed'?'s-done':s==='In Progress'?'s-prog':'s-not';
+  return `<span class="status ${cls}"><span class="status-dot"></span>${s}</span>`;
+}
+
+function calcCoverage(phase) {
+  const total = phase.tasks.length;
+  const covered = phase.tasks.filter(t => t.assigned.length > 0).length;
+  return { covered, total, pct: Math.round((covered/total)*100) };
+}
+
+function covBadge(cov) {
+  const cls = cov.pct===100 ? 'badge-cov-full' : cov.pct>0 ? 'badge-cov-partial' : 'badge-cov-none';
+  const tip = `Coverage: ${cov.covered} of ${cov.total} tasks have at least one resource assigned`;
+  return `<span class="badge ${cls}" title="${tip}" style="cursor:help;">${cov.covered}/${cov.total} covered</span>`;
+}
+
+function tlInner(h, barHtml) {
+  return `<div class="tl-inner" style="height:${h}px;">
+    <div class="tl-grid">${MONTHS.map(()=>'<div class="tl-month"></div>').join('')}</div>
+    ${barHtml}
+  </div>`;
+}
+
+function barPosStyle(startM, endM) {
+  const l = (startM/12)*100;
+  const w = ((endM-startM+1)/12)*100;
+  return `left:${l.toFixed(2)}%;width:${w.toFixed(2)}%;`;
+}
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════ */
+function goTo(page, section) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item.sub').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const nav = document.getElementById('nav-'+page);
+  if (nav) nav.classList.add('active');
+  if (page==='schedule') {
+    switchView(section || 'projects');
+  }
+}
+
+function switchView(view) {
+  document.getElementById('view-projects').style.display = view==='projects' ? 'block' : 'none';
+  const vp = document.getElementById('view-people');
+  vp.style.display = view==='people' ? 'flex' : 'none';
+  vp.style.flexDirection = 'column';
+  vp.style.flex = '1';
+  vp.style.overflow = 'hidden';
+  document.getElementById('btn-proj').classList.toggle('active', view==='projects');
+  document.getElementById('btn-people').classList.toggle('active', view==='people');
+  if (view==='projects') renderProjectsSchedule(document.getElementById('project-select').value);
+  if (view==='people') renderPeopleSchedule('all');
+}
+
+/* ═══════════════════════════════════════════
+   RESOURCES TABLE
+══════════════════════════════════════════ */
+function renderResources() {
+  const tbody = document.getElementById('res-tbody');
+  document.getElementById('res-count').textContent = `${resources.length} resources`;
+  tbody.innerHTML = resources.map(r => `
+    <tr>
+      <td><div class="res-name-cell">
+        <div class="av av-lg" style="background:${r.color}">${r.initials}</div>
+        <span style="font-weight:500;color:#111827;">${r.name}</span>
+      </div></td>
+      <td><span class="badge badge-${r.type==='Person'?'person':'company'}">${r.type}</span></td>
+      <td style="color:#6B7280;">${r.email}</td>
+      <td style="color:#374151;">${r.company}</td>
+      <td style="color:#374151;">${r.role}</td>
+    </tr>`).join('');
+}
+
+/* ═══════════════════════════════════════════
+   PROJECTS SCHEDULE
+══════════════════════════════════════════ */
+function renderProjectsSchedule(projectId) {
+  const phases = schedule[projectId] || [];
+  const thead = document.getElementById('sched-thead');
+  const tbody = document.getElementById('sched-tbody');
+
+  thead.innerHTML = `<tr>
+    <th class="th-info sticky1" style="width:200px;">Task Name</th>
+    <th class="th-info sticky2" style="width:130px;left:200px;">Assigned To</th>
+    <th class="th-info sticky3" style="width:90px;left:330px;">Allocation</th>
+    <th class="th-info sticky4" style="width:100px;left:420px;">Status</th>
+    ${MONTHS.map(m=>`<th class="th-month">${m}</th>`).join('')}
+  </tr>`;
+
+  let rows = '';
+  phases.forEach(phase => {
+    const isOpen = expanded[phase.id] !== false; // default open
+    const cov = calcCoverage(phase);
+    const phasebar = `<div class="tl-bar bar-phase-bg" style="${barPosStyle(phase.startMonth,phase.endMonth)}width:calc(${((phase.endMonth-phase.startMonth+1)/12*100).toFixed(2)}% - 4px);margin:0 2px;"></div>`;
+    rows += `<tr class="phase-tr" id="ptr-${phase.id}" onclick="togglePhase('${phase.id}')">
+      <td class="phase-td-info sticky1" style="width:200px;">
+        <div class="phase-name-wrap">
+          <span class="expand-icon" id="ei-${phase.id}">${isOpen?'▼':'▶'}</span>
+          <span class="phase-name">${phase.name}</span>
+          ${covBadge(cov)}
+        </div>
+      </td>
+      <td class="phase-td-info sticky2" style="width:130px;left:200px;"></td>
+      <td class="phase-td-info sticky3" style="width:90px;left:330px;"></td>
+      <td class="phase-td-info sticky4" style="width:100px;left:420px;"></td>
+      <td colspan="12" class="phase-timeline-cell">${tlInner(28, phasebar)}</td>
+    </tr>`;
+
+    // Task rows
+    phase.tasks.forEach(task => {
+      const barCls = !task.assigned.length ? 'bar-task-unassigned' : task.alloc<100 ? 'bar-task-partial' : 'bar-task-full';
+      const barLabel = !task.assigned.length ? 'Unassigned' : task.assigned.map(id=>getRes(id)?.initials).join(', ');
+      const tip = buildTaskTooltip(task, phase);
+      const bar = `<div class="tl-bar ${barCls}" style="${barPosStyle(task.startMonth,task.endMonth)}top:5px;height:18px;"
+        onmouseenter="showTip(event,'${tip}')" onmouseleave="hideTip()">${barLabel}</div>`;
+
+      rows += `<tr class="task-tr" id="trow-${task.id}" style="${isOpen?'':'display:none'}">
+        <td class="task-name-td td-sticky sticky1" style="width:200px;">
+          <span class="task-name">${task.name}</span>
+        </td>
+        <td class="td-assigned td-sticky sticky2" style="width:130px;left:200px;">${avHtml(task.assigned,'av-sm')}</td>
+        <td class="td-alloc td-sticky sticky3" style="width:90px;left:330px;">${allocBadge(task.alloc,task.assigned)}</td>
+        <td class="td-status td-sticky sticky4" style="width:100px;left:420px;">${statusHtml(task.status)}</td>
+        <td colspan="12" class="td-timeline">${tlInner(28, bar)}</td>
+      </tr>`;
+    });
+  });
+
+  tbody.innerHTML = rows;
+}
+
+function buildTaskTooltip(task, phase) {
+  const names = task.assigned.map(id=>getRes(id)?.name).join(', ') || 'No one assigned';
+  const tip = `📋 ${task.name}|Phase: ${phase.name}|Assigned: ${names}|Allocation: ${task.alloc}%|${MONTHS[task.startMonth]} – ${MONTHS[task.endMonth]} 2026`;
+  return tip.replace(/'/g,"&#39;");
+}
+
+function togglePhase(phaseId) {
+  expanded[phaseId] = expanded[phaseId] === false ? true : false;
+  const isOpen = expanded[phaseId] !== false;
+  document.getElementById('ei-'+phaseId).textContent = isOpen ? '▼' : '▶';
+  document.querySelectorAll(`[id^="trow-"]`).forEach(row => {
+    // find which phase this task belongs to
+  });
+  // Re-render (simplest approach for POC)
+  renderProjectsSchedule(document.getElementById('project-select').value);
+}
+
+/* ═══════════════════════════════════════════
+   PEOPLE SCHEDULE
+══════════════════════════════════════════ */
+function getPersonAssignments(personId) {
+  const result = [];
+  for (const [projectId, phases] of Object.entries(schedule)) {
+    for (const phase of phases) {
+      // aggregate by phase: find min/max months for this person in this phase
+      const tasksWithPerson = phase.tasks.filter(t => t.assigned.includes(personId));
+      if (!tasksWithPerson.length) continue;
+      const startMonth = Math.min(...tasksWithPerson.map(t=>t.startMonth));
+      const endMonth   = Math.max(...tasksWithPerson.map(t=>t.endMonth));
+      result.push({ projectId, phaseName: phase.name, startMonth, endMonth });
+    }
+  }
+  return result;
+}
+
+function overallocatedMonths(assignments) {
+  const overMonths = [];
+  for (let m=0; m<12; m++) {
+    const count = assignments.filter(a => a.startMonth<=m && a.endMonth>=m).length;
+    if (count>=2) overMonths.push(m);
+  }
+  return overMonths;
+}
+
+// Simple lane algorithm to avoid bar overlap
+function assignLanes(assignments) {
+  const sorted = [...assignments].sort((a,b)=>a.startMonth-b.startMonth);
+  const laneEnd = [];
+  return sorted.map(a => {
+    let lane = laneEnd.findIndex(e => e < a.startMonth);
+    if (lane === -1) lane = laneEnd.length;
+    laneEnd[lane] = a.endMonth;
+    return { ...a, lane };
+  });
+}
+
+function renderPeopleSchedule(filter) {
+  const filtered = filter==='all' ? resources : resources.filter(r=>r.type===filter);
+  const thead = document.getElementById('people-thead');
+  const tbody = document.getElementById('people-tbody');
+
+  thead.innerHTML = `<tr>
+    <th class="th-info sticky1" style="width:200px;">Resource</th>
+    <th class="th-info sticky2" style="width:130px;left:200px;">Role</th>
+    <th class="th-info sticky3" style="width:130px;left:330px;">Company</th>
+    ${MONTHS.map(m=>`<th class="th-month">${m}</th>`).join('')}
+  </tr>`;
+
+  let rows = '';
+  filtered.forEach(r => {
+    const assignments = getPersonAssignments(r.id);
+    const overMonths = overallocatedMonths(assignments);
+    const isOveralloc = overMonths.length > 0;
+    const withLanes = assignLanes(assignments);
+    const maxLane = withLanes.reduce((m,a)=>Math.max(m,a.lane),0);
+    const rowH = maxLane >= 1 ? 48 : 32;
+
+    // Gap detection: months with no assignment
+    const gaps = [];
+    let gStart = null;
+    for (let m=0; m<12; m++) {
+      const isCovered = assignments.some(a=>a.startMonth<=m && a.endMonth>=m);
+      if (!isCovered) { if(gStart===null) gStart=m; }
+      else { if(gStart!==null) { gaps.push({s:gStart,e:m-1}); gStart=null; } }
+    }
+    if (gStart!==null) gaps.push({s:gStart,e:11});
+
+    // Build bars HTML
+    let barsHtml = '';
+
+    // Available gap bars
+    gaps.forEach(g => {
+      const l = (g.s/12)*100;
+      const w = ((g.e-g.s+1)/12)*100;
+      barsHtml += `<div class="tl-bar bar-available" style="left:${l.toFixed(1)}%;width:${w.toFixed(1)}%;top:8px;height:16px;font-size:10px;color:#9CA3AF;">Available</div>`;
+    });
+
+    // Assignment bars
+    withLanes.forEach(a => {
+      const top = a.lane===0 ? 5 : 27;
+      const h = 16;
+      const l = (a.startMonth/12)*100;
+      const w = ((a.endMonth-a.startMonth+1)/12)*100;
+      const col = projectColors[a.projectId];
+      const tip = `🏗 ${a.projectId}|Phase: ${a.phaseName}|${MONTHS[a.startMonth]} – ${MONTHS[a.endMonth]} 2026`;
+      barsHtml += `<div class="tl-bar" style="left:${l.toFixed(1)}%;width:${w.toFixed(1)}%;top:${top}px;height:${h}px;background:${col};"
+        onmouseenter="showTip(event,'${tip.replace(/'/g,"&#39;")}')" onmouseleave="hideTip()">${a.projectId.substring(0,8)} · ${a.phaseName}</div>`;
+    });
+
+    // Overallocation range bar
+    if (isOveralloc) {
+      const first = Math.min(...overMonths);
+      const last  = Math.max(...overMonths);
+      const l = (first/12)*100;
+      const w = ((last-first+1)/12)*100;
+      barsHtml += `<div style="position:absolute;left:${l.toFixed(1)}%;width:${w.toFixed(1)}%;top:0;bottom:0;background:rgba(220,38,38,.06);border-top:2px solid rgba(220,38,38,.3);pointer-events:none;z-index:2;"></div>`;
+    }
+
+    const overBadge = isOveralloc ? `<span class="badge badge-overalloc" title="Assigned to multiple projects in the same period: ${overMonths.map(m=>MONTHS[m]).join(', ')}">⚠ Overallocated</span>` : '';
+
+    rows += `<tr class="person-tr">
+      <td class="person-td-info sticky1" style="width:200px;height:${rowH}px;">
+        <div class="person-info-inner">
+          <div class="av" style="background:${r.color}">${r.initials}</div>
+          <div class="person-meta">
+            <span class="person-name">${r.name}</span>
+            ${overBadge}
+          </div>
+        </div>
+      </td>
+      <td class="sticky2" style="width:130px;left:200px;padding:0 12px;font-size:11px;color:#6B7280;vertical-align:middle;background:#fff;">${r.role}</td>
+      <td class="sticky3" style="width:130px;left:330px;padding:0 12px;font-size:11px;color:#6B7280;vertical-align:middle;background:#fff;">${r.company}</td>
+      <td colspan="12" style="padding:0;">
+        ${tlInner(rowH, barsHtml)}
+      </td>
+    </tr>`;
+  });
+
+  tbody.innerHTML = rows;
+}
+
+/* ═══════════════════════════════════════════
+   TOOLTIP
+══════════════════════════════════════════ */
+function showTip(e, raw) {
+  const parts = raw.replace(/&#39;/g,"'").split('|');
+  const tip = document.getElementById('tooltip');
+  tip.innerHTML = `<strong>${parts[0]}</strong>${parts.slice(1).join('<br>')}`;
+  tip.classList.add('show');
+  moveTip(e);
+}
+function moveTip(e) {
+  const tip = document.getElementById('tooltip');
+  const x = e.clientX + 12, y = e.clientY - 10;
+  tip.style.left = Math.min(x, window.innerWidth-250)+'px';
+  tip.style.top  = Math.max(y, 4)+'px';
+}
+function hideTip() { document.getElementById('tooltip').classList.remove('show'); }
+document.addEventListener('mousemove', e => {
+  const tip = document.getElementById('tooltip');
+  if (tip.classList.contains('show')) moveTip(e);
+});
+
+/* ═══════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════ */
+let selectedType = 'Person';
+function openModal() {
+  selectedType = 'Person';
+  document.getElementById('modal-add').classList.add('open');
+  document.getElementById('fields-person').style.display = 'block';
+  document.getElementById('fields-company').style.display = 'none';
+  document.getElementById('type-person').classList.add('selected');
+  document.getElementById('type-company').classList.remove('selected');
+}
+function closeModal() { document.getElementById('modal-add').classList.remove('open'); }
+function selectType(t) {
+  selectedType = t;
+  document.getElementById('type-person').classList.toggle('selected', t==='Person');
+  document.getElementById('type-company').classList.toggle('selected', t==='Company');
+  document.getElementById('fields-person').style.display = t==='Person'?'block':'none';
+  document.getElementById('fields-company').style.display = t==='Company'?'block':'none';
+}
+document.getElementById('modal-add').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-add')) closeModal();
+});
+
+/* ═══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+renderResources();
+goTo('schedule','projects');
+</script>
+</body>
+</html>
