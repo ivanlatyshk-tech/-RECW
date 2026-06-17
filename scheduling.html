@@ -134,6 +134,22 @@ th.cact,td.cact{width:44px;text-align:center;padding:4px!important}
 .pred-line select{flex:1;padding:5px 8px;border:1px solid #ccc;border-radius:2px;font-size:12px;font-family:inherit}
 .pred-rm{background:none;border:none;cursor:pointer;color:#c62828;font-size:16px;padding:0 2px;line-height:1;flex-shrink:0}
 .hidden{display:none!important}
+/* Assignment popup */
+.assign-popup{position:fixed;background:#fff;border:1px solid #ddd;border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,.18);width:250px;z-index:500;display:none;overflow:hidden;}
+.assign-popup-search{width:100%;padding:8px 12px;border:none;border-bottom:1px solid #eee;font-size:12.5px;font-family:inherit;outline:none;color:#222;}
+.assign-popup-search::placeholder{color:#aaa;}
+.assign-list{max-height:220px;overflow-y:auto;}
+.assign-item{display:flex;align-items:center;gap:9px;padding:7px 12px;cursor:pointer;font-size:12.5px;transition:background .1s;}
+.assign-item:hover{background:#f0f5ff;}
+.assign-item.is-assigned{background:#f0f7ff;}
+.assign-item-meta{flex:1;min-width:0;}
+.assign-item-name{font-weight:500;color:#111;font-size:12px;}
+.assign-item-role{font-size:10.5px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.assign-check{color:#0076CE;font-size:13px;flex-shrink:0;}
+.assign-empty{padding:12px;font-size:12px;color:#aaa;text-align:center;}
+.av-rm{position:relative;cursor:pointer;}
+.av-rm::after{content:'×';position:absolute;inset:0;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:13px;font-weight:700;opacity:0;transition:opacity .12s;display:none;}
+.av-rm:hover::after{opacity:1;display:flex;}
 </style>
 </head>
 <body>
@@ -394,7 +410,7 @@ th.cact,td.cact{width:44px;text-align:center;padding:4px!important}
         <div><label class="fl">% Complete</label><input type="number" class="fi" placeholder="0" min="0" max="100"></div>
       </div>
       <div class="fmb"><label class="fl">Assigned To</label>
-        <select class="fi" style="padding:6px 10px"><option value="">Select user&#8230;</option><option>Brian Holloway</option><option>Andy Chen</option><option>Rachel Kim</option><option>Monica Reyes</option><option>Greg Borak</option></select>
+        <select class="fi" id="add-assigned" style="padding:6px 10px"><option value="">Select resource…</option><option value="1">Laura Bennett — Portfolio Leader</option><option value="2">Daniel Reyes — Strategy Lead</option><option value="3">Sophie Marsh — Workplace Exp. Designer</option><option value="4">Chris Wade — Transaction Manager</option><option value="5">Ryan Kowalski — Architect</option><option value="6">Vantara Partners — External PM</option><option value="7">Stratford Design — Architecture Firm</option></select>
       </div>
     </div>
     <div class="modal-ft"><button class="btn btn-secondary" onclick="closeAdd()">Cancel</button><button class="btn btn-primary" onclick="saveAdd()">Save Task</button></div>
@@ -458,9 +474,122 @@ th.cact,td.cact{width:44px;text-align:center;padding:4px!important}
   </div>
 </div>
 
+<!-- ASSIGN RESOURCE POPUP -->
+<div id="assign-popup" class="assign-popup">
+  <input type="text" id="assign-search" class="assign-popup-search" placeholder="Search resources...">
+  <div class="assign-list" id="assign-list"></div>
+</div>
+
 <script>
 var staged=false, delTarget=null;
 
+/* ── RESOURCES (shared with rm_poc) ─── */
+var resources=[
+  {id:1,name:'Laura Bennett',  initials:'LB',color:'#7C3AED',role:'Portfolio Leader'},
+  {id:2,name:'Daniel Reyes',   initials:'DR',color:'#EF4444',role:'Strategy Lead'},
+  {id:3,name:'Sophie Marsh',   initials:'SM',color:'#6D28D9',role:'Workplace Exp. Designer'},
+  {id:4,name:'Chris Wade',     initials:'CW',color:'#0D9488',role:'Transaction Manager'},
+  {id:5,name:'Ryan Kowalski',  initials:'RK',color:'#16A34A',role:'Architect'},
+  {id:6,name:'Vantara Partners',initials:'VP',color:'#EA580C',role:'External PM'},
+  {id:7,name:'Stratford Design',initials:'SD',color:'#3B82F6',role:'Architecture Firm'},
+];
+
+/* ── ASSIGNMENT POPUP ───────────────── */
+var currentAvatarsContainer=null;
+
+function openAssign(btn){
+  var container=btn.closest('.avatars');
+  currentAvatarsContainer=container;
+  var popup=document.getElementById('assign-popup');
+  var rect=btn.getBoundingClientRect();
+  var left=Math.min(rect.left, window.innerWidth-260);
+  popup.style.top=(rect.bottom+4)+'px';
+  popup.style.left=left+'px';
+  popup.style.display='block';
+  document.getElementById('assign-search').value='';
+  renderAssignList('');
+  setTimeout(function(){document.getElementById('assign-search').focus();},50);
+}
+
+function closeAssign(){
+  document.getElementById('assign-popup').style.display='none';
+  currentAvatarsContainer=null;
+}
+
+function renderAssignList(filter){
+  if(!currentAvatarsContainer){return;}
+  var assignedIds=getAssignedIds(currentAvatarsContainer);
+  var list=document.getElementById('assign-list');
+  var filtered=resources.filter(function(r){
+    return !filter||r.name.toLowerCase().indexOf(filter.toLowerCase())!==-1||r.role.toLowerCase().indexOf(filter.toLowerCase())!==-1;
+  });
+  if(!filtered.length){
+    list.innerHTML='<div class="assign-empty">No resources found</div>';return;
+  }
+  list.innerHTML=filtered.map(function(r){
+    var assigned=assignedIds.indexOf(r.id)!==-1;
+    return '<div class="assign-item'+(assigned?' is-assigned':'')+'" onclick="toggleAssign('+r.id+')">'+
+      '<div class="av" style="background:'+r.color+';width:24px;height:24px;font-size:8.5px;border-radius:4px;flex-shrink:0;">'+r.initials+'</div>'+
+      '<div class="assign-item-meta"><div class="assign-item-name">'+r.name+'</div><div class="assign-item-role">'+r.role+'</div></div>'+
+      (assigned?'<span class="assign-check">✓</span>':'')+
+    '</div>';
+  }).join('');
+}
+
+function getAssignedIds(container){
+  var ids=[];
+  container.querySelectorAll('.av[data-rid]').forEach(function(el){
+    ids.push(parseInt(el.getAttribute('data-rid')));
+  });
+  return ids;
+}
+
+function toggleAssign(rid){
+  if(!currentAvatarsContainer)return;
+  var existing=currentAvatarsContainer.querySelector('.av[data-rid="'+rid+'"]');
+  if(existing){
+    existing.remove();
+  } else {
+    var r=resources.find(function(x){return x.id===rid;});
+    if(!r)return;
+    var addBtn=currentAvatarsContainer.querySelector('.av-add');
+    var el=document.createElement('span');
+    el.className='av av-rm';
+    el.style.background=r.color;
+    el.setAttribute('data-rid',r.id);
+    el.title=r.name+' — click to remove';
+    el.textContent=r.initials;
+    el.onclick=function(e){e.stopPropagation();removeAvatar(el,r.name);};
+    currentAvatarsContainer.insertBefore(el,addBtn);
+    markStaged();
+  }
+  renderAssignList(document.getElementById('assign-search').value);
+}
+
+function removeAvatar(el,name){
+  if(confirm('Remove '+name+' from this task?')){el.remove();markStaged();}
+}
+
+/* close popup on outside click */
+document.addEventListener('click',function(e){
+  var popup=document.getElementById('assign-popup');
+  if(popup.style.display==='block'&&!popup.contains(e.target)&&!e.target.classList.contains('av-add')){
+    closeAssign();
+  }
+});
+
+document.getElementById('assign-search').addEventListener('input',function(){
+  renderAssignList(this.value);
+});
+
+/* wire up all existing + buttons */
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.av-add').forEach(function(btn){
+    btn.onclick=function(e){e.stopPropagation();openAssign(btn);};
+  });
+});
+
+/* ── EXISTING FUNCTIONS ─────────────── */
 function markStaged(){
   if(!staged){
     staged=true;
@@ -484,14 +613,8 @@ function doSave(){
   alert('Changes saved successfully.');
 }
 
-function discardChanges(){
-  document.getElementById('modal-discard').classList.remove('hidden');
-}
-
-function confirmDiscard(){
-  location.reload();
-}
-
+function discardChanges(){document.getElementById('modal-discard').classList.remove('hidden');}
+function confirmDiscard(){location.reload();}
 function discardAll(){
   staged=false;
   document.getElementById('save-btn').disabled=true;
@@ -500,9 +623,7 @@ function discardAll(){
   document.getElementById('modal-unsaved').classList.add('hidden');
 }
 
-function onProjChange(){
-  if(staged)document.getElementById('modal-unsaved').classList.remove('hidden');
-}
+function onProjChange(){if(staged)document.getElementById('modal-unsaved').classList.remove('hidden');}
 
 function delRow(n){delTarget=n;document.getElementById('modal-del').classList.remove('hidden');}
 function doDelete(){
@@ -510,16 +631,25 @@ function doDelete(){
   document.getElementById('modal-del').classList.add('hidden');
 }
 
-function openAdd(ph){document.getElementById('add-phase-lbl').textContent=ph;document.getElementById('add-name').value='';document.getElementById('modal-add').classList.remove('hidden');}
+function openAdd(ph){
+  document.getElementById('add-phase-lbl').textContent=ph;
+  document.getElementById('add-name').value='';
+  document.getElementById('add-assigned').value='';
+  document.getElementById('modal-add').classList.remove('hidden');
+}
 function closeAdd(){document.getElementById('modal-add').classList.add('hidden');}
-function saveAdd(){var n=document.getElementById('add-name').value.trim();if(!n){document.getElementById('add-name').style.borderColor='#c62828';return;}closeAdd();markStaged();}
+function saveAdd(){
+  var n=document.getElementById('add-name').value.trim();
+  if(!n){document.getElementById('add-name').style.borderColor='#c62828';return;}
+  closeAdd();markStaged();
+}
 
 function openPred(n,name){document.getElementById('pred-lbl').textContent=n+' \u2014 '+name;document.getElementById('modal-pred').classList.remove('hidden');}
 function closePred(){document.getElementById('modal-pred').classList.add('hidden');}
 
 function tph(id,btn){var t=document.getElementById(id);t.classList.toggle('hidden');btn.textContent=t.classList.contains('hidden')?'\u25B6':'\u25BC';}
 function tnav(id,trigger){var el=document.getElementById(id);el.classList.toggle('hidden');var ch=trigger.querySelector('.chevron');if(ch)ch.innerHTML=el.classList.contains('hidden')?'&#9660;':'&#9650;';}
-function switchTab(t,btn){document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');if(t!=='sched')alert(btn.textContent+' \u2013 covered by a separate story.');}
+function switchTab(t,btn){document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');if(t!=='sched')alert(btn.textContent+' \u2013 covered by a separate story.');}
 </script>
 </body>
 </html>
