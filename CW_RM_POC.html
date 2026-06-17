@@ -190,7 +190,16 @@ table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-l
 .type-opt-sub { font-size:10.5px; color:#9CA3AF; }
 .note-box { background:#FFFBEB; border:1px solid #FDE68A; border-radius:5px; padding:8px 12px; font-size:11px; color:#92400E; margin-bottom:14px; }
 
-/* TOOLTIP */
+/* SCALE + MODEL TOGGLES */
+.mini-toggle { display:flex; background:#E5E7EB; border-radius:5px; padding:2px; }
+.mini-btn { padding:3px 10px; border-radius:3px; border:none; background:transparent; cursor:pointer; font-size:11.5px; font-weight:500; color:#6B7280; transition:all .12s; white-space:nowrap; }
+.mini-btn.active { background:#fff; color:#111827; box-shadow:0 1px 2px rgba(0,0,0,.1); }
+.model-desc-bar { padding:6px 24px; font-size:11.5px; border-bottom:1px solid #E5E7EB; flex-shrink:0; display:flex; align-items:center; gap:8px; }
+.model-tag { font-weight:600; padding:1px 8px; border-radius:9px; font-size:11px; }
+.model-tag-c { background:#EFF6FF; color:#1D4ED8; }
+.model-tag-a { background:#F0FDF4; color:#15803D; }
+.model-tag-b { background:#FFF7ED; color:#92400E; }
+</style>
 #tooltip { position:fixed; background:#1F2937; color:#F9FAFB; padding:8px 12px; border-radius:6px; font-size:11.5px; line-height:1.5; pointer-events:none; z-index:1000; max-width:240px; display:none; box-shadow:0 4px 16px rgba(0,0,0,.25); }
 #tooltip.show { display:block; }
 #tooltip strong { display:block; font-size:12px; margin-bottom:2px; }
@@ -204,20 +213,15 @@ table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-l
 <div class="modal-overlay" id="modal-add">
   <div class="modal modal-wide">
     <h2>Add Resource</h2>
-    <p style="margin-bottom:14px;">Choose the resource type first.</p>
-    <div class="type-select-row">
-      <div class="type-opt selected" id="type-person" onclick="selectType('Person')">
-        <div style="font-size:18px">👤</div>
-        <span class="type-opt-label">Person</span>
-        <span class="type-opt-sub">Individual resource</span>
-      </div>
-      <div class="type-opt" id="type-company" onclick="selectType('Company')">
-        <div style="font-size:18px">🏢</div>
-        <span class="type-opt-label">Company</span>
-        <span class="type-opt-sub">Firm or placeholder</span>
-      </div>
+    <div class="form-group">
+      <label>Type *</label>
+      <select id="modal-type-sel" onchange="selectType(this.value)" style="width:100%;padding:6px 10px;border:1px solid #D1D5DB;border-radius:5px;font-size:13px;">
+        <option value="">Select type...</option>
+        <option value="Person">Person — individual resource</option>
+        <option value="Company">Company — firm or placeholder</option>
+      </select>
     </div>
-    <div id="fields-person">
+    <div id="fields-person" style="display:none">
       <div class="form-row">
         <div class="form-group"><label>Full Name *</label><input type="text" placeholder="e.g. Jane Smith"></div>
         <div class="form-group"><label>Email *</label><input type="email" placeholder="jane.smith@company.com"></div>
@@ -384,11 +388,28 @@ table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-l
             <option value="CHI00089">CHI00089 – 350 N Orleans, Regional Hub</option>
             <option value="DAL00231">DAL00231 – 2222 McKinney Ave, Talent Center</option>
           </select>
-          <div class="legend" style="margin-left:auto;">
-            <div class="legend-item"><div class="legend-dot" style="background:#2563EB"></div>Assigned (100%)</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div>Assigned (&lt;100%)</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#E5E7EB;border:1.5px dashed #CBD5E1"></div>Unassigned</div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:16px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;color:#6B7280;font-weight:500;">View:</span>
+              <div class="mini-toggle">
+                <button class="mini-btn active" id="scale-M" onclick="setScale('M')">Month</button>
+                <button class="mini-btn" id="scale-W" onclick="setScale('W')">Week</button>
+                <button class="mini-btn" id="scale-D" onclick="setScale('D')">Day</button>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;color:#6B7280;font-weight:500;">Allocation:</span>
+              <div class="mini-toggle">
+                <button class="mini-btn active" id="model-C" onclick="setModel('C')" title="MVP: just assigned or not">C — MVP</button>
+                <button class="mini-btn" id="model-A" onclick="setModel('A')" title="Manual: user enters hours per resource">A — Manual hrs</button>
+                <button class="mini-btn" id="model-B" onclick="setModel('B')" title="Auto: calculated from task duration">B — Auto calc</button>
+              </div>
+            </div>
           </div>
+        </div>
+        <div class="model-desc-bar" id="model-desc-bar">
+          <span class="model-tag model-tag-c">Model C — MVP</span>
+          <span style="color:#6B7280;">A resource is either assigned to a task or not. No hours tracked. If 2 resources on one task — both show as Assigned.</span>
         </div>
         <div class="sched-wrap">
           <table class="sched-table" id="sched-table">
@@ -448,44 +469,131 @@ const projectColors = { 'SNY00142':'#2563EB', 'CHI00089':'#059669', 'DAL00231':'
 const schedule = {
   'SNY00142': [
     { id:'ph1', name:'Strategy', startMonth:0, endMonth:1, tasks:[
-      { id:'t1', name:'Project Kickoff',           startMonth:0, endMonth:0, assigned:[1,2],   alloc:100, status:'Completed'   },
-      { id:'t2', name:'Prepare Launch Deck',       startMonth:0, endMonth:1, assigned:[2,3],   alloc:100, status:'In Progress' },
-      { id:'t3', name:'Project Launch w/ Locals',  startMonth:1, endMonth:1, assigned:[1,2,3], alloc:100, status:'Not Started' },
+      { id:'t1', name:'Project Kickoff',          startMonth:0, endMonth:0, dur:1,  assigned:[1,2],   manualHours:{1:8,   2:8}   },
+      { id:'t2', name:'Prepare Launch Deck',      startMonth:0, endMonth:1, dur:25, assigned:[2,3],   manualHours:{2:40,  3:60}  },
+      { id:'t3', name:'Project Launch w/ Locals', startMonth:1, endMonth:1, dur:1,  assigned:[1,2,3], manualHours:{1:8,   2:8,   3:8}  },
     ]},
     { id:'ph2', name:'Leasing', startMonth:1, endMonth:7, tasks:[
-      { id:'t4', name:'Engage Broker', startMonth:1, endMonth:1, assigned:[2,4],   alloc:100, status:'Not Started' },
-      { id:'t5', name:'Long List',     startMonth:2, endMonth:3, assigned:[2,4,3], alloc:75,  status:'Not Started' },
-      { id:'t6', name:'Short List',    startMonth:4, endMonth:5, assigned:[4],     alloc:100, status:'Not Started' },
+      { id:'t4', name:'Engage Broker', startMonth:1, endMonth:1, dur:3,  assigned:[2,4],   manualHours:{2:12,  4:12}  },
+      { id:'t5', name:'Long List',     startMonth:2, endMonth:3, dur:40, assigned:[2,4,3], manualHours:{2:80,  4:120, 3:60}  },
+      { id:'t6', name:'Short List',    startMonth:4, endMonth:5, dur:20, assigned:[4],     manualHours:{4:160}  },
     ]},
     { id:'ph3', name:'Design', startMonth:4, endMonth:11, tasks:[
-      { id:'t7',  name:'Programming Validation', startMonth:4, endMonth:5, assigned:[5,3], alloc:100, status:'Not Started' },
-      { id:'t8',  name:'Test Fit',               startMonth:5, endMonth:7, assigned:[5,3], alloc:100, status:'Not Started' },
-      { id:'t9',  name:'CM RFP & Award',         startMonth:5, endMonth:8, assigned:[6],   alloc:50,  status:'Not Started' },
-      { id:'t10', name:'Permit Submission',       startMonth:8, endMonth:9, assigned:[],    alloc:0,   status:'Not Started' },
+      { id:'t7',  name:'Programming Validation', startMonth:4, endMonth:5, dur:22, assigned:[5,3], manualHours:{5:80,  3:80}  },
+      { id:'t8',  name:'Test Fit',               startMonth:5, endMonth:7, dur:45, assigned:[5,3], manualHours:{5:160, 3:80}  },
+      { id:'t9',  name:'CM RFP & Award',         startMonth:5, endMonth:8, dur:65, assigned:[6],   manualHours:{6:200}  },
+      { id:'t10', name:'Permit Submission',       startMonth:8, endMonth:9, dur:42, assigned:[],    manualHours:{}  },
     ]},
   ],
   'CHI00089': [
     { id:'ph4', name:'Strategy', startMonth:1, endMonth:3, tasks:[
-      { id:'t11', name:'Project Kickoff', startMonth:1, endMonth:1, assigned:[1,2], alloc:100, status:'Completed'   },
-      { id:'t12', name:'Site Assessment', startMonth:2, endMonth:3, assigned:[2],   alloc:100, status:'In Progress' },
+      { id:'t11', name:'Project Kickoff', startMonth:1, endMonth:1, dur:1,  assigned:[1,2], manualHours:{1:8,  2:8}   },
+      { id:'t12', name:'Site Assessment', startMonth:2, endMonth:3, dur:30, assigned:[2],   manualHours:{2:120}  },
     ]},
     { id:'ph5', name:'Design', startMonth:4, endMonth:8, tasks:[
-      { id:'t13', name:'Programming Validation', startMonth:4, endMonth:5, assigned:[5],  alloc:100, status:'Not Started' },
-      { id:'t14', name:'Concept Design',         startMonth:5, endMonth:8, assigned:[],   alloc:0,   status:'Not Started' },
+      { id:'t13', name:'Programming Validation', startMonth:4, endMonth:5, dur:22, assigned:[5],  manualHours:{5:160}  },
+      { id:'t14', name:'Concept Design',         startMonth:5, endMonth:8, dur:65, assigned:[],   manualHours:{}  },
     ]},
   ],
   'DAL00231': [
     { id:'ph6', name:'Strategy', startMonth:3, endMonth:5, tasks:[
-      { id:'t15', name:'Kickoff & Discovery',   startMonth:3, endMonth:4, assigned:[1],  alloc:100, status:'Not Started' },
-      { id:'t16', name:'Stakeholder Alignment', startMonth:4, endMonth:5, assigned:[],   alloc:0,   status:'Not Started' },
+      { id:'t15', name:'Kickoff & Discovery',   startMonth:3, endMonth:4, dur:20, assigned:[1],  manualHours:{1:80}  },
+      { id:'t16', name:'Stakeholder Alignment', startMonth:4, endMonth:5, dur:20, assigned:[],   manualHours:{}  },
     ]},
   ],
 };
 
 /* ═══════════════ STATE ═════════════════ */
 const expanded = {};
+let currentTaskId = null;
 let currentResourceId = null;
 let editSnapshot = null;
+
+/* ═══════════════ SCALE + MODEL STATE ══ */
+let currentScale = 'M';
+let currentModel = 'C';
+
+const MODEL_DESCS = {
+  C: { tag:'model-tag-c', label:'Model C — MVP', desc:'A resource is either assigned to a task or not. No hours tracked. If 2 resources on one task — both show as Assigned.' },
+  A: { tag:'model-tag-a', label:'Model A — Manual Hours', desc:'The user enters hours for each resource per task manually. Each resource can have a different number of hours on the same task.' },
+  B: { tag:'model-tag-b', label:'Model B — Auto Calculated', desc:'Hours are calculated from task duration × 8h/day. If 2 resources are on one task, hours and % are split equally between them.' },
+};
+
+function setScale(s) {
+  currentScale = s;
+  ['M','W','D'].forEach(x => document.getElementById('scale-'+x).classList.toggle('active', x===s));
+  renderProjectsSchedule(document.getElementById('project-select').value);
+}
+
+function setModel(m) {
+  currentModel = m;
+  ['C','A','B'].forEach(x => document.getElementById('model-'+x).classList.toggle('active', x===m));
+  const md = MODEL_DESCS[m];
+  document.getElementById('model-desc-bar').innerHTML =
+    `<span class="model-tag ${md.tag}">${md.label}</span><span style="color:#6B7280;">${md.desc}</span>`;
+  renderProjectsSchedule(document.getElementById('project-select').value);
+}
+
+/* time scale helpers */
+function getColumns() {
+  if (currentScale === 'M') return MONTHS.map((m,i) => ({ label: m, idx: i, total: 12 }));
+  if (currentScale === 'W') {
+    const cols = [];
+    for (let w = 1; w <= 26; w++) cols.push({ label: 'W'+w, idx: w-1, total: 26 });
+    return cols;
+  }
+  // Day: show Jan (31 days)
+  const cols = [];
+  for (let d = 1; d <= 31; d++) cols.push({ label: d+'', idx: d-1, total: 31 });
+  return cols;
+}
+
+function barPos(startMonth, endMonth) {
+  const total = getColumns().length;
+  let s, e;
+  if (currentScale === 'M') { s = startMonth; e = endMonth; }
+  else if (currentScale === 'W') { s = Math.round(startMonth * 4.33); e = Math.min(Math.round((endMonth+1) * 4.33) - 1, 25); }
+  else { s = Math.round(startMonth * 2.58); e = Math.min(Math.round((endMonth+1) * 2.58) - 1, 30); }
+  s = Math.max(0, Math.min(s, total-1));
+  e = Math.max(s, Math.min(e, total-1));
+  return `left:${(s/total*100).toFixed(2)}%;width:${((e-s+1)/total*100).toFixed(2)}%;`;
+}
+
+/* allocation display helpers */
+function allocDisplay(task) {
+  if (currentModel === 'C') {
+    if (!task.assigned.length) return `<span class="badge badge-none">Unassigned</span>`;
+    return `<span class="badge badge-full">Assigned</span>`;
+  }
+  if (currentModel === 'A') {
+    if (!task.assigned.length) return `<span class="badge badge-none">Unassigned</span>`;
+    return task.assigned.map(id => {
+      const r = getRes(id); if (!r) return '';
+      const h = task.manualHours[id] || 0;
+      return `<div style="font-size:11px;white-space:nowrap;"><span class="av av-sm" style="background:${r.color};display:inline-flex;vertical-align:middle;">${r.initials}</span> <b>${h}h</b></div>`;
+    }).join('');
+  }
+  // Model B - auto calc
+  if (!task.assigned.length) return `<span class="badge badge-none">Unassigned</span>`;
+  const n = task.assigned.length;
+  const totalH = task.dur * 8;
+  const hEach = Math.round(totalH / n);
+  const pct = Math.round(100 / n);
+  return task.assigned.map(id => {
+    const r = getRes(id); if (!r) return '';
+    return `<div style="font-size:11px;white-space:nowrap;"><span class="av av-sm" style="background:${r.color};display:inline-flex;vertical-align:middle;">${r.initials}</span> <b>${pct}%</b> · ${hEach}h</div>`;
+  }).join('');
+}
+
+function barColorClass(task) {
+  if (!task.assigned.length) return 'bar-task-unassigned';
+  if (currentModel === 'C') return 'bar-task-full';
+  if (currentModel === 'A') {
+    const totalH = Object.values(task.manualHours).reduce((a,b)=>a+b,0);
+    return totalH > 0 ? 'bar-task-full' : 'bar-task-unassigned';
+  }
+  return 'bar-task-full';
+}
 
 /* ═══════════════ HELPERS ═══════════════ */
 function getRes(id) { return resources.find(r => r.id === id); }
@@ -690,15 +798,16 @@ function confirmDelete() {
 
 /* ═══════════════ ADD MODAL ═════════════ */
 function openAddModal() {
-  selectType('Person');
+  const sel = document.getElementById('modal-type-sel');
+  if (sel) sel.value = '';
+  document.getElementById('fields-person').style.display = 'none';
+  document.getElementById('fields-company').style.display = 'none';
   document.getElementById('modal-add').classList.add('open');
 }
 function closeAddModal() { document.getElementById('modal-add').classList.remove('open'); }
 function selectType(t) {
-  document.getElementById('type-person').classList.toggle('selected', t==='Person');
-  document.getElementById('type-company').classList.toggle('selected', t==='Company');
-  document.getElementById('fields-person').style.display = t==='Person'?'block':'none';
-  document.getElementById('fields-company').style.display = t==='Company'?'block':'none';
+  document.getElementById('fields-person').style.display = t==='Person' ? 'block' : 'none';
+  document.getElementById('fields-company').style.display = t==='Company' ? 'block' : 'none';
 }
 document.getElementById('modal-add').addEventListener('click', e => { if(e.target===document.getElementById('modal-add')) closeAddModal(); });
 document.getElementById('modal-delete').addEventListener('click', e => { if(e.target===document.getElementById('modal-delete')) closeDeleteModal(); });
@@ -706,12 +815,15 @@ document.getElementById('modal-delete').addEventListener('click', e => { if(e.ta
 /* ═══════════════ PROJECTS SCHEDULE ═════ */
 function renderProjectsSchedule(projectId) {
   const phases = schedule[projectId] || [];
+  const cols = getColumns();
+  const colCount = cols.length;
+  const colW = currentScale==='M' ? 60 : currentScale==='W' ? 28 : 22;
+
   document.getElementById('sched-thead').innerHTML = `<tr>
     <th class="th-info sticky1" style="width:200px;">Task Name</th>
-    <th class="th-info sticky2" style="width:130px;left:200px;">Assigned To</th>
-    <th class="th-info sticky3" style="width:90px;left:330px;">Allocation</th>
-    <th class="th-info sticky4" style="width:100px;left:420px;">Status</th>
-    ${MONTHS.map(m=>`<th class="th-month">${m}</th>`).join('')}
+    <th class="th-info sticky2" style="width:140px;left:200px;">Assigned To</th>
+    <th class="th-info sticky3" style="width:130px;left:340px;">Allocation</th>
+    ${cols.map(c=>`<th class="th-month" style="width:${colW}px;min-width:unset;">${c.label}</th>`).join('')}
   </tr>`;
 
   let rows = '';
@@ -727,26 +839,29 @@ function renderProjectsSchedule(projectId) {
           ${covBadge(cov)}
         </div>
       </td>
-      <td class="phase-td-info sticky2" style="width:130px;left:200px;"></td>
-      <td class="phase-td-info sticky3" style="width:90px;left:330px;"></td>
-      <td class="phase-td-info sticky4" style="width:100px;left:420px;"></td>
-      <td colspan="12" class="phase-timeline-cell">${tlInner(28,pbar)}</td>
+      <td class="phase-td-info sticky2" style="width:140px;left:200px;"></td>
+      <td class="phase-td-info sticky3" style="width:130px;left:340px;"></td>
+      <td colspan="${colCount}" class="phase-timeline-cell">${tlInner(28,pbar)}</td>
     </tr>`;
 
     phase.tasks.forEach(task => {
-      const cls = !task.assigned.length ? 'bar-task-unassigned' : task.alloc<100 ? 'bar-task-partial' : 'bar-task-full';
+      const cls = barColorClass(task);
       const lbl = !task.assigned.length ? 'Unassigned' : task.assigned.map(id=>getRes(id)?.initials||'').join(', ');
-      const names = task.assigned.map(id=>getRes(id)?.name||'').join(', ') || 'No one assigned';
-      const tip = `📋 ${task.name}|Phase: ${phase.name}|Assigned: ${names}|Allocation: ${task.alloc}%|${MONTHS[task.startMonth]} – ${MONTHS[task.endMonth]} 2026`;
+      const names = task.assigned.map(id=>getRes(id)?.name||'').filter(Boolean).join(', ') || 'No one assigned';
+      const allocInfo = currentModel==='B' && task.assigned.length
+        ? `Allocation: ${Math.round(100/task.assigned.length)}% · ${Math.round(task.dur*8/task.assigned.length)}h each`
+        : currentModel==='A' && task.assigned.length
+        ? `Hours: ${task.assigned.map(id=>`${getRes(id)?.initials} ${task.manualHours[id]||0}h`).join(', ')}`
+        : 'Assigned';
+      const tip = `📋 ${task.name}|Assigned: ${names}|${allocInfo}|${MONTHS[task.startMonth]} – ${MONTHS[task.endMonth]} 2026`;
       const bar = `<div class="tl-bar ${cls}" style="${barPos(task.startMonth,task.endMonth)}top:5px;height:18px;"
         onmouseenter="showTip(event,'${tip.replace(/'/g,"&#39;")}')" onmouseleave="hideTip()">${lbl}</div>`;
 
       rows += `<tr class="task-tr" id="trow-${task.id}" style="${isOpen?'':'display:none'}">
         <td class="task-name-td td-sticky sticky1" style="width:200px;"><span class="task-name">${task.name}</span></td>
-        <td class="td-assigned td-sticky sticky2" style="width:130px;left:200px;">${avHtml(task.assigned,'av-sm')}</td>
-        <td class="td-alloc td-sticky sticky3" style="width:90px;left:330px;">${allocBadge(task.alloc,task.assigned)}</td>
-        <td class="td-status td-sticky sticky4" style="width:100px;left:420px;">${statusHtml(task.status)}</td>
-        <td colspan="12" class="td-timeline">${tlInner(28,bar)}</td>
+        <td class="td-assigned td-sticky sticky2" style="width:140px;left:200px;">${avHtml(task.assigned,'av-sm')}</td>
+        <td class="td-alloc td-sticky sticky3" style="width:130px;left:340px;">${allocDisplay(task)}</td>
+        <td colspan="${colCount}" class="td-timeline">${tlInner(28,bar)}</td>
       </tr>`;
     });
   });
@@ -757,6 +872,7 @@ function togglePhase(phaseId, projectId) {
   expanded[phaseId] = expanded[phaseId] === false ? true : false;
   renderProjectsSchedule(projectId || document.getElementById('project-select').value);
 }
+
 
 /* ═══════════════ PEOPLE SCHEDULE ═══════ */
 function getPersonAssignments(personId) {
