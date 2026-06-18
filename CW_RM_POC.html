@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CW – Resource Management POC</title>
+<title>CW – Resource Management POC v2</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:13px; background:#F3F4F6; color:#111827; display:flex; height:100vh; overflow:hidden; }
@@ -33,6 +33,12 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-
 .page-header p { font-size:12px; color:#6B7280; margin-top:2px; }
 .header-actions { display:flex; align-items:flex-end; justify-content:space-between; padding:12px 24px 0; flex-shrink:0; }
 
+/* TABS inside page */
+.page-tabs { display:flex; gap:0; padding:0 24px; border-bottom:1px solid #E5E7EB; flex-shrink:0; margin-top:12px; }
+.page-tab { padding:8px 16px; font-size:12.5px; font-weight:500; color:#6B7280; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .12s; }
+.page-tab:hover { color:#111827; }
+.page-tab.active { color:#2563EB; border-bottom-color:#2563EB; font-weight:600; }
+
 /* TOGGLE */
 .view-toggle { display:flex; background:#E5E7EB; border-radius:6px; padding:3px; width:fit-content; }
 .toggle-btn { padding:5px 18px; border-radius:4px; border:none; background:transparent; cursor:pointer; font-size:12.5px; font-weight:500; color:#6B7280; transition:all .14s; }
@@ -42,14 +48,6 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-
 .toolbar { padding:10px 24px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
 .toolbar label { font-size:12px; color:#6B7280; font-weight:500; }
 .toolbar select { padding:5px 10px; border:1px solid #D1D5DB; border-radius:5px; font-size:12.5px; color:#111827; background:#fff; cursor:pointer; min-width:280px; }
-
-/* FILTER BAR */
-.filter-bar { padding:8px 24px; display:flex; align-items:center; gap:16px; flex-shrink:0; }
-.filter-bar label { font-size:11px; color:#6B7280; font-weight:500; }
-.filter-bar select { padding:4px 8px; border:1px solid #D1D5DB; border-radius:4px; font-size:12px; background:#fff; }
-.legend { display:flex; align-items:center; gap:14px; margin-left:auto; }
-.legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:#6B7280; }
-.legend-dot { width:10px; height:10px; border-radius:2px; }
 
 /* RESOURCE TABLE */
 .table-wrap { flex:1; overflow:auto; margin:0 24px 20px; background:#fff; border-radius:8px; border:1px solid #E5E7EB; }
@@ -68,8 +66,6 @@ table.res-table tbody tr:hover .row-action { opacity:1; }
 .profile-back:hover { color:#2563EB; }
 .profile-card { background:#fff; border-radius:10px; border:1px solid #E5E7EB; overflow:hidden; max-width:680px; }
 .profile-card-header { padding:28px 28px 20px; border-bottom:1px solid #E5E7EB; display:flex; align-items:center; justify-content:space-between; }
-.profile-identity { display:flex; align-items:center; gap:16px; }
-.profile-av { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#fff; flex-shrink:0; }
 .profile-name { font-size:17px; font-weight:600; color:#111827; }
 .profile-sub { font-size:12.5px; color:#6B7280; margin-top:3px; }
 .profile-actions { display:flex; gap:8px; }
@@ -81,12 +77,10 @@ table.res-table tbody tr:hover .row-action { opacity:1; }
 .field-input { width:100%; padding:6px 10px; border:1px solid #D1D5DB; border-radius:5px; font-size:13px; color:#111827; }
 .field-input:focus { outline:none; border-color:#2563EB; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
 .field-select { width:100%; padding:6px 10px; border:1px solid #D1D5DB; border-radius:5px; font-size:13px; color:#111827; background:#fff; }
-.field-ro { color:#9CA3AF; font-style:italic; }
 .profile-footer { padding:16px 28px; background:#F9FAFB; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; align-items:center; }
-.danger-zone { display:flex; align-items:center; gap:10px; }
 .danger-text { font-size:11.5px; color:#6B7280; }
 
-/* AVATARS */
+/* AVATARS (list only) */
 .av { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; font-size:9px; font-weight:700; color:#fff; flex-shrink:0; border:2px solid #fff; }
 .av-group { display:flex; }
 .av-group .av { margin-left:-6px; }
@@ -95,33 +89,22 @@ table.res-table tbody tr:hover .row-action { opacity:1; }
 
 /* BADGES */
 .badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; white-space:nowrap; }
-.badge-person { background:#EFF6FF; color:#1D4ED8; }
-.badge-company { background:#F0FDF4; color:#15803D; }
 .badge-full { background:#DCFCE7; color:#15803D; }
-.badge-partial { background:#FEF3C7; color:#92400E; }
 .badge-none { background:#FEE2E2; color:#991B1B; }
 .badge-cov-full { background:#DCFCE7; color:#166534; font-size:11px; }
 .badge-cov-partial { background:#FEF3C7; color:#92400E; font-size:11px; }
 .badge-cov-none { background:#FEE2E2; color:#991B1B; font-size:11px; }
 .badge-overalloc { background:#FEE2E2; color:#991B1B; font-size:10px; padding:2px 6px; }
 
-/* STATUS */
-.status { display:inline-flex; align-items:center; gap:5px; font-size:11px; color:#6B7280; }
-.status-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
-.s-done .status-dot { background:#6B7280; }
-.s-prog .status-dot { background:#2563EB; }
-.s-not .status-dot { background:#D1D5DB; }
-
 /* SCHEDULE TABLE */
 .sched-wrap { flex:1; overflow:auto; margin:0 24px 20px; background:#fff; border-radius:8px; border:1px solid #E5E7EB; }
-table.sched-table { border-collapse:collapse; width:100%; min-width:1050px; }
+table.sched-table { border-collapse:collapse; width:100%; min-width:900px; }
 table.sched-table thead th { padding:0; text-align:left; font-size:10px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid #E5E7EB; background:#F9FAFB; white-space:nowrap; position:sticky; top:0; z-index:3; }
 table.sched-table thead th.th-info { padding:9px 12px; }
 table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-left:1px solid #E5E7EB; width:60px; min-width:60px; font-size:10px; color:#9CA3AF; }
 .sticky1 { position:sticky; left:0; z-index:4; background:#F9FAFB; }
 .sticky2 { position:sticky; left:200px; z-index:4; background:#F9FAFB; }
-.sticky3 { position:sticky; left:330px; z-index:4; background:#F9FAFB; }
-.sticky4 { position:sticky; left:420px; z-index:4; background:#F9FAFB; }
+.sticky3 { position:sticky; left:340px; z-index:4; background:#F9FAFB; }
 
 /* Phase row */
 .phase-tr td { background:#F9FAFB; border-bottom:1px solid #E5E7EB; cursor:pointer; }
@@ -141,7 +124,6 @@ table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-l
 .task-name-td { padding:6px 12px 6px 28px; position:sticky; }
 .task-name { font-size:12px; color:#374151; }
 .td-assigned { padding:6px 12px; }
-.td-alloc { padding:6px 12px; }
 .td-status { padding:6px 12px; }
 .td-timeline { padding:0; }
 
@@ -150,11 +132,10 @@ table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-l
 .tl-grid { display:flex; position:absolute; inset:0; pointer-events:none; z-index:0; }
 .tl-month { flex:1; border-left:1px solid #F3F4F6; }
 .tl-month:first-child { border-left:none; }
-.tl-bar { position:absolute; border-radius:3px; display:flex; align-items:center; padding:0 6px; overflow:hidden; white-space:nowrap; font-size:10px; font-weight:600; color:#fff; cursor:pointer; z-index:1; transition:opacity .13s,filter .13s; }
-.tl-bar:hover { opacity:.85; filter:brightness(1.08); }
+.tl-bar { position:absolute; border-radius:3px; display:flex; align-items:center; padding:0 6px; overflow:hidden; white-space:nowrap; font-size:10px; font-weight:600; color:#fff; cursor:pointer; z-index:1; transition:opacity .13s; }
+.tl-bar:hover { opacity:.85; }
 .bar-phase-bg { background:#CBD5E1; height:8px; top:50%; transform:translateY(-50%); border-radius:2px; }
 .bar-task-full { background:#2563EB; }
-.bar-task-partial { background:#F59E0B; }
 .bar-task-unassigned { background:#E5E7EB; border:1.5px dashed #CBD5E1; color:#9CA3AF; font-weight:500; }
 .bar-available { background:transparent; color:#9CA3AF; font-size:10px; font-weight:400; border:none; }
 
@@ -182,23 +163,12 @@ table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-l
 .form-group input,.form-group select { width:100%; padding:6px 10px; border:1px solid #D1D5DB; border-radius:5px; font-size:12.5px; color:#111827; }
 .form-group input:focus,.form-group select:focus { outline:none; border-color:#2563EB; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
 .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; padding-top:16px; border-top:1px solid #E5E7EB; }
-.type-select-row { display:flex; gap:10px; margin-bottom:16px; }
-.type-opt { flex:1; border:1.5px solid #E5E7EB; border-radius:7px; padding:10px; cursor:pointer; text-align:center; transition:all .13s; }
-.type-opt:hover { border-color:#93C5FD; background:#EFF6FF; }
-.type-opt.selected { border-color:#2563EB; background:#EFF6FF; }
-.type-opt-label { font-size:12.5px; font-weight:600; color:#374151; display:block; margin-top:4px; }
-.type-opt-sub { font-size:10.5px; color:#9CA3AF; }
-.note-box { background:#FFFBEB; border:1px solid #FDE68A; border-radius:5px; padding:8px 12px; font-size:11px; color:#92400E; margin-bottom:14px; }
 
-/* SCALE + MODEL TOGGLES */
+/* MINI TOGGLE (scale) */
 .mini-toggle { display:flex; background:#E5E7EB; border-radius:5px; padding:2px; }
-.mini-btn { padding:3px 10px; border-radius:3px; border:none; background:transparent; cursor:pointer; font-size:11.5px; font-weight:500; color:#6B7280; transition:all .12s; white-space:nowrap; }
+.mini-btn { padding:3px 10px; border-radius:3px; border:none; background:transparent; cursor:pointer; font-size:11.5px; font-weight:500; color:#6B7280; transition:all .12s; }
 .mini-btn.active { background:#fff; color:#111827; box-shadow:0 1px 2px rgba(0,0,0,.1); }
-.model-desc-bar { padding:6px 24px; font-size:11.5px; border-bottom:1px solid #E5E7EB; flex-shrink:0; display:flex; align-items:center; gap:8px; }
-.model-tag { font-weight:600; padding:1px 8px; border-radius:9px; font-size:11px; }
-.model-tag-c { background:#EFF6FF; color:#1D4ED8; }
-.model-tag-a { background:#F0FDF4; color:#15803D; }
-.model-tag-b { background:#FFF7ED; color:#92400E; }
+
 /* TOOLTIP */
 #tooltip { position:fixed; background:#1F2937; color:#F9FAFB; padding:8px 12px; border-radius:6px; font-size:11.5px; line-height:1.5; pointer-events:none; z-index:1000; max-width:240px; display:none; box-shadow:0 4px 16px rgba(0,0,0,.25); }
 #tooltip.show { display:block; }
@@ -209,54 +179,84 @@ table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-l
 
 <div id="tooltip"></div>
 
-<!-- ADD RESOURCE MODAL -->
-<div class="modal-overlay" id="modal-add">
+<!-- ADD RESOURCE MODAL (Person only) -->
+<div class="modal-overlay" id="modal-add-resource">
   <div class="modal modal-wide">
     <h2>Add Resource</h2>
-    <div class="form-group">
-      <label>Type *</label>
-      <select id="modal-type-sel" onchange="selectType(this.value)" style="width:100%;padding:6px 10px;border:1px solid #D1D5DB;border-radius:5px;font-size:13px;">
-        <option value="">Select type...</option>
-        <option value="Person">Person — individual resource</option>
-        <option value="Company">Company — firm or placeholder</option>
-      </select>
+    <div class="form-row">
+      <div class="form-group"><label>Full Name *</label><input type="text" id="add-res-name" placeholder="e.g. Jane Smith" maxlength="256"></div>
+      <div class="form-group"><label>Email *</label><input type="email" id="add-res-email" placeholder="jane.smith@company.com" maxlength="256"></div>
     </div>
-    <div id="fields-person" style="display:none">
-      <div class="form-row">
-        <div class="form-group"><label>Full Name *</label><input type="text" placeholder="e.g. Jane Smith"></div>
-        <div class="form-group"><label>Email *</label><input type="email" placeholder="jane.smith@company.com"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Company *</label>
+        <select id="add-res-company">
+          <option value="">Select company...</option>
+        </select>
       </div>
-      <div class="form-row">
-        <div class="form-group"><label>Company *</label><input type="text" placeholder="e.g. Avellon Group"></div>
-        <div class="form-group"><label>Role *</label>
-          <select><option value="">Select role...</option><option>Portfolio Leader</option><option>Strategy Lead</option><option>Transaction Manager</option><option>Workplace Experience Designer</option><option>Architect</option><option>External PM</option><option>Program Manager</option></select>
-        </div>
-      </div>
-    </div>
-    <div id="fields-company" style="display:none">
-      <div class="note-box">⚠ Company resources act as placeholders. They can be replaced with a named person later.</div>
-      <div class="form-row">
-        <div class="form-group"><label>Company Name *</label><input type="text" placeholder="e.g. Vantara Partners"></div>
-        <div class="form-group"><label>Role *</label>
-          <select><option value="">Select role...</option><option>External PM</option><option>Architecture Firm</option><option>Construction Manager</option><option>Legal Counsel</option><option>Broker</option></select>
-        </div>
+      <div class="form-group"><label>Role *</label>
+        <select id="add-res-role">
+          <option value="">Select role...</option>
+          <option>Portfolio Leader</option>
+          <option>Strategy Lead</option>
+          <option>Transaction Manager</option>
+          <option>Workplace Experience Designer</option>
+          <option>Architect</option>
+          <option>External PM</option>
+          <option>Program Manager</option>
+        </select>
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
-      <button class="btn-primary" onclick="closeAddModal()">Save Resource</button>
+      <button class="btn-cancel" onclick="closeModal('modal-add-resource')">Cancel</button>
+      <button class="btn-primary" onclick="saveNewResource()">Save Resource</button>
     </div>
   </div>
 </div>
 
-<!-- DELETE CONFIRMATION MODAL -->
-<div class="modal-overlay" id="modal-delete">
+<!-- ADD COMPANY MODAL -->
+<div class="modal-overlay" id="modal-add-company">
+  <div class="modal modal-wide">
+    <h2>Add Company</h2>
+    <div class="form-group"><label>Company Name *</label><input type="text" id="add-co-name" placeholder="e.g. Vantara Partners" maxlength="256"></div>
+    <div class="form-group"><label>Industry *</label>
+      <select id="add-co-industry">
+        <option value="">Select industry...</option>
+        <option>Real Estate Advisory</option>
+        <option>Architecture &amp; Design</option>
+        <option>Project Management</option>
+        <option>Construction Management</option>
+        <option>Interior Design</option>
+        <option>Engineering</option>
+        <option>Legal &amp; Compliance</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-add-company')">Cancel</button>
+      <button class="btn-primary" onclick="saveNewCompany()">Save Company</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE RESOURCE MODAL -->
+<div class="modal-overlay" id="modal-delete-resource">
   <div class="modal modal-narrow">
     <h2>Delete Resource</h2>
-    <p id="delete-msg">Are you sure you want to delete this resource? This action cannot be undone.</p>
+    <p id="delete-res-msg">Are you sure you want to delete this resource? This action cannot be undone.</p>
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
-      <button class="btn-danger" onclick="confirmDelete()" style="background:#DC2626;color:#fff;border-color:#DC2626;">Delete Resource</button>
+      <button class="btn-cancel" onclick="closeModal('modal-delete-resource')">Cancel</button>
+      <button class="btn-danger" style="background:#DC2626;color:#fff;border-color:#DC2626;" onclick="confirmDeleteResource()">Delete Resource</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE COMPANY MODAL -->
+<div class="modal-overlay" id="modal-delete-company">
+  <div class="modal modal-narrow">
+    <h2>Delete Company</h2>
+    <p id="delete-co-msg">Are you sure you want to delete this company? This action cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-delete-company')">Cancel</button>
+      <button class="btn-danger" style="background:#DC2626;color:#fff;border-color:#DC2626;" onclick="confirmDeleteCompany()">Delete Company</button>
     </div>
   </div>
 </div>
@@ -271,7 +271,7 @@ table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-l
       <div class="logo-sub">Real Estate Insights</div>
     </div>
     <div class="nav-section">
-      <div class="nav-item" onclick="goTo('resources')">
+      <div class="nav-item">
         <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         Maps
       </div>
@@ -287,6 +287,7 @@ table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-l
     <div class="nav-section">
       <div class="nav-label">Resource Mgmt</div>
       <div class="nav-item sub" id="nav-resources" onclick="goTo('resources')">Resources</div>
+      <div class="nav-item sub" id="nav-companies" onclick="goTo('companies')">Companies</div>
       <div class="nav-item sub" id="nav-schedule" onclick="goTo('schedule')">Schedule</div>
     </div>
     <div class="nav-section" style="margin-top:auto;padding-bottom:12px;">
@@ -304,69 +305,107 @@ table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-l
   <!-- MAIN -->
   <main class="main">
 
-    <!-- ── RESOURCES PAGE ───────────────── -->
+    <!-- ── RESOURCES PAGE ─────────────────── -->
     <div class="page" id="page-resources">
-
-      <!-- LIST VIEW -->
+      <!-- List view -->
       <div id="res-list-view" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
         <div class="page-header">
           <h1>Resources</h1>
-          <p>All people and companies available for project assignments</p>
+          <p>All people available for project assignments</p>
         </div>
         <div class="header-actions">
           <div style="font-size:12px;color:#6B7280;" id="res-count"></div>
-          <button class="btn-primary" onclick="openAddModal()">+ Add Resource</button>
+          <button class="btn-primary" onclick="openAddResourceModal()">+ Add Resource</button>
         </div>
         <div class="table-wrap" style="margin-top:12px;">
           <table class="res-table">
             <thead><tr>
-              <th>Name</th><th>Type</th><th>Email</th><th>Company</th><th>Role</th><th></th>
+              <th>Name</th><th>Email</th><th>Company</th><th>Role</th><th></th>
             </tr></thead>
             <tbody id="res-tbody"></tbody>
           </table>
         </div>
       </div>
-
-      <!-- PROFILE VIEW -->
+      <!-- Profile view -->
       <div id="res-profile-view" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
         <div class="profile-wrap">
-          <div class="profile-back" onclick="showList()">
-            ← Back to Resources
-          </div>
+          <div class="profile-back" onclick="showResList()">← Back to Resources</div>
           <div class="profile-card">
             <div class="profile-card-header">
-              <div class="profile-identity">
-                <div class="profile-av" id="prof-av"></div>
-                <div>
-                  <div class="profile-name" id="prof-name"></div>
-                  <div class="profile-sub" id="prof-sub"></div>
-                </div>
+              <div>
+                <div class="profile-name" id="res-prof-name"></div>
+                <div class="profile-sub" id="res-prof-sub"></div>
               </div>
-              <div class="profile-actions" id="prof-actions-view">
-                <button class="btn-secondary" onclick="startEdit()">Edit</button>
-                <button class="btn-danger" onclick="openDeleteModal()">Delete</button>
+              <div class="profile-actions" id="res-prof-actions-view">
+                <button class="btn-secondary" onclick="startResEdit()">Edit</button>
+                <button class="btn-danger" onclick="openDeleteResModal()">Delete</button>
               </div>
-              <div class="profile-actions" id="prof-actions-edit" style="display:none;">
-                <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
-                <button class="btn-primary" onclick="saveEdit()">Save Changes</button>
+              <div class="profile-actions" id="res-prof-actions-edit" style="display:none;">
+                <button class="btn-secondary" onclick="cancelResEdit()">Cancel</button>
+                <button class="btn-primary" onclick="saveResEdit()">Save Changes</button>
               </div>
             </div>
-            <div class="profile-fields" id="prof-fields"></div>
+            <div class="profile-fields" id="res-prof-fields"></div>
             <div class="profile-footer">
-              <div class="danger-zone" id="prof-footer-view">
-                <span class="danger-text">To remove this resource from the system, use the Delete button.</span>
-              </div>
-              <div id="prof-footer-edit" style="display:none;">
-                <span style="font-size:11.5px;color:#6B7280;">* Required fields</span>
-              </div>
+              <div id="res-prof-footer-view"><span class="danger-text">To remove this resource from the system, use the Delete button.</span></div>
+              <div id="res-prof-footer-edit" style="display:none;"><span style="font-size:11.5px;color:#6B7280;">* Required fields</span></div>
             </div>
           </div>
         </div>
       </div>
-
     </div>
 
-    <!-- ── SCHEDULE PAGE ───────────────── -->
+    <!-- ── COMPANIES PAGE ─────────────────── -->
+    <div class="page" id="page-companies">
+      <!-- List view -->
+      <div id="co-list-view" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+        <div class="page-header">
+          <h1>Companies</h1>
+          <p>All companies in the system. Add companies before creating person resources.</p>
+        </div>
+        <div class="header-actions">
+          <div style="font-size:12px;color:#6B7280;" id="co-count"></div>
+          <button class="btn-primary" onclick="openAddCompanyModal()">+ Add Company</button>
+        </div>
+        <div class="table-wrap" style="margin-top:12px;">
+          <table class="res-table">
+            <thead><tr>
+              <th>Company Name</th><th>Industry</th><th></th>
+            </tr></thead>
+            <tbody id="co-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Profile view -->
+      <div id="co-profile-view" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+        <div class="profile-wrap">
+          <div class="profile-back" onclick="showCoList()">← Back to Companies</div>
+          <div class="profile-card">
+            <div class="profile-card-header">
+              <div>
+                <div class="profile-name" id="co-prof-name"></div>
+                <div class="profile-sub" id="co-prof-sub"></div>
+              </div>
+              <div class="profile-actions" id="co-prof-actions-view">
+                <button class="btn-secondary" onclick="startCoEdit()">Edit</button>
+                <button class="btn-danger" onclick="openDeleteCoModal()">Delete</button>
+              </div>
+              <div class="profile-actions" id="co-prof-actions-edit" style="display:none;">
+                <button class="btn-secondary" onclick="cancelCoEdit()">Cancel</button>
+                <button class="btn-primary" onclick="saveCoEdit()">Save Changes</button>
+              </div>
+            </div>
+            <div class="profile-fields" id="co-prof-fields"></div>
+            <div class="profile-footer">
+              <div id="co-prof-footer-view"><span class="danger-text">To remove this company from the system, use the Delete button.</span></div>
+              <div id="co-prof-footer-edit" style="display:none;"><span style="font-size:11.5px;color:#6B7280;">* Required fields</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SCHEDULE PAGE ─────────────────── -->
     <div class="page" id="page-schedule">
       <div class="page-header">
         <h1>Schedule</h1>
@@ -388,28 +427,14 @@ table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-l
             <option value="CHI00089">CHI00089 – 350 N Orleans, Regional Hub</option>
             <option value="DAL00231">DAL00231 – 2222 McKinney Ave, Talent Center</option>
           </select>
-          <div style="margin-left:auto;display:flex;align-items:center;gap:16px;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:11px;color:#6B7280;font-weight:500;">View:</span>
-              <div class="mini-toggle">
-                <button class="mini-btn active" id="scale-M" onclick="setScale('M')">Month</button>
-                <button class="mini-btn" id="scale-W" onclick="setScale('W')">Week</button>
-                <button class="mini-btn" id="scale-D" onclick="setScale('D')">Day</button>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <span style="font-size:11px;color:#6B7280;font-weight:500;">Allocation:</span>
-              <div class="mini-toggle">
-                <button class="mini-btn active" id="model-C" onclick="setModel('C')" title="MVP: just assigned or not">C — MVP</button>
-                <button class="mini-btn" id="model-A" onclick="setModel('A')" title="Manual: user enters hours per resource">A — Manual hrs</button>
-                <button class="mini-btn" id="model-B" onclick="setModel('B')" title="Auto: calculated from task duration">B — Auto calc</button>
-              </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:11px;color:#6B7280;font-weight:500;">View:</span>
+            <div class="mini-toggle">
+              <button class="mini-btn active" id="scale-M" onclick="setScale('M')">Month</button>
+              <button class="mini-btn" id="scale-W" onclick="setScale('W')">Week</button>
+              <button class="mini-btn" id="scale-D" onclick="setScale('D')">Day</button>
             </div>
           </div>
-        </div>
-        <div class="model-desc-bar" id="model-desc-bar">
-          <span class="model-tag model-tag-c">Model C — MVP</span>
-          <span style="color:#6B7280;">A resource is either assigned to a task or not. No hours tracked. If 2 resources on one task — both show as Assigned.</span>
         </div>
         <div class="sched-wrap">
           <table class="sched-table" id="sched-table">
@@ -421,23 +446,7 @@ table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-l
 
       <!-- People Schedule -->
       <div id="view-people" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-        <div class="filter-bar">
-          <label>Filter:</label>
-          <select onchange="renderPeopleSchedule(this.value)">
-            <option value="all">All Types</option>
-            <option value="Person">People only</option>
-            <option value="Company">Companies only</option>
-          </select>
-          <label style="margin-left:8px;">Sort by:</label>
-          <select><option>Name</option><option>Role</option><option>Company</option></select>
-          <div class="legend" style="margin-left:auto;">
-            <div class="legend-item"><div class="legend-dot" style="background:#2563EB"></div>SNY00142</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#059669"></div>CHI00089</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#DC2626"></div>DAL00231</div>
-            <div class="legend-item"><div class="legend-dot" style="background:#FEE2E2;border:1px solid #FECACA"></div>Overallocated</div>
-          </div>
-        </div>
-        <div class="sched-wrap">
+        <div class="sched-wrap" style="margin-top:12px;">
           <table class="sched-table" id="people-table">
             <thead id="people-thead"></thead>
             <tbody id="people-tbody"></tbody>
@@ -452,194 +461,103 @@ table.sched-table thead th.th-month { text-align:center; padding:9px 0; border-l
 <script>
 /* ═══════════════ DATA ══════════════════ */
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const ROLES = ['Portfolio Leader','Strategy Lead','Transaction Manager','Workplace Experience Designer','Architect','External PM','Program Manager'];
+const ROLES  = ['Portfolio Leader','Strategy Lead','Transaction Manager','Workplace Experience Designer','Architect','External PM','Program Manager'];
+const INDUSTRIES = ['Real Estate Advisory','Architecture & Design','Project Management','Construction Management','Interior Design','Engineering','Legal & Compliance'];
 
-let resources = [
-  { id:1, name:'Laura Bennett',     type:'Person',  email:'laura.bennett@avellon.com',   company:'Avellon Group', role:'Portfolio Leader',             initials:'LB', color:'#7C3AED' },
-  { id:2, name:'Daniel Reyes',      type:'Person',  email:'daniel.reyes@avellon.com',    company:'Avellon Group', role:'Strategy Lead',                initials:'DR', color:'#EF4444' },
-  { id:3, name:'Sophie Marsh',      type:'Person',  email:'sophie.marsh@avellon.com',    company:'Avellon Group', role:'Workplace Experience Designer', initials:'SM', color:'#6D28D9' },
-  { id:4, name:'Chris Wade',        type:'Person',  email:'chris.wade@avellon.com',      company:'Avellon Group', role:'Transaction Manager',          initials:'CW', color:'#0D9488' },
-  { id:5, name:'Ryan Kowalski',     type:'Person',  email:'ryan.kowalski@avellon.com',   company:'Avellon Group', role:'Architect',                    initials:'RK', color:'#16A34A' },
-  { id:6, name:'Vantara Partners',  type:'Company', email:'—',                           company:'Vantara Partners', role:'External PM (placeholder)', initials:'VP', color:'#EA580C' },
-  { id:7, name:'Stratford Design',  type:'Company', email:'—',                           company:'Stratford Design Group', role:'Architecture Firm',   initials:'SD', color:'#3B82F6' },
+let companies = [
+  { id:1, name:'Avellon Group',        industry:'Real Estate Advisory'    },
+  { id:2, name:'Vantara Partners',     industry:'Project Management'      },
+  { id:3, name:'Stratford Design Group', industry:'Architecture & Design' },
+  { id:4, name:'CoreBuild LLC',        industry:'Construction Management' },
 ];
 
-const projectColors = { 'SNY00142':'#2563EB', 'CHI00089':'#059669', 'DAL00231':'#DC2626' };
+let resources = [
+  { id:1, name:'Laura Bennett',   email:'laura.bennett@avellon.com',   companyId:1, company:'Avellon Group',         role:'Portfolio Leader',             initials:'LB', color:'#7C3AED' },
+  { id:2, name:'Daniel Reyes',    email:'daniel.reyes@avellon.com',    companyId:1, company:'Avellon Group',         role:'Strategy Lead',                initials:'DR', color:'#EF4444' },
+  { id:3, name:'Sophie Marsh',    email:'sophie.marsh@avellon.com',    companyId:1, company:'Avellon Group',         role:'Workplace Experience Designer', initials:'SM', color:'#6D28D9' },
+  { id:4, name:'Chris Wade',      email:'chris.wade@avellon.com',      companyId:1, company:'Avellon Group',         role:'Transaction Manager',          initials:'CW', color:'#0D9488' },
+  { id:5, name:'Ryan Kowalski',   email:'ryan.kowalski@avellon.com',   companyId:1, company:'Avellon Group',         role:'Architect',                    initials:'RK', color:'#16A34A' },
+  { id:6, name:'James Porter',    email:'j.porter@vantara.com',        companyId:2, company:'Vantara Partners',      role:'External PM',                  initials:'JP', color:'#EA580C' },
+  { id:7, name:'Mia Chen',        email:'m.chen@stratforddesign.com',  companyId:3, company:'Stratford Design Group',role:'Architect',                    initials:'MC', color:'#3B82F6' },
+];
+
+const PROJ_COLORS = { 'SNY00142':'#2563EB', 'CHI00089':'#059669', 'DAL00231':'#DC2626' };
 
 const schedule = {
   'SNY00142': [
     { id:'ph1', name:'Strategy', startMonth:0, endMonth:1, tasks:[
-      { id:'t1', name:'Project Kickoff',          startMonth:0, endMonth:0, dur:1,  assigned:[1,2],   manualHours:{1:8,   2:8}   },
-      { id:'t2', name:'Prepare Launch Deck',      startMonth:0, endMonth:1, dur:25, assigned:[2,3],   manualHours:{2:40,  3:60}  },
-      { id:'t3', name:'Project Launch w/ Locals', startMonth:1, endMonth:1, dur:1,  assigned:[1,2,3], manualHours:{1:8,   2:8,   3:8}  },
+      { id:'t1', name:'Project Kickoff',          startMonth:0, endMonth:0, assigned:[1,2] },
+      { id:'t2', name:'Prepare Launch Deck',      startMonth:0, endMonth:1, assigned:[2,3] },
+      { id:'t3', name:'Project Launch w/ Locals', startMonth:1, endMonth:1, assigned:[1,2,3] },
     ]},
     { id:'ph2', name:'Leasing', startMonth:1, endMonth:7, tasks:[
-      { id:'t4', name:'Engage Broker', startMonth:1, endMonth:1, dur:3,  assigned:[2,4],   manualHours:{2:12,  4:12}  },
-      { id:'t5', name:'Long List',     startMonth:2, endMonth:3, dur:40, assigned:[2,4,3], manualHours:{2:80,  4:120, 3:60}  },
-      { id:'t6', name:'Short List',    startMonth:4, endMonth:5, dur:20, assigned:[4],     manualHours:{4:160}  },
+      { id:'t4', name:'Engage Broker', startMonth:1, endMonth:1, assigned:[2,4] },
+      { id:'t5', name:'Long List',     startMonth:2, endMonth:3, assigned:[2,4,3] },
+      { id:'t6', name:'Short List',    startMonth:4, endMonth:5, assigned:[4] },
     ]},
     { id:'ph3', name:'Design', startMonth:4, endMonth:11, tasks:[
-      { id:'t7',  name:'Programming Validation', startMonth:4, endMonth:5, dur:22, assigned:[5,3], manualHours:{5:80,  3:80}  },
-      { id:'t8',  name:'Test Fit',               startMonth:5, endMonth:7, dur:45, assigned:[5,3], manualHours:{5:160, 3:80}  },
-      { id:'t9',  name:'CM RFP & Award',         startMonth:5, endMonth:8, dur:65, assigned:[6],   manualHours:{6:200}  },
-      { id:'t10', name:'Permit Submission',       startMonth:8, endMonth:9, dur:42, assigned:[],    manualHours:{}  },
+      { id:'t7',  name:'Programming Validation', startMonth:4, endMonth:5, assigned:[5,3] },
+      { id:'t8',  name:'Test Fit',               startMonth:5, endMonth:7, assigned:[5,3] },
+      { id:'t9',  name:'CM RFP & Award',         startMonth:5, endMonth:8, assigned:[6]   },
+      { id:'t10', name:'Permit Submission',       startMonth:8, endMonth:9, assigned:[]    },
     ]},
   ],
   'CHI00089': [
     { id:'ph4', name:'Strategy', startMonth:1, endMonth:3, tasks:[
-      { id:'t11', name:'Project Kickoff', startMonth:1, endMonth:1, dur:1,  assigned:[1,2], manualHours:{1:8,  2:8}   },
-      { id:'t12', name:'Site Assessment', startMonth:2, endMonth:3, dur:30, assigned:[2],   manualHours:{2:120}  },
+      { id:'t11', name:'Project Kickoff', startMonth:1, endMonth:1, assigned:[1,2] },
+      { id:'t12', name:'Site Assessment', startMonth:2, endMonth:3, assigned:[2]   },
     ]},
     { id:'ph5', name:'Design', startMonth:4, endMonth:8, tasks:[
-      { id:'t13', name:'Programming Validation', startMonth:4, endMonth:5, dur:22, assigned:[5],  manualHours:{5:160}  },
-      { id:'t14', name:'Concept Design',         startMonth:5, endMonth:8, dur:65, assigned:[],   manualHours:{}  },
+      { id:'t13', name:'Programming Validation', startMonth:4, endMonth:5, assigned:[5]  },
+      { id:'t14', name:'Concept Design',         startMonth:5, endMonth:8, assigned:[7]  },
     ]},
   ],
   'DAL00231': [
     { id:'ph6', name:'Strategy', startMonth:3, endMonth:5, tasks:[
-      { id:'t15', name:'Kickoff & Discovery',   startMonth:3, endMonth:4, dur:20, assigned:[1],  manualHours:{1:80}  },
-      { id:'t16', name:'Stakeholder Alignment', startMonth:4, endMonth:5, dur:20, assigned:[],   manualHours:{}  },
+      { id:'t15', name:'Kickoff & Discovery',   startMonth:3, endMonth:4, assigned:[1]  },
+      { id:'t16', name:'Stakeholder Alignment', startMonth:4, endMonth:5, assigned:[]   },
     ]},
   ],
 };
 
 /* ═══════════════ STATE ═════════════════ */
 const expanded = {};
-let currentTaskId = null;
+let currentScale      = 'M';
 let currentResourceId = null;
-let editSnapshot = null;
+let currentCompanyId  = null;
+let resEditSnapshot   = null;
+let coEditSnapshot    = null;
+let nextResId = 8;
+let nextCoId  = 5;
 
-/* ═══════════════ SCALE + MODEL STATE ══ */
-let currentScale = 'M';
-let currentModel = 'C';
-
-const MODEL_DESCS = {
-  C: { tag:'model-tag-c', label:'Model C — MVP', desc:'A resource is either assigned to a task or not. No hours tracked. If 2 resources on one task — both show as Assigned.' },
-  A: { tag:'model-tag-a', label:'Model A — Manual Hours', desc:'The user enters hours for each resource per task manually. Each resource can have a different number of hours on the same task.' },
-  B: { tag:'model-tag-b', label:'Model B — Auto Calculated', desc:'Hours are calculated from task duration × 8h/day. If 2 resources are on one task, hours and % are split equally between them.' },
-};
-
-function setScale(s) {
-  currentScale = s;
-  ['M','W','D'].forEach(x => document.getElementById('scale-'+x).classList.toggle('active', x===s));
-  renderProjectsSchedule(document.getElementById('project-select').value);
-}
-
-function setModel(m) {
-  currentModel = m;
-  ['C','A','B'].forEach(x => document.getElementById('model-'+x).classList.toggle('active', x===m));
-  const md = MODEL_DESCS[m];
-  document.getElementById('model-desc-bar').innerHTML =
-    `<span class="model-tag ${md.tag}">${md.label}</span><span style="color:#6B7280;">${md.desc}</span>`;
-  renderProjectsSchedule(document.getElementById('project-select').value);
-}
-
-/* time scale helpers */
-function getColumns() {
-  if (currentScale === 'M') return MONTHS.map((m,i) => ({ label: m, idx: i, total: 12 }));
-  if (currentScale === 'W') {
-    const cols = [];
-    for (let w = 1; w <= 26; w++) cols.push({ label: 'W'+w, idx: w-1, total: 26 });
-    return cols;
-  }
-  // Day: show Jan (31 days)
-  const cols = [];
-  for (let d = 1; d <= 31; d++) cols.push({ label: d+'', idx: d-1, total: 31 });
-  return cols;
-}
-
-function barPos(startMonth, endMonth) {
-  const total = getColumns().length;
-  let s, e;
-  if (currentScale === 'M') { s = startMonth; e = endMonth; }
-  else if (currentScale === 'W') { s = Math.round(startMonth * 4.33); e = Math.min(Math.round((endMonth+1) * 4.33) - 1, 25); }
-  else { s = Math.round(startMonth * 2.58); e = Math.min(Math.round((endMonth+1) * 2.58) - 1, 30); }
-  s = Math.max(0, Math.min(s, total-1));
-  e = Math.max(s, Math.min(e, total-1));
-  return `left:${(s/total*100).toFixed(2)}%;width:${((e-s+1)/total*100).toFixed(2)}%;`;
-}
-
-/* allocation display helpers */
-function allocDisplay(task) {
-  if (currentModel === 'C') {
-    if (!task.assigned.length) return `<span class="badge badge-none">Unassigned</span>`;
-    return `<span class="badge badge-full">Assigned</span>`;
-  }
-  if (currentModel === 'A') {
-    if (!task.assigned.length) return `<span class="badge badge-none">Unassigned</span>`;
-    return task.assigned.map(id => {
-      const r = getRes(id); if (!r) return '';
-      const h = task.manualHours[id] || 0;
-      return `<div style="font-size:11px;white-space:nowrap;"><span class="av av-sm" style="background:${r.color};display:inline-flex;vertical-align:middle;">${r.initials}</span> <b>${h}h</b></div>`;
-    }).join('');
-  }
-  // Model B - auto calc
-  if (!task.assigned.length) return `<span class="badge badge-none">Unassigned</span>`;
-  const n = task.assigned.length;
-  const totalH = task.dur * 8;
-  const hEach = Math.round(totalH / n);
-  const pct = Math.round(100 / n);
-  return task.assigned.map(id => {
-    const r = getRes(id); if (!r) return '';
-    return `<div style="font-size:11px;white-space:nowrap;"><span class="av av-sm" style="background:${r.color};display:inline-flex;vertical-align:middle;">${r.initials}</span> <b>${pct}%</b> · ${hEach}h</div>`;
-  }).join('');
-}
-
-function barColorClass(task) {
-  if (!task.assigned.length) return 'bar-task-unassigned';
-  if (currentModel === 'C') return 'bar-task-full';
-  if (currentModel === 'A') {
-    const totalH = Object.values(task.manualHours).reduce((a,b)=>a+b,0);
-    return totalH > 0 ? 'bar-task-full' : 'bar-task-unassigned';
-  }
-  return 'bar-task-full';
-}
-
-/* ═══════════════ HELPERS ═══════════════ */
-function getRes(id) { return resources.find(r => r.id === id); }
-
+/* ═══════════════ HELPERS ════════════════ */
+function getRes(id)  { return resources.find(r => r.id === id); }
+function getCo(id)   { return companies.find(c => c.id === id); }
 function avHtml(ids, cls='') {
   if (!ids.length) return '<span style="font-size:11px;color:#9CA3AF;">—</span>';
   return `<div class="av-group">${ids.map(id => {
-    const r = getRes(id);
-    if (!r) return '';
+    const r = getRes(id); if(!r) return '';
     return `<div class="av ${cls}" style="background:${r.color}" title="${r.name}">${r.initials}</div>`;
   }).join('')}</div>`;
 }
-
-function allocBadge(alloc, assigned) {
-  if (!assigned.length) return `<span class="badge badge-none">Unassigned</span>`;
-  if (alloc === 100) return `<span class="badge badge-full">${alloc}%</span>`;
-  return `<span class="badge badge-partial">${alloc}%</span>`;
+function initials(name) {
+  const p = name.trim().split(' ');
+  return (p[0][0]+(p[1]?p[1][0]:'')).toUpperCase();
 }
-
-function statusHtml(s) {
-  const cls = s==='Completed'?'s-done':s==='In Progress'?'s-prog':'s-not';
-  return `<span class="status ${cls}"><span class="status-dot"></span>${s}</span>`;
+function randomColor() {
+  const cols = ['#7C3AED','#EF4444','#0D9488','#16A34A','#EA580C','#3B82F6','#DB2777','#CA8A04'];
+  return cols[Math.floor(Math.random()*cols.length)];
 }
-
 function calcCoverage(phase) {
-  const total = phase.tasks.length;
+  const total   = phase.tasks.length;
   const covered = phase.tasks.filter(t => t.assigned.length > 0).length;
   return { covered, total, pct: Math.round((covered/total)*100) };
 }
-
 function covBadge(cov) {
-  const cls = cov.pct===100 ? 'badge-cov-full' : cov.pct>0 ? 'badge-cov-partial' : 'badge-cov-none';
-  const tip = `${cov.covered} of ${cov.total} tasks have at least one resource assigned`;
-  return `<span class="badge ${cls}" title="${tip}" style="cursor:help;">${cov.covered}/${cov.total} covered</span>`;
+  const cls = cov.pct===100?'badge-cov-full':cov.pct>0?'badge-cov-partial':'badge-cov-none';
+  return `<span class="badge ${cls}" title="${cov.covered} of ${cov.total} tasks assigned">${cov.covered}/${cov.total} covered</span>`;
 }
-
-function tlInner(h, barHtml) {
-  return `<div class="tl-inner" style="height:${h}px;">
-    <div class="tl-grid">${MONTHS.map(()=>'<div class="tl-month"></div>').join('')}</div>
-    ${barHtml}
-  </div>`;
-}
-
-function barPos(s, e) {
-  return `left:${(s/12*100).toFixed(2)}%;width:${((e-s+1)/12*100).toFixed(2)}%;`;
-}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 /* ═══════════════ NAVIGATION ════════════ */
 function goTo(page) {
@@ -648,30 +566,20 @@ function goTo(page) {
   document.getElementById('page-'+page).classList.add('active');
   const nav = document.getElementById('nav-'+page);
   if (nav) nav.classList.add('active');
-  if (page === 'resources') { showList(); renderResources(); }
-  if (page === 'schedule') switchView('projects');
-}
-
-function switchView(view) {
-  document.getElementById('view-projects').style.display = view==='projects' ? 'flex' : 'none';
-  const vp = document.getElementById('view-people');
-  vp.style.display = view==='people' ? 'flex' : 'none';
-  document.getElementById('btn-proj').classList.toggle('active', view==='projects');
-  document.getElementById('btn-people').classList.toggle('active', view==='people');
-  if (view==='projects') renderProjectsSchedule(document.getElementById('project-select').value);
-  if (view==='people') renderPeopleSchedule('all');
+  if (page === 'resources') { showResList(); }
+  if (page === 'companies') { showCoList(); }
+  if (page === 'schedule')  { switchView('projects'); }
 }
 
 /* ═══════════════ RESOURCES LIST ════════ */
 function renderResources() {
   document.getElementById('res-count').textContent = `${resources.length} resources`;
   document.getElementById('res-tbody').innerHTML = resources.map(r => `
-    <tr onclick="openProfile(${r.id})">
+    <tr onclick="openResProfile(${r.id})">
       <td><div class="res-name-cell">
         <div class="av" style="background:${r.color}">${r.initials}</div>
         <span style="font-weight:500;color:#111827;">${r.name}</span>
       </div></td>
-      <td><span class="badge badge-${r.type==='Person'?'person':'company'}">${r.type}</span></td>
       <td style="color:#6B7280;">${r.email}</td>
       <td style="color:#374151;">${r.company}</td>
       <td style="color:#374151;">${r.role}</td>
@@ -679,282 +587,372 @@ function renderResources() {
     </tr>`).join('');
 }
 
-function showList() {
+function showResList() {
   document.getElementById('res-list-view').style.display = 'flex';
   document.getElementById('res-profile-view').style.display = 'none';
-  cancelEdit();
+  currentResourceId = null; resEditSnapshot = null;
   renderResources();
 }
 
-/* ═══════════════ PROFILE ════════════════ */
-function openProfile(id) {
+/* ═══════════════ RESOURCE PROFILE ══════ */
+function openResProfile(id) {
   currentResourceId = id;
   document.getElementById('res-list-view').style.display = 'none';
   document.getElementById('res-profile-view').style.display = 'flex';
-  renderProfile(false);
+  renderResProfile(false);
 }
 
-function renderProfile(editMode) {
-  const r = getRes(currentResourceId);
-  if (!r) return;
+function renderResProfile(editMode) {
+  const r = getRes(currentResourceId); if (!r) return;
+  document.getElementById('res-prof-name').textContent = r.name;
+  document.getElementById('res-prof-sub').textContent  = `${r.role} · ${r.company}`;
+  document.getElementById('res-prof-actions-view').style.display = editMode ? 'none' : 'flex';
+  document.getElementById('res-prof-actions-edit').style.display = editMode ? 'flex' : 'none';
+  document.getElementById('res-prof-footer-view').style.display  = editMode ? 'none' : 'block';
+  document.getElementById('res-prof-footer-edit').style.display  = editMode ? 'block' : 'none';
 
-  document.getElementById('prof-av').style.background = r.color;
-  document.getElementById('prof-av').textContent = r.initials;
-  document.getElementById('prof-name').textContent = r.name;
-  document.getElementById('prof-sub').textContent = `${r.role} · ${r.company}`;
+  const coOpts = companies.map(c=>`<option value="${c.id}" ${c.id===r.companyId?'selected':''}>${c.name}</option>`).join('');
+  const roleOpts = ROLES.map(ro=>`<option ${ro===r.role?'selected':''}>${ro}</option>`).join('');
 
-  document.getElementById('prof-actions-view').style.display = editMode ? 'none' : 'flex';
-  document.getElementById('prof-actions-edit').style.display = editMode ? 'flex' : 'none';
-  document.getElementById('prof-footer-view').style.display = editMode ? 'none' : 'block';
-  document.getElementById('prof-footer-edit').style.display = editMode ? 'block' : 'none';
-
-  const isPerson = r.type === 'Person';
-
-  if (!editMode) {
-    document.getElementById('prof-fields').innerHTML = `
-      <div class="field-row"><div class="field-label">Type</div><div class="field-value"><span class="badge badge-${isPerson?'person':'company'}">${r.type}</span></div></div>
-      ${isPerson ? `
-      <div class="field-row"><div class="field-label">Full Name *</div><div class="field-value">${r.name}</div></div>
-      <div class="field-row"><div class="field-label">Email *</div><div class="field-value">${r.email}</div></div>
-      <div class="field-row"><div class="field-label">Company *</div><div class="field-value">${r.company}</div></div>
-      <div class="field-row"><div class="field-label">Role *</div><div class="field-value">${r.role}</div></div>
-      ` : `
-      <div class="field-row"><div class="field-label">Company Name *</div><div class="field-value">${r.name}</div></div>
-      <div class="field-row"><div class="field-label">Role *</div><div class="field-value">${r.role}</div></div>
-      `}
-    `;
-  } else {
-    const roleOptions = ROLES.map(ro => `<option ${ro===r.role?'selected':''}>${ro}</option>`).join('');
-    document.getElementById('prof-fields').innerHTML = `
-      <div class="field-row"><div class="field-label">Type</div><div class="field-value"><span class="badge badge-${isPerson?'person':'company'}">${r.type}</span></div></div>
-      ${isPerson ? `
-      <div class="field-row"><div class="field-label">Full Name *</div><div class="field-value"><input class="field-input" id="edit-name" value="${r.name}"></div></div>
-      <div class="field-row"><div class="field-label">Email *</div><div class="field-value"><input class="field-input" id="edit-email" value="${r.email}"></div></div>
-      <div class="field-row"><div class="field-label">Company *</div><div class="field-value"><input class="field-input" id="edit-company" value="${r.company}"></div></div>
-      <div class="field-row"><div class="field-label">Role *</div><div class="field-value"><select class="field-select" id="edit-role"><option value="">Select role...</option>${roleOptions}</select></div></div>
-      ` : `
-      <div class="field-row"><div class="field-label">Company Name *</div><div class="field-value"><input class="field-input" id="edit-name" value="${r.name}"></div></div>
-      <div class="field-row"><div class="field-label">Role *</div><div class="field-value"><select class="field-select" id="edit-role"><option value="">Select role...</option>${roleOptions}</select></div></div>
-      `}
-    `;
-  }
+  document.getElementById('res-prof-fields').innerHTML = !editMode ? `
+    <div class="field-row"><div class="field-label">Full Name</div><div class="field-value">${r.name}</div></div>
+    <div class="field-row"><div class="field-label">Email</div><div class="field-value">${r.email}</div></div>
+    <div class="field-row"><div class="field-label">Company</div><div class="field-value">${r.company}</div></div>
+    <div class="field-row"><div class="field-label">Role</div><div class="field-value">${r.role}</div></div>
+  ` : `
+    <div class="field-row"><div class="field-label">Full Name *</div><div class="field-value"><input class="field-input" id="edit-res-name" value="${r.name}" maxlength="256"></div></div>
+    <div class="field-row"><div class="field-label">Email *</div><div class="field-value"><input class="field-input" id="edit-res-email" type="email" value="${r.email}" maxlength="256"></div></div>
+    <div class="field-row"><div class="field-label">Company *</div><div class="field-value"><select class="field-select" id="edit-res-company"><option value="">Select company...</option>${coOpts}</select></div></div>
+    <div class="field-row"><div class="field-label">Role *</div><div class="field-value"><select class="field-select" id="edit-res-role"><option value="">Select role...</option>${roleOpts}</select></div></div>
+  `;
 }
 
-function startEdit() {
-  const r = getRes(currentResourceId);
-  editSnapshot = { ...r };
-  renderProfile(true);
+function startResEdit() { resEditSnapshot = {...getRes(currentResourceId)}; renderResProfile(true); }
+
+function cancelResEdit() {
+  if (resEditSnapshot) { const i=resources.findIndex(r=>r.id===currentResourceId); if(i!==-1) resources[i]={...resEditSnapshot}; resEditSnapshot=null; }
+  renderResProfile(false);
 }
 
-function cancelEdit() {
-  if (editSnapshot && currentResourceId) {
-    // restore snapshot
-    const idx = resources.findIndex(r => r.id === currentResourceId);
-    if (idx !== -1) resources[idx] = { ...editSnapshot };
-    editSnapshot = null;
-  }
-  if (currentResourceId) renderProfile(false);
+function saveResEdit() {
+  const r = getRes(currentResourceId); if(!r) return;
+  const name  = document.getElementById('edit-res-name').value.trim();
+  const email = document.getElementById('edit-res-email').value.trim();
+  const coId  = parseInt(document.getElementById('edit-res-company').value);
+  const role  = document.getElementById('edit-res-role').value;
+  if (name)  { r.name=name; r.initials=initials(name); }
+  if (email) r.email=email;
+  if (coId)  { r.companyId=coId; const co=getCo(coId); if(co) r.company=co.name; }
+  if (role)  r.role=role;
+  resEditSnapshot=null;
+  renderResProfile(false);
 }
 
-function saveEdit() {
-  const r = getRes(currentResourceId);
-  if (!r) return;
-  const nameEl = document.getElementById('edit-name');
-  const emailEl = document.getElementById('edit-email');
-  const compEl = document.getElementById('edit-company');
-  const roleEl = document.getElementById('edit-role');
-  if (nameEl) { r.name = nameEl.value.trim() || r.name; }
-  if (emailEl) r.email = emailEl.value.trim() || r.email;
-  if (compEl) r.company = compEl.value.trim() || r.company;
-  if (roleEl && roleEl.value) r.role = roleEl.value;
-  // update initials from name
-  if (r.type === 'Person' && nameEl) {
-    const parts = r.name.split(' ');
-    r.initials = (parts[0][0] + (parts[1]?.[0] || '')).toUpperCase();
-  }
-  editSnapshot = null;
-  renderProfile(false);
+function openDeleteResModal() {
+  const r=getRes(currentResourceId);
+  document.getElementById('delete-res-msg').textContent=`Are you sure you want to delete "${r?.name}"? This action cannot be undone.`;
+  document.getElementById('modal-delete-resource').classList.add('open');
 }
 
-/* ═══════════════ DELETE ════════════════ */
-function openDeleteModal() {
-  const r = getRes(currentResourceId);
-  document.getElementById('delete-msg').textContent =
-    `Are you sure you want to delete "${r?.name}"? This action cannot be undone.`;
-  document.getElementById('modal-delete').classList.add('open');
+function confirmDeleteResource() {
+  resources=resources.filter(r=>r.id!==currentResourceId);
+  closeModal('modal-delete-resource');
+  currentResourceId=null; resEditSnapshot=null;
+  showResList();
 }
 
-function closeDeleteModal() {
-  document.getElementById('modal-delete').classList.remove('open');
+/* ═══════════════ ADD RESOURCE MODAL ════ */
+function openAddResourceModal() {
+  document.getElementById('add-res-name').value='';
+  document.getElementById('add-res-email').value='';
+  document.getElementById('add-res-role').value='';
+  const coSel = document.getElementById('add-res-company');
+  coSel.innerHTML = '<option value="">Select company...</option>' +
+    companies.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('modal-add-resource').classList.add('open');
 }
 
-function confirmDelete() {
-  resources = resources.filter(r => r.id !== currentResourceId);
-  closeDeleteModal();
-  currentResourceId = null;
-  editSnapshot = null;
-  showList();
+function saveNewResource() {
+  const name  = document.getElementById('add-res-name').value.trim();
+  const email = document.getElementById('add-res-email').value.trim();
+  const coId  = parseInt(document.getElementById('add-res-company').value);
+  const role  = document.getElementById('add-res-role').value;
+  if (!name||!email||!coId||!role) { alert('Please fill in all required fields.'); return; }
+  const co = getCo(coId);
+  resources.push({ id:nextResId++, name, email, companyId:coId, company:co?.name||'', role, initials:initials(name), color:randomColor() });
+  closeModal('modal-add-resource');
+  renderResources();
+  document.getElementById('res-count').textContent=`${resources.length} resources`;
 }
 
-/* ═══════════════ ADD MODAL ═════════════ */
-function openAddModal() {
-  const sel = document.getElementById('modal-type-sel');
-  if (sel) sel.value = '';
-  document.getElementById('fields-person').style.display = 'none';
-  document.getElementById('fields-company').style.display = 'none';
-  document.getElementById('modal-add').classList.add('open');
+/* ═══════════════ COMPANIES LIST ════════ */
+function renderCompanies() {
+  document.getElementById('co-count').textContent = `${companies.length} companies`;
+  document.getElementById('co-tbody').innerHTML = companies.map(c => `
+    <tr onclick="openCoProfile(${c.id})">
+      <td><span style="font-weight:500;color:#111827;">${c.name}</span></td>
+      <td style="color:#6B7280;">${c.industry}</td>
+      <td><span class="row-action">View →</span></td>
+    </tr>`).join('');
 }
-function closeAddModal() { document.getElementById('modal-add').classList.remove('open'); }
-function selectType(t) {
-  document.getElementById('fields-person').style.display = t==='Person' ? 'block' : 'none';
-  document.getElementById('fields-company').style.display = t==='Company' ? 'block' : 'none';
+
+function showCoList() {
+  document.getElementById('co-list-view').style.display='flex';
+  document.getElementById('co-profile-view').style.display='none';
+  currentCompanyId=null; coEditSnapshot=null;
+  renderCompanies();
 }
-document.getElementById('modal-add').addEventListener('click', e => { if(e.target===document.getElementById('modal-add')) closeAddModal(); });
-document.getElementById('modal-delete').addEventListener('click', e => { if(e.target===document.getElementById('modal-delete')) closeDeleteModal(); });
+
+/* ═══════════════ COMPANY PROFILE ════════ */
+function openCoProfile(id) {
+  currentCompanyId=id;
+  document.getElementById('co-list-view').style.display='none';
+  document.getElementById('co-profile-view').style.display='flex';
+  renderCoProfile(false);
+}
+
+function renderCoProfile(editMode) {
+  const c=getCo(currentCompanyId); if(!c) return;
+  document.getElementById('co-prof-name').textContent=c.name;
+  document.getElementById('co-prof-sub').textContent=c.industry;
+  document.getElementById('co-prof-actions-view').style.display=editMode?'none':'flex';
+  document.getElementById('co-prof-actions-edit').style.display=editMode?'flex':'none';
+  document.getElementById('co-prof-footer-view').style.display=editMode?'none':'block';
+  document.getElementById('co-prof-footer-edit').style.display=editMode?'block':'none';
+
+  const indOpts=INDUSTRIES.map(i=>`<option ${i===c.industry?'selected':''}>${i}</option>`).join('');
+
+  document.getElementById('co-prof-fields').innerHTML = !editMode ? `
+    <div class="field-row"><div class="field-label">Company Name</div><div class="field-value">${c.name}</div></div>
+    <div class="field-row"><div class="field-label">Industry</div><div class="field-value">${c.industry}</div></div>
+  ` : `
+    <div class="field-row"><div class="field-label">Company Name *</div><div class="field-value"><input class="field-input" id="edit-co-name" value="${c.name}" maxlength="256"></div></div>
+    <div class="field-row"><div class="field-label">Industry *</div><div class="field-value"><select class="field-select" id="edit-co-industry"><option value="">Select industry...</option>${indOpts}</select></div></div>
+  `;
+}
+
+function startCoEdit() { coEditSnapshot={...getCo(currentCompanyId)}; renderCoProfile(true); }
+
+function cancelCoEdit() {
+  if(coEditSnapshot){const i=companies.findIndex(c=>c.id===currentCompanyId);if(i!==-1)companies[i]={...coEditSnapshot};coEditSnapshot=null;}
+  renderCoProfile(false);
+}
+
+function saveCoEdit() {
+  const c=getCo(currentCompanyId);if(!c)return;
+  const name=document.getElementById('edit-co-name').value.trim();
+  const ind=document.getElementById('edit-co-industry').value;
+  if(name)c.name=name;
+  if(ind)c.industry=ind;
+  // update company name in resources
+  resources.forEach(r=>{ if(r.companyId===currentCompanyId) r.company=c.name; });
+  coEditSnapshot=null;
+  renderCoProfile(false);
+}
+
+function openAddCompanyModal() {
+  document.getElementById('add-co-name').value='';
+  document.getElementById('add-co-industry').value='';
+  document.getElementById('modal-add-company').classList.add('open');
+}
+
+function saveNewCompany() {
+  const name=document.getElementById('add-co-name').value.trim();
+  const ind=document.getElementById('add-co-industry').value;
+  if(!name||!ind){alert('Please fill in all required fields.');return;}
+  companies.push({id:nextCoId++,name,industry:ind});
+  closeModal('modal-add-company');
+  renderCompanies();
+}
+
+function openDeleteCoModal() {
+  const c=getCo(currentCompanyId);
+  document.getElementById('delete-co-msg').textContent=`Are you sure you want to delete "${c?.name}"? This action cannot be undone.`;
+  document.getElementById('modal-delete-company').classList.add('open');
+}
+
+function confirmDeleteCompany() {
+  companies=companies.filter(c=>c.id!==currentCompanyId);
+  closeModal('modal-delete-company');
+  currentCompanyId=null;coEditSnapshot=null;
+  showCoList();
+}
+
+/* ═══════════════ SCALE ══════════════════ */
+function setScale(s) {
+  currentScale=s;
+  ['M','W','D'].forEach(x=>document.getElementById('scale-'+x).classList.toggle('active',x===s));
+  renderProjectsSchedule(document.getElementById('project-select').value);
+}
+
+function getColumns() {
+  if (currentScale==='M') return MONTHS.map((m,i)=>({label:m,idx:i,total:12}));
+  if (currentScale==='W') { const c=[];for(let w=1;w<=26;w++)c.push({label:'W'+w,idx:w-1,total:26});return c; }
+  const c=[];for(let d=1;d<=31;d++)c.push({label:d+'',idx:d-1,total:31});return c;
+}
+
+function barPos(sM, eM) {
+  const total=getColumns().length;
+  let s,e;
+  if(currentScale==='M'){s=sM;e=eM;}
+  else if(currentScale==='W'){s=Math.round(sM*4.33);e=Math.min(Math.round((eM+1)*4.33)-1,25);}
+  else{s=Math.round(sM*2.58);e=Math.min(Math.round((eM+1)*2.58)-1,30);}
+  s=Math.max(0,Math.min(s,total-1));e=Math.max(s,Math.min(e,total-1));
+  return `left:${(s/total*100).toFixed(2)}%;width:${((e-s+1)/total*100).toFixed(2)}%;`;
+}
+
+function tlInner(h, barHtml) {
+  const cols=getColumns();
+  return `<div class="tl-inner" style="height:${h}px;">
+    <div class="tl-grid">${cols.map(()=>'<div class="tl-month"></div>').join('')}</div>
+    ${barHtml}
+  </div>`;
+}
 
 /* ═══════════════ PROJECTS SCHEDULE ═════ */
-function renderProjectsSchedule(projectId) {
-  const phases = schedule[projectId] || [];
-  const cols = getColumns();
-  const colCount = cols.length;
-  const colW = currentScale==='M' ? 60 : currentScale==='W' ? 28 : 22;
+function switchView(view) {
+  document.getElementById('view-projects').style.display=view==='projects'?'flex':'none';
+  document.getElementById('view-people').style.display=view==='people'?'flex':'none';
+  document.getElementById('btn-proj').classList.toggle('active',view==='projects');
+  document.getElementById('btn-people').classList.toggle('active',view==='people');
+  if(view==='projects') renderProjectsSchedule(document.getElementById('project-select').value);
+  if(view==='people')   renderPeopleSchedule();
+}
 
-  document.getElementById('sched-thead').innerHTML = `<tr>
+function renderProjectsSchedule(projectId) {
+  const phases=schedule[projectId]||[];
+  const cols=getColumns();
+  const colW=currentScale==='M'?60:currentScale==='W'?28:22;
+
+  document.getElementById('sched-thead').innerHTML=`<tr>
     <th class="th-info sticky1" style="width:200px;">Task Name</th>
     <th class="th-info sticky2" style="width:140px;left:200px;">Assigned To</th>
-    <th class="th-info sticky3" style="width:130px;left:340px;">Allocation</th>
+    <th class="th-info sticky3" style="width:120px;left:340px;">Status</th>
     ${cols.map(c=>`<th class="th-month" style="width:${colW}px;min-width:unset;">${c.label}</th>`).join('')}
   </tr>`;
 
-  let rows = '';
+  let rows='';
   phases.forEach(phase => {
-    const isOpen = expanded[phase.id] !== false;
-    const cov = calcCoverage(phase);
-    const pbar = `<div class="tl-bar bar-phase-bg" style="${barPos(phase.startMonth,phase.endMonth)}"></div>`;
-    rows += `<tr class="phase-tr" onclick="togglePhase('${phase.id}','${projectId}')">
+    const isOpen=expanded[phase.id]!==false;
+    const cov=calcCoverage(phase);
+    const pbar=`<div class="tl-bar bar-phase-bg" style="${barPos(phase.startMonth,phase.endMonth)}"></div>`;
+    rows+=`<tr class="phase-tr" onclick="togglePhase('${phase.id}','${projectId}')">
       <td class="phase-td-info sticky1" style="width:200px;">
         <div class="phase-name-wrap">
-          <span class="expand-icon" id="ei-${phase.id}">${isOpen?'▼':'▶'}</span>
+          <span class="expand-icon">${isOpen?'▼':'▶'}</span>
           <span class="phase-name">${phase.name}</span>
           ${covBadge(cov)}
         </div>
       </td>
       <td class="phase-td-info sticky2" style="width:140px;left:200px;"></td>
-      <td class="phase-td-info sticky3" style="width:130px;left:340px;"></td>
-      <td colspan="${colCount}" class="phase-timeline-cell">${tlInner(28,pbar)}</td>
+      <td class="phase-td-info sticky3" style="width:120px;left:340px;"></td>
+      <td colspan="${cols.length}" class="phase-timeline-cell">${tlInner(28,pbar)}</td>
     </tr>`;
 
     phase.tasks.forEach(task => {
-      const cls = barColorClass(task);
-      const lbl = !task.assigned.length ? 'Unassigned' : task.assigned.map(id=>getRes(id)?.initials||'').join(', ');
-      const names = task.assigned.map(id=>getRes(id)?.name||'').filter(Boolean).join(', ') || 'No one assigned';
-      const allocInfo = currentModel==='B' && task.assigned.length
-        ? `Allocation: ${Math.round(100/task.assigned.length)}% · ${Math.round(task.dur*8/task.assigned.length)}h each`
-        : currentModel==='A' && task.assigned.length
-        ? `Hours: ${task.assigned.map(id=>`${getRes(id)?.initials} ${task.manualHours[id]||0}h`).join(', ')}`
-        : 'Assigned';
-      const tip = `📋 ${task.name}|Assigned: ${names}|${allocInfo}|${MONTHS[task.startMonth]} – ${MONTHS[task.endMonth]} 2026`;
-      const bar = `<div class="tl-bar ${cls}" style="${barPos(task.startMonth,task.endMonth)}top:5px;height:18px;"
+      const isAssigned=task.assigned.length>0;
+      const cls=isAssigned?'bar-task-full':'bar-task-unassigned';
+      const lbl=isAssigned?task.assigned.map(id=>getRes(id)?.initials||'').join(', '):'Unassigned';
+      const names=task.assigned.map(id=>getRes(id)?.name||'').filter(Boolean).join(', ')||'No one assigned';
+      const tip=`📋 ${task.name}|Assigned: ${names}|${MONTHS[task.startMonth]} – ${MONTHS[task.endMonth]} 2026`;
+      const bar=`<div class="tl-bar ${cls}" style="${barPos(task.startMonth,task.endMonth)}top:5px;height:18px;"
         onmouseenter="showTip(event,'${tip.replace(/'/g,"&#39;")}')" onmouseleave="hideTip()">${lbl}</div>`;
+      const statusBadge=isAssigned
+        ?`<span class="badge badge-full">Assigned</span>`
+        :`<span class="badge badge-none">Unassigned</span>`;
 
-      rows += `<tr class="task-tr" id="trow-${task.id}" style="${isOpen?'':'display:none'}">
+      rows+=`<tr class="task-tr" style="${isOpen?'':'display:none'}">
         <td class="task-name-td td-sticky sticky1" style="width:200px;"><span class="task-name">${task.name}</span></td>
-        <td class="td-assigned td-sticky sticky2" style="width:140px;left:200px;">${avHtml(task.assigned,'av-sm')}</td>
-        <td class="td-alloc td-sticky sticky3" style="width:130px;left:340px;">${allocDisplay(task)}</td>
-        <td colspan="${colCount}" class="td-timeline">${tlInner(28,bar)}</td>
+        <td class="td-assigned td-sticky" style="position:sticky;left:200px;z-index:2;background:#fff;width:140px;">${avHtml(task.assigned,'av-sm')}</td>
+        <td class="td-status td-sticky" style="position:sticky;left:340px;z-index:2;background:#fff;width:120px;">${statusBadge}</td>
+        <td colspan="${cols.length}" class="td-timeline">${tlInner(28,bar)}</td>
       </tr>`;
     });
   });
-  document.getElementById('sched-tbody').innerHTML = rows;
+  document.getElementById('sched-tbody').innerHTML=rows;
 }
 
 function togglePhase(phaseId, projectId) {
-  expanded[phaseId] = expanded[phaseId] === false ? true : false;
-  renderProjectsSchedule(projectId || document.getElementById('project-select').value);
+  expanded[phaseId]=expanded[phaseId]===false?true:false;
+  renderProjectsSchedule(projectId||document.getElementById('project-select').value);
 }
-
 
 /* ═══════════════ PEOPLE SCHEDULE ═══════ */
 function getPersonAssignments(personId) {
-  const result = [];
-  for (const [projectId, phases] of Object.entries(schedule)) {
-    for (const phase of phases) {
-      const tasks = phase.tasks.filter(t => t.assigned.includes(personId));
-      if (!tasks.length) continue;
-      result.push({
-        projectId, phaseName: phase.name,
-        startMonth: Math.min(...tasks.map(t=>t.startMonth)),
-        endMonth:   Math.max(...tasks.map(t=>t.endMonth)),
-      });
+  const result=[];
+  for(const [projectId,phases] of Object.entries(schedule)){
+    for(const phase of phases){
+      const tasks=phase.tasks.filter(t=>t.assigned.includes(personId));
+      if(!tasks.length) continue;
+      result.push({ projectId, phaseName:phase.name,
+        startMonth:Math.min(...tasks.map(t=>t.startMonth)),
+        endMonth:Math.max(...tasks.map(t=>t.endMonth)) });
     }
   }
   return result;
 }
 
 function overallocMonths(assignments) {
-  return Array.from({length:12},(_,m)=>m).filter(m =>
-    assignments.filter(a=>a.startMonth<=m&&a.endMonth>=m).length >= 2
-  );
+  return Array.from({length:12},(_,m)=>m).filter(m=>assignments.filter(a=>a.startMonth<=m&&a.endMonth>=m).length>=2);
 }
 
 function assignLanes(assignments) {
-  const sorted = [...assignments].sort((a,b)=>a.startMonth-b.startMonth);
-  const laneEnd = [];
-  return sorted.map(a => {
-    let lane = laneEnd.findIndex(e => e < a.startMonth);
-    if (lane===-1) lane = laneEnd.length;
-    laneEnd[lane] = a.endMonth;
-    return { ...a, lane };
+  const sorted=[...assignments].sort((a,b)=>a.startMonth-b.startMonth);
+  const laneEnd=[];
+  return sorted.map(a=>{
+    let lane=laneEnd.findIndex(e=>e<a.startMonth);
+    if(lane===-1) lane=laneEnd.length;
+    laneEnd[lane]=a.endMonth;
+    return{...a,lane};
   });
 }
 
-function renderPeopleSchedule(filter) {
-  const list = filter==='all' ? resources : resources.filter(r=>r.type===filter);
-  document.getElementById('people-thead').innerHTML = `<tr>
+function renderPeopleSchedule() {
+  document.getElementById('people-thead').innerHTML=`<tr>
     <th class="th-info sticky1" style="width:200px;">Resource</th>
-    <th class="th-info sticky2" style="width:130px;left:200px;">Role</th>
-    <th class="th-info sticky3" style="width:130px;left:330px;">Company</th>
+    <th class="th-info" style="position:sticky;left:200px;z-index:4;background:#F9FAFB;width:130px;">Role</th>
+    <th class="th-info" style="position:sticky;left:330px;z-index:4;background:#F9FAFB;width:130px;">Company</th>
     ${MONTHS.map(m=>`<th class="th-month">${m}</th>`).join('')}
   </tr>`;
 
-  document.getElementById('people-tbody').innerHTML = list.map(r => {
-    const assignments = getPersonAssignments(r.id);
-    const overMonths  = overallocMonths(assignments);
-    const withLanes   = assignLanes(assignments);
-    const maxLane     = withLanes.reduce((m,a)=>Math.max(m,a.lane),0);
-    const rowH        = maxLane >= 1 ? 50 : 34;
-
-    // gaps
-    let gaps=[], gStart=null;
-    for (let m=0;m<12;m++) {
-      const covered = assignments.some(a=>a.startMonth<=m&&a.endMonth>=m);
-      if (!covered) { if(gStart===null) gStart=m; }
-      else { if(gStart!==null){ gaps.push({s:gStart,e:m-1}); gStart=null; } }
-    }
-    if (gStart!==null) gaps.push({s:gStart,e:11});
+  document.getElementById('people-tbody').innerHTML=resources.map(r=>{
+    const assignments=getPersonAssignments(r.id);
+    const overMonths=overallocMonths(assignments);
+    const withLanes=assignLanes(assignments);
+    const maxLane=withLanes.reduce((m,a)=>Math.max(m,a.lane),0);
+    const rowH=maxLane>=1?50:34;
 
     let bars='';
-    gaps.forEach(g => {
-      const l=(g.s/12*100).toFixed(1), w=((g.e-g.s+1)/12*100).toFixed(1);
+    // available gaps
+    let gaps=[],gStart=null;
+    for(let m=0;m<12;m++){
+      const covered=assignments.some(a=>a.startMonth<=m&&a.endMonth>=m);
+      if(!covered){if(gStart===null)gStart=m;}
+      else{if(gStart!==null){gaps.push({s:gStart,e:m-1});gStart=null;}}
+    }
+    if(gStart!==null) gaps.push({s:gStart,e:11});
+    gaps.forEach(g=>{
+      const l=(g.s/12*100).toFixed(1),w=((g.e-g.s+1)/12*100).toFixed(1);
       bars+=`<div class="tl-bar bar-available" style="left:${l}%;width:${w}%;top:10px;height:14px;">Available</div>`;
     });
-    withLanes.forEach(a => {
-      const top  = a.lane===0 ? 6 : 28;
-      const col  = projectColors[a.projectId];
-      const l    = (a.startMonth/12*100).toFixed(1);
-      const w    = ((a.endMonth-a.startMonth+1)/12*100).toFixed(1);
-      const tip  = `🏗 ${a.projectId}|Phase: ${a.phaseName}|${MONTHS[a.startMonth]} – ${MONTHS[a.endMonth]} 2026`;
+
+    withLanes.forEach(a=>{
+      const top=a.lane===0?6:28;
+      const col=PROJ_COLORS[a.projectId]||'#6B7280';
+      const l=(a.startMonth/12*100).toFixed(1);
+      const w=((a.endMonth-a.startMonth+1)/12*100).toFixed(1);
+      const tip=`🏗 ${a.projectId}|Phase: ${a.phaseName}|${MONTHS[a.startMonth]} – ${MONTHS[a.endMonth]} 2026`;
       bars+=`<div class="tl-bar" style="left:${l}%;width:${w}%;top:${top}px;height:16px;background:${col};"
         onmouseenter="showTip(event,'${tip.replace(/'/g,"&#39;")}')" onmouseleave="hideTip()">${a.projectId} · ${a.phaseName}</div>`;
     });
-    if (overMonths.length) {
-      const f=Math.min(...overMonths), la=Math.max(...overMonths);
-      const l=(f/12*100).toFixed(1), w=((la-f+1)/12*100).toFixed(1);
+
+    if(overMonths.length){
+      const f=Math.min(...overMonths),la=Math.max(...overMonths);
+      const l=(f/12*100).toFixed(1),w=((la-f+1)/12*100).toFixed(1);
       bars+=`<div style="position:absolute;left:${l}%;width:${w}%;top:0;bottom:0;background:rgba(220,38,38,.06);border-top:2px solid rgba(220,38,38,.35);pointer-events:none;z-index:2;"></div>`;
     }
 
-    const overBadge = overMonths.length
-      ? `<span class="badge badge-overalloc" title="Multiple assignments in: ${overMonths.map(m=>MONTHS[m]).join(', ')}">⚠ Overallocated</span>` : '';
+    const overBadge=overMonths.length?`<span class="badge badge-overalloc">⚠ Overallocated</span>`:'';
 
     return `<tr>
       <td style="position:sticky;left:0;z-index:2;background:#fff;width:200px;padding:0 12px;height:${rowH}px;">
@@ -968,32 +966,38 @@ function renderPeopleSchedule(filter) {
       </td>
       <td style="position:sticky;left:200px;z-index:2;background:#fff;width:130px;padding:0 12px;font-size:11px;color:#6B7280;">${r.role}</td>
       <td style="position:sticky;left:330px;z-index:2;background:#fff;width:130px;padding:0 12px;font-size:11px;color:#6B7280;">${r.company}</td>
-      <td colspan="12" style="padding:0;border-bottom:1px solid #E5E7EB;">${tlInner(rowH,bars)}</td>
+      <td colspan="12" style="padding:0;border-bottom:1px solid #E5E7EB;">
+        <div class="tl-inner" style="height:${rowH}px;">
+          <div class="tl-grid">${MONTHS.map(()=>'<div class="tl-month"></div>').join('')}</div>
+          ${bars}
+        </div>
+      </td>
     </tr>`;
   }).join('');
 }
 
 /* ═══════════════ TOOLTIP ═══════════════ */
-function showTip(e, raw) {
-  const parts = raw.replace(/&#39;/g,"'").split('|');
-  const t = document.getElementById('tooltip');
-  t.innerHTML = `<strong>${parts[0]}</strong>${parts.slice(1).join('<br>')}`;
-  t.classList.add('show');
-  moveTip(e);
+function showTip(e,raw) {
+  const parts=raw.replace(/&#39;/g,"'").split('|');
+  const t=document.getElementById('tooltip');
+  t.innerHTML=`<strong>${parts[0]}</strong>${parts.slice(1).join('<br>')}`;
+  t.classList.add('show'); moveTip(e);
 }
 function moveTip(e) {
-  const t = document.getElementById('tooltip');
-  t.style.left = Math.min(e.clientX+14, window.innerWidth-260)+'px';
-  t.style.top  = Math.max(e.clientY-10, 4)+'px';
+  const t=document.getElementById('tooltip');
+  t.style.left=Math.min(e.clientX+14,window.innerWidth-260)+'px';
+  t.style.top=Math.max(e.clientY-10,4)+'px';
 }
 function hideTip() { document.getElementById('tooltip').classList.remove('show'); }
-document.addEventListener('mousemove', e => {
-  if (document.getElementById('tooltip').classList.contains('show')) moveTip(e);
+document.addEventListener('mousemove',e=>{ if(document.getElementById('tooltip').classList.contains('show')) moveTip(e); });
+
+/* close modals on overlay click */
+['modal-add-resource','modal-add-company','modal-delete-resource','modal-delete-company'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{ if(e.target===document.getElementById(id)) closeModal(id); });
 });
 
 /* ═══════════════ INIT ══════════════════ */
-renderResources();
-goTo('schedule');
+goTo('resources');
 </script>
 </body>
 </html>
