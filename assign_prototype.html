@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assign to – Prototype</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f2f2f2;font-size:13px}
+.topbar{background:#000;color:#fff;padding:0 20px;height:46px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:15px;font-weight:700}
+.brand span{color:#999;font-weight:400;font-size:13px;margin-left:10px;border-left:1px solid #333;padding-left:10px}
+.main{padding:28px 32px;max-width:860px;margin:0 auto}
+.section-label{font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+.card{background:#fff;border:1px solid #e0e0e0;border-radius:4px;overflow:hidden;margin-bottom:24px}
+.card-header{padding:13px 18px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:13.5px;font-weight:600;color:#111}
+.card-subtitle{font-size:11.5px;color:#999;margin-top:1px}
+
+/* Table-like task rows */
+.task-header{display:grid;grid-template-columns:36px 1fr 240px 120px;padding:7px 18px;background:#f7f7f7;border-bottom:1px solid #eee;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.4px}
+.task-row{display:grid;grid-template-columns:36px 1fr 240px 120px;align-items:center;padding:10px 18px;border-bottom:1px solid #f5f5f5;transition:background .1s}
+.task-row:last-child{border-bottom:none}
+.task-row:hover{background:#fafcff}
+.task-num{font-size:11.5px;color:#ccc;font-weight:600}
+.task-name{font-size:13px;color:#222;font-weight:500}
+.assigned-cell{display:flex;align-items:flex-start;gap:5px;flex-wrap:wrap}
+
+/* Avatar with hover remove */
+.av-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;position:relative}
+.av{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#fff;flex-shrink:0;transition:opacity .1s}
+.av.person{border-radius:7px}
+.av.company{border-radius:2px}
+.av-wrap:hover .av{opacity:.8}
+.av-remove{position:absolute;top:-5px;right:-5px;width:15px;height:15px;border-radius:50%;background:#c62828;color:#fff;border:none;font-size:11px;line-height:1;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0;z-index:10}
+.av-wrap:hover .av-remove{display:flex}
+
+/* Add button */
+.av-add-btn{width:30px;height:30px;border-radius:5px;background:#f0f0f0;border:1.5px dashed #ccc;color:#aaa;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .1s;padding:0}
+.av-add-btn:hover{background:#e6eeff;border-color:#0076CE;color:#0076CE}
+
+/* Assign dropdown */
+.assign-popup{position:fixed;background:#fff;border:1px solid #ddd;border-radius:6px;box-shadow:0 6px 28px rgba(0,0,0,.15);width:304px;z-index:500;display:none;overflow:hidden}
+.assign-search-wrap{position:relative;border-bottom:1px solid #eee}
+.assign-search-inp{width:100%;padding:10px 32px 10px 12px;border:none;font-size:12.5px;font-family:inherit;outline:none;color:#222;display:block}
+.assign-search-inp::placeholder{color:#bbb}
+.assign-clear-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#bbb;font-size:18px;padding:0;line-height:1}
+.assign-clear-btn:hover{color:#555}
+.assign-hint{padding:7px 12px 5px;font-size:10.5px;color:#c0c0c0;font-style:italic;border-bottom:1px solid #f5f5f5}
+.assign-section-hd{padding:6px 12px 3px;font-size:10px;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:.5px;background:#fafafa;border-bottom:1px solid #f0f0f0}
+.assign-separator{height:1px;background:#f0f0f0}
+.assign-list{max-height:268px;overflow-y:auto}
+.assign-item{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;transition:background .1s}
+.assign-item:hover{background:#f4f7ff}
+.assign-item.is-selected{background:#EEF5FF}
+.aitem-av{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#fff;flex-shrink:0}
+.aitem-av.person{border-radius:6px}
+.aitem-av.company{border-radius:2px}
+.aitem-meta{flex:1;min-width:0}
+.aitem-name{font-size:12.5px;font-weight:500;color:#111;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.aitem-role{font-size:10.5px;color:#aaa;margin-top:1px}
+.aitem-check{color:#0076CE;font-size:13px;flex-shrink:0}
+.entity-badge{display:inline-flex;align-items:center;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;flex-shrink:0}
+.entity-badge.person{background:#E3F0FC;color:#0055A5}
+.entity-badge.company{background:#FFF3E0;color:#E65100}
+.assign-empty{padding:16px 12px;font-size:12px;color:#ccc;text-align:center}
+
+/* Allocation modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:600;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:#fff;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.2);width:360px;overflow:hidden}
+.modal-hd{padding:16px 20px;border-bottom:1px solid #eee;display:flex;align-items:flex-start;justify-content:space-between}
+.modal-ttl{font-size:14px;font-weight:600;color:#111}
+.modal-sub{font-size:12px;color:#888;margin-top:2px}
+.modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:#bbb;padding:0;line-height:1;margin-top:2px}
+.modal-x:hover{color:#555}
+.modal-bd{padding:22px 20px 16px}
+.modal-ft{padding:12px 20px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:8px}
+
+/* Allocation modes */
+.alloc-section-label{font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.alloc-mode-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f0f0f0}
+.alloc-mode-row:last-child{border-bottom:none}
+.alloc-radio{width:16px;height:16px;accent-color:#0076CE;cursor:pointer;flex-shrink:0}
+.alloc-mode-label{font-size:13px;color:#333;width:130px;cursor:pointer;flex-shrink:0}
+.alloc-inp-wrap{display:flex;align-items:center;gap:7px;margin-left:auto}
+.alloc-inp{width:82px;padding:7px 10px;border:1.5px solid #ccc;border-radius:4px;font-size:14px;font-weight:600;font-family:inherit;text-align:right;color:#111;transition:border-color .1s}
+.alloc-inp:focus{outline:none;border-color:#0076CE}
+.alloc-inp:disabled{background:#f7f7f7;color:#bbb;border-color:#e8e8e8;cursor:default}
+.alloc-unit{font-size:12.5px;color:#aaa;width:28px;flex-shrink:0}
+.alloc-hint{font-size:11px;color:#c0c0c0;margin-top:12px;line-height:1.5;font-style:italic}
+.overalloc-warn{display:flex;align-items:flex-start;gap:8px;background:#FFF8E1;border:1px solid #FFCC80;border-radius:4px;padding:10px 12px;margin-top:12px;font-size:11.5px;color:#6D4C00;line-height:1.5}
+
+.btn{padding:7px 18px;font-size:12.5px;cursor:pointer;border-radius:3px;border:none;font-family:inherit;font-weight:500}
+.btn-primary{background:#0076CE;color:#fff}
+.btn-primary:hover{background:#0065b3}
+.btn-secondary{background:#fff;color:#333;border:1px solid #ccc}
+.btn-secondary:hover{background:#f5f5f5}
+
+.alloc-col{font-size:13px;font-weight:600;color:#333}
+.alloc-col-empty{color:#ccc;font-weight:400}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Deloitte. <span>Real Estate Insights</span></div>
+</div>
+
+<div class="main">
+
+  <div class="section-label">Scheduling — Assigned To</div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">SNY00142 – 11 Corporate Woods, GPS Project Office</div>
+        <div class="card-subtitle">Strategy &amp; Planning phase</div>
+      </div>
+    </div>
+
+    <div class="task-header">
+      <div>#</div><div>Task Name</div><div>Assigned To</div><div>Allocation %</div>
+    </div>
+
+    <div class="task-row">
+      <div class="task-num">1</div>
+      <div class="task-name">Site Assessment</div>
+      <div class="assigned-cell" id="assigned-1"></div>
+      <div class="alloc-col" id="alloc-col-1"></div>
+    </div>
+
+    <div class="task-row">
+      <div class="task-num">2</div>
+      <div class="task-name">Concept Design</div>
+      <div class="assigned-cell" id="assigned-2"></div>
+      <div class="alloc-col" id="alloc-col-2"></div>
+    </div>
+
+    <div class="task-row">
+      <div class="task-num">3</div>
+      <div class="task-name">Design Development</div>
+      <div class="assigned-cell" id="assigned-3"></div>
+      <div class="alloc-col" id="alloc-col-3"></div>
+    </div>
+
+    <div class="task-row">
+      <div class="task-num">4</div>
+      <div class="task-name">Permit Review</div>
+      <div class="assigned-cell" id="assigned-4"></div>
+      <div class="alloc-col" id="alloc-col-4"></div>
+    </div>
+  </div>
+
+
+
+</div>
+
+<!-- ASSIGN DROPDOWN -->
+<div id="assign-popup" class="assign-popup">
+  <div class="assign-search-wrap">
+    <input type="text" id="assign-search" class="assign-search-inp" placeholder="Search by name" autocomplete="off">
+    <button class="assign-clear-btn hidden" id="assign-clear" onclick="clearSearch()">&#215;</button>
+  </div>
+  <div id="assign-hint" class="assign-hint">Type 3 or more characters to search</div>
+  <div class="assign-list" id="assign-list"></div>
+</div>
+
+<!-- ALLOCATION MODAL -->
+<div id="alloc-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-ttl" id="alloc-title">Set allocation</div>
+        <div class="modal-sub" id="alloc-sub"></div>
+      </div>
+      <button class="modal-x" onclick="closeAllocModal()">&#10005;</button>
+    </div>
+    <div class="modal-bd">
+      <div class="alloc-section-label">Set allocation for this assignment</div>
+
+      <div class="alloc-mode-row">
+        <input type="radio" class="alloc-radio" name="alloc-mode" id="mode-pct" value="pct" checked onchange="switchMode('pct')">
+        <label class="alloc-mode-label" for="mode-pct">Percentage</label>
+        <div class="alloc-inp-wrap">
+          <input type="number" id="inp-pct" class="alloc-inp" min="1" max="100" value="100" oninput="onPctChange(this.value)">
+          <div class="alloc-unit">%</div>
+        </div>
+      </div>
+
+      <div class="alloc-mode-row">
+        <input type="radio" class="alloc-radio" name="alloc-mode" id="mode-hpd" value="hpd" onchange="switchMode('hpd')">
+        <label class="alloc-mode-label" for="mode-hpd">Hours per day</label>
+        <div class="alloc-inp-wrap">
+          <input type="number" id="inp-hpd" class="alloc-inp" min="0.5" max="8" step="0.5" value="8" disabled oninput="onHpdChange(this.value)">
+          <div class="alloc-unit">h/d</div>
+        </div>
+      </div>
+
+      <div class="alloc-mode-row">
+        <input type="radio" class="alloc-radio" name="alloc-mode" id="mode-total" value="total" onchange="switchMode('total')">
+        <label class="alloc-mode-label" for="mode-total">Total</label>
+        <div class="alloc-inp-wrap">
+          <input type="number" id="inp-total" class="alloc-inp" min="1" value="160" disabled oninput="onTotalChange(this.value)">
+          <div class="alloc-unit">hours</div>
+        </div>
+      </div>
+
+      <div class="alloc-hint">Changing one value recalculates the others automatically.<br>Working day = 8 hours.</div>
+      <div id="alloc-warn" class="overalloc-warn hidden">
+        <span>⚠️</span>
+        <div id="alloc-warn-text"></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-secondary" onclick="closeAllocModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAlloc()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── DATA ── */
+var entities = [
+  {id:1,  name:'Chris Wade',       initials:'CW', color:'#0D9488', type:'person',  role:'Transaction Manager'},
+  {id:2,  name:'Daniel Reyes',     initials:'DR', color:'#EF4444', type:'person',  role:'Strategy Lead'},
+  {id:3,  name:'Emma Torres',      initials:'ET', color:'#7C3AED', type:'person',  role:'EPM'},
+  {id:4,  name:'Laura Bennett',    initials:'LB', color:'#0076CE', type:'person',  role:'Portfolio Leader'},
+  {id:5,  name:'Ryan Kowalski',    initials:'RK', color:'#16A34A', type:'person',  role:'Architect'},
+  {id:6,  name:'Sophie Marsh',     initials:'SM', color:'#6D28D9', type:'person',  role:'Workplace Exp. Designer'},
+  {id:7,  name:'Apex FFE',         initials:'AF', color:'#D97706', type:'company', role:'FFE'},
+  {id:8,  name:'BuildCo Group',    initials:'BG', color:'#B45309', type:'company', role:'GC'},
+  {id:9,  name:'Stratford Design', initials:'SD', color:'#EA580C', type:'company', role:'Architecture Firm'},
+  {id:10, name:'Vantara Partners', initials:'VP', color:'#92400E', type:'company', role:'PM'},
+];
+
+/* taskState: { taskId: { entityId: { type, alloc } } } */
+var taskState = {
+  1: { 4:{type:'person',alloc:100}, 9:{type:'company',alloc:75} },
+  2: { 5:{type:'person',alloc:75} },
+  3: {},
+  4: {},
+};
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded', function() {
+  [1,2,3,4].forEach(renderAvatars);
+  [1,2,3,4].forEach(renderAllocCol);
+});
+
+/* ── ASSIGN POPUP ── */
+var currentTaskId = null;
+var debounceTimer = null;
+
+function openAssign(btn, taskId) {
+  currentTaskId = taskId;
+  var popup = document.getElementById('assign-popup');
+  var rect = btn.getBoundingClientRect();
+  var left = Math.min(rect.left, window.innerWidth - 314);
+  var top = rect.bottom + 6;
+  if (top + 340 > window.innerHeight) top = rect.top - 340;
+  popup.style.top = top + 'px';
+  popup.style.left = left + 'px';
+  popup.style.display = 'block';
+  var inp = document.getElementById('assign-search');
+  inp.value = '';
+  document.getElementById('assign-clear').classList.add('hidden');
+  document.getElementById('assign-hint').classList.remove('hidden');
+  renderDropList('');
+  setTimeout(function(){ inp.focus(); }, 50);
+}
+
+function closeAssign() {
+  document.getElementById('assign-popup').style.display = 'none';
+  currentTaskId = null;
+}
+
+function clearSearch() {
+  var inp = document.getElementById('assign-search');
+  inp.value = '';
+  document.getElementById('assign-clear').classList.add('hidden');
+  document.getElementById('assign-hint').classList.remove('hidden');
+  clearTimeout(debounceTimer);
+  renderDropList('');
+  inp.focus();
+}
+
+document.getElementById('assign-search').addEventListener('input', function() {
+  var v = this.value;
+  document.getElementById('assign-clear').classList.toggle('hidden', v.length === 0);
+  document.getElementById('assign-hint').classList.toggle('hidden', v.length >= 3 || v.length === 0);
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(function(){ renderDropList(v); }, 300);
+});
+
+function renderDropList(filter) {
+  if (currentTaskId === null) return;
+  var state = taskState[currentTaskId] || {};
+  var selected = entities.filter(function(e){ return !!state[e.id]; });
+  var unselected = entities.filter(function(e){ return !state[e.id]; });
+  var filtered = unselected;
+  if (filter.length >= 3) {
+    var q = filter.toLowerCase();
+    filtered = unselected.filter(function(e){ return e.name.toLowerCase().indexOf(q) !== -1; });
+  }
+  var html = '';
+  if (selected.length) {
+    html += '<div class="assign-section-hd">Selected</div>';
+    selected.forEach(function(e){ html += itemHTML(e, true); });
+    html += '<div class="assign-separator"></div>';
+  }
+  if (filter.length >= 3) {
+    html += filtered.length ? filtered.map(function(e){ return itemHTML(e, false); }).join('') : '<div class="assign-empty">No matches found.</div>';
+  } else {
+    html += unselected.length ? unselected.map(function(e){ return itemHTML(e, false); }).join('') : (selected.length ? '' : '<div class="assign-empty">No assignable entities available.</div>');
+  }
+  document.getElementById('assign-list').innerHTML = html;
+}
+
+function itemHTML(e, sel) {
+  var br = e.type === 'company' ? '2px' : '6px';
+  var bc = e.type === 'person' ? 'person' : 'company';
+  var bt = e.type === 'person' ? 'Person' : 'Company';
+  return '<div class="assign-item' + (sel ? ' is-selected' : '') + '" onclick="selectEntity(' + e.id + ')">' +
+    '<div class="aitem-av ' + e.type + '" style="background:' + e.color + ';border-radius:' + br + '">' + e.initials + '</div>' +
+    '<div class="aitem-meta">' +
+      '<div class="aitem-name">' + e.name + '<span class="entity-badge ' + bc + '">' + bt + '</span></div>' +
+      '<div class="aitem-role">' + e.role + '</div>' +
+    '</div>' +
+    (sel ? '<span class="aitem-check">&#10003;</span>' : '') +
+  '</div>';
+}
+
+function selectEntity(eid) {
+  var state = taskState[currentTaskId];
+  var e = entities.find(function(x){ return x.id === eid; });
+  if (!e) return;
+  if (state[eid]) {
+    delete state[eid];
+    renderDropList(document.getElementById('assign-search').value);
+    renderAvatars(currentTaskId);
+    renderAllocCol(currentTaskId);
+    return;
+  }
+  var tid = currentTaskId;
+  closeAssign();
+  openAllocModal(tid, eid, 100, false);
+}
+
+/* ── ALLOCATION MODAL ── */
+var allocTaskId = null;
+var allocEntityId = null;
+var currentMode = 'pct';
+var HOURS_PER_DAY = 8;
+
+/* task durations in working days (demo values) */
+var taskDurations = { 1:20, 2:15, 3:10, 4:25 };
+
+function getTaskDays(taskId) {
+  return taskDurations[taskId] || 20;
+}
+
+function openAllocModal(taskId, eid, pct, isEdit) {
+  allocTaskId = taskId;
+  allocEntityId = eid;
+  currentMode = 'pct';
+  var e = entities.find(function(x){ return x.id === eid; });
+  document.getElementById('alloc-title').textContent = isEdit ? 'Edit allocation' : 'Set allocation';
+  document.getElementById('alloc-sub').textContent = e ? e.name + ' \u00b7 ' + e.role : '';
+  /* reset to pct mode */
+  document.getElementById('mode-pct').checked = true;
+  setFieldsFromPct(pct);
+  enableOnlyActive('pct');
+  checkOveralloc(taskId, eid, pct);
+  document.getElementById('alloc-modal').classList.add('open');
+  setTimeout(function(){ document.getElementById('inp-pct').select(); }, 100);
+}
+
+function openAllocEdit(taskId, eid) {
+  var s = taskState[taskId];
+  if (!s || !s[eid]) return;
+  openAllocModal(taskId, eid, s[eid].alloc || 100, true);
+}
+
+function closeAllocModal() {
+  document.getElementById('alloc-modal').classList.remove('open');
+  allocTaskId = null;
+  allocEntityId = null;
+}
+
+function saveAlloc() {
+  var pct = Math.min(100, Math.max(1, Math.round(parseFloat(document.getElementById('inp-pct').value) || 100)));
+  if (allocTaskId !== null && allocEntityId !== null) {
+    if (!taskState[allocTaskId]) taskState[allocTaskId] = {};
+    var e = entities.find(function(x){ return x.id === allocEntityId; });
+    taskState[allocTaskId][allocEntityId] = { type: e ? e.type : 'person', alloc: pct };
+    renderAvatars(allocTaskId);
+    renderAllocCol(allocTaskId);
+  }
+  closeAllocModal();
+}
+
+/* mode switching */
+function switchMode(mode) {
+  currentMode = mode;
+  enableOnlyActive(mode);
+  setTimeout(function(){ document.getElementById('inp-' + mode).select(); }, 50);
+}
+
+function enableOnlyActive(mode) {
+  ['pct','hpd','total'].forEach(function(m) {
+    document.getElementById('inp-' + m).disabled = (m !== mode);
+  });
+}
+
+/* conversion helpers */
+function setFieldsFromPct(pct) {
+  pct = Math.min(100, Math.max(0, parseFloat(pct) || 0));
+  var days = getTaskDays(allocTaskId);
+  var hpd = Math.round((pct / 100) * HOURS_PER_DAY * 10) / 10;
+  var total = Math.round(hpd * days);
+  document.getElementById('inp-pct').value = Math.round(pct);
+  document.getElementById('inp-hpd').value = hpd;
+  document.getElementById('inp-total').value = total;
+}
+
+function setFieldsFromHpd(hpd) {
+  hpd = Math.min(HOURS_PER_DAY, Math.max(0, parseFloat(hpd) || 0));
+  var days = getTaskDays(allocTaskId);
+  var pct = Math.round((hpd / HOURS_PER_DAY) * 100);
+  var total = Math.round(hpd * days);
+  document.getElementById('inp-pct').value = pct;
+  document.getElementById('inp-hpd').value = hpd;
+  document.getElementById('inp-total').value = total;
+}
+
+function setFieldsFromTotal(totalHours) {
+  var days = getTaskDays(allocTaskId);
+  totalHours = Math.max(0, parseFloat(totalHours) || 0);
+  var hpd = Math.round((totalHours / days) * 10) / 10;
+  var pct = Math.round((hpd / HOURS_PER_DAY) * 100);
+  document.getElementById('inp-pct').value = Math.min(100, pct);
+  document.getElementById('inp-hpd').value = Math.min(HOURS_PER_DAY, hpd);
+  document.getElementById('inp-total').value = totalHours;
+}
+
+function onPctChange(v) {
+  setFieldsFromPct(v);
+  checkOveralloc(allocTaskId, allocEntityId, parseFloat(v) || 0);
+}
+
+function onHpdChange(v) {
+  setFieldsFromHpd(v);
+  var pct = parseFloat(document.getElementById('inp-pct').value) || 0;
+  checkOveralloc(allocTaskId, allocEntityId, pct);
+}
+
+function onTotalChange(v) {
+  setFieldsFromTotal(v);
+  var pct = parseFloat(document.getElementById('inp-pct').value) || 0;
+  checkOveralloc(allocTaskId, allocEntityId, pct);
+}
+
+function checkOveralloc(taskId, eid, newPct) {
+  var other = 0;
+  for (var tid in taskState) {
+    if (parseInt(tid) === taskId) continue;
+    var s = taskState[tid];
+    if (s[eid]) other += (s[eid].alloc || 100);
+  }
+  var total = other + Math.round(parseFloat(newPct) || 0);
+  var warn = document.getElementById('alloc-warn');
+  if (total > 100) {
+    document.getElementById('alloc-warn-text').textContent =
+      "This entity's total allocation across all tasks will be " + total + "%. This may indicate overallocation. You can still save.";
+    warn.classList.remove('hidden');
+  } else {
+    warn.classList.add('hidden');
+  }
+}
+
+/* ── RENDER AVATARS ── */
+function renderAvatars(taskId) {
+  var container = document.getElementById('assigned-' + taskId);
+  if (!container) return;
+  var state = taskState[taskId] || {};
+  var html = '';
+  Object.keys(state).forEach(function(eid) {
+    var entry = state[eid];
+    var e = entities.find(function(x){ return x.id === parseInt(eid); });
+    if (!e) return;
+    var br = e.type === 'company' ? '2px' : '7px';
+    var titleTxt = e.name + ' \u00b7 ' + entry.alloc + '% \u2014 click to edit';
+    html +=
+      '<div class="av-wrap" title="' + titleTxt + '" onclick="openAllocEdit(' + taskId + ',' + e.id + ')">' +
+        '<div class="av ' + e.type + '" style="background:' + e.color + ';border-radius:' + br + '">' + e.initials + '</div>' +
+        '<button class="av-remove" onclick="event.stopPropagation();removeEntity(' + taskId + ',' + e.id + ')">&#215;</button>' +
+      '</div>';
+  });
+  html += '<button class="av-add-btn" title="Add person or company" onclick="openAssign(this,' + taskId + ')">+</button>';
+  container.innerHTML = html;
+}
+
+function removeEntity(taskId, eid) {
+  var e = entities.find(function(x){ return x.id === eid; });
+  if (confirm('Remove ' + (e ? e.name : 'this entity') + ' from this task?')) {
+    delete taskState[taskId][eid];
+    renderAvatars(taskId);
+    renderAllocCol(taskId);
+  }
+}
+
+/* ── ALLOCATION COLUMN ── */
+function renderAllocCol(taskId) {
+  var col = document.getElementById('alloc-col-' + taskId);
+  if (!col) return;
+  var state = taskState[taskId] || {};
+  var entries = Object.values(state);
+  if (!entries.length) {
+    col.innerHTML = '<span style="color:#ccc">\u2014</span>';
+    return;
+  }
+  var sum = entries.reduce(function(acc, e){ return acc + (e.alloc || 0); }, 0);
+  col.textContent = sum + '%';
+}
+
+/* close on outside click */
+document.addEventListener('click', function(ev) {
+  var popup = document.getElementById('assign-popup');
+  if (popup.style.display === 'block' && !popup.contains(ev.target) && !ev.target.classList.contains('av-add-btn')) {
+    closeAssign();
+  }
+});
+</script>
+</body>
+</html>
