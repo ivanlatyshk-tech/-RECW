@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CW – Resource Management POC v7</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;background:#F3F4F6;color:#111827;display:flex;height:100vh;overflow:hidden;}
+.sidebar{width:220px;background:#111827;color:#9CA3AF;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;user-select:none;}
+.logo{padding:18px 16px 14px;border-bottom:1px solid #1F2937;}
+.logo-main{font-size:15px;font-weight:700;color:#fff;}
+.logo-sub{font-size:11px;color:#4B5563;margin-top:2px;}
+.nav-section{padding:12px 0 4px;}
+.nav-label{padding:4px 16px 6px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#4B5563;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:12.5px;cursor:pointer;transition:background .12s;}
+.nav-item:hover{background:#1F2937;color:#E5E7EB;}
+.nav-item.active{background:#1D4ED8;color:#fff;}
+.nav-item.sub{padding-left:40px;font-size:12px;}
+.nav-icon{width:15px;height:15px;flex-shrink:0;opacity:.7;}
+.nav-arrow{margin-left:auto;font-size:9px;opacity:.5;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#F3F4F6;}
+.page{display:none;flex-direction:column;height:100%;overflow:hidden;}
+.page.active{display:flex;}
+.page-header{padding:18px 24px 0;flex-shrink:0;}
+.page-header h1{font-size:19px;font-weight:600;color:#111827;}
+.page-header p{font-size:12px;color:#6B7280;margin-top:2px;}
+.header-actions{display:flex;align-items:flex-end;justify-content:space-between;padding:12px 24px 0;flex-shrink:0;}
+.search-filter-bar{padding:10px 24px 0;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.search-wrap{position:relative;flex:0 0 260px;}
+.search-input{width:100%;padding:6px 28px 6px 10px;border:1px solid #D1D5DB;border-radius:5px;font-size:12.5px;color:#111827;background:#fff;}
+.search-input:focus{outline:none;border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);cursor:pointer;color:#9CA3AF;font-size:13px;display:none;line-height:1;}
+.search-clear.visible{display:block;}
+.filter-wrap{position:relative;}
+.filter-btn{display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid #D1D5DB;border-radius:5px;font-size:12px;color:#374151;background:#fff;cursor:pointer;white-space:nowrap;}
+.filter-btn:hover{background:#F9FAFB;}
+.filter-btn.active{border-color:#2563EB;color:#2563EB;background:#EFF6FF;}
+.filter-arrow{font-size:9px;opacity:.6;}
+.filter-dropdown{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #E5E7EB;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:180px;z-index:100;padding:6px 0;display:none;}
+.filter-dropdown.open{display:block;}
+.filter-dropdown-header{padding:6px 10px 4px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #F3F4F6;margin-bottom:4px;}
+.filter-clear-link{font-size:11px;color:#2563EB;cursor:pointer;}
+.filter-option{display:flex;align-items:center;gap:8px;padding:5px 10px;cursor:pointer;font-size:12px;}
+.filter-option:hover{background:#F9FAFB;}
+.filter-option input[type=checkbox]{cursor:pointer;}
+.filter-option label{cursor:pointer;flex:1;}
+.clear-all-link{font-size:11.5px;color:#2563EB;cursor:pointer;white-space:nowrap;}
+.table-wrap{flex:1;overflow:auto;margin:10px 24px 20px;background:#fff;border-radius:8px;border:1px solid #E5E7EB;}
+table.res-table{width:100%;border-collapse:collapse;}
+table.res-table thead th{padding:9px 14px;text-align:left;font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #E5E7EB;background:#F9FAFB;position:sticky;top:0;white-space:nowrap;}
+table.res-table tbody td{padding:9px 14px;border-bottom:1px solid #F3F4F6;vertical-align:middle;}
+table.res-table tbody tr:last-child td{border-bottom:none;}
+table.res-table tbody tr:hover td{background:#F9FAFB;}
+.row-actions{display:flex;align-items:center;gap:4px;justify-content:flex-end;opacity:0;transition:opacity .12s;}
+table.res-table tbody tr:hover .row-actions{opacity:1;}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;border:1px solid transparent;cursor:pointer;background:transparent;color:#6B7280;transition:all .12s;}
+.icon-btn:hover{background:#F3F4F6;border-color:#D1D5DB;}
+.icon-btn.icon-edit:hover{color:#2563EB;border-color:#BFDBFE;background:#EFF6FF;}
+.icon-btn.icon-delete:hover{color:#DC2626;border-color:#FECACA;background:#FEF2F2;}
+.icon-btn svg{width:14px;height:14px;flex-shrink:0;}
+.deleted-row td{opacity:.5;}
+.deleted-badge-row{display:inline-flex;align-items:center;gap:6px;}
+.tag-deleted{font-size:10px;color:#6B7280;background:#F3F4F6;border:1px solid #D1D5DB;border-radius:4px;padding:1px 5px;font-weight:500;}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;text-align:center;}
+.empty-state p{font-size:13px;color:#6B7280;margin-bottom:12px;}
+.empty-icon{font-size:28px;margin-bottom:12px;opacity:.5;}
+.av{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;}
+.badge-cov-full{background:#DCFCE7;color:#166534;}
+.badge-cov-partial{background:#FEF3C7;color:#92400E;}
+.badge-cov-none{background:#FEE2E2;color:#991B1B;}
+.badge-full{background:#DCFCE7;color:#15803D;}
+.badge-none{background:#FEE2E2;color:#991B1B;}
+.badge-overalloc{background:#FEE2E2;color:#991B1B;font-size:10px;padding:2px 6px;}
+.sched-wrap{flex:1;overflow:auto;margin:0 24px 20px;background:#fff;border-radius:8px;border:1px solid #E5E7EB;}
+table.sched-table{border-collapse:collapse;width:100%;min-width:900px;}
+table.sched-table thead th{padding:0;text-align:left;font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #E5E7EB;background:#F9FAFB;white-space:nowrap;position:sticky;top:0;z-index:3;}
+table.sched-table thead th.th-info{padding:9px 12px;}
+table.sched-table thead th.th-month{text-align:center;padding:9px 0;border-left:1px solid #E5E7EB;width:60px;min-width:60px;font-size:10px;color:#9CA3AF;}
+.sticky1{position:sticky;left:0;z-index:4;background:#F9FAFB;}
+.sticky2{position:sticky;left:200px;z-index:4;background:#F9FAFB;}
+.sticky3{position:sticky;left:340px;z-index:4;background:#F9FAFB;}
+.phase-tr td{background:#F9FAFB;border-bottom:1px solid #E5E7EB;cursor:pointer;}
+.phase-tr:hover td{background:#F3F4F6;}
+.phase-td-info{padding:7px 12px;position:sticky;background:#F9FAFB;}
+.phase-tr:hover .phase-td-info{background:#F3F4F6;}
+.phase-name-wrap{display:flex;align-items:center;gap:7px;}
+.phase-name{font-weight:600;font-size:12.5px;color:#374151;}
+.expand-icon{font-size:9px;color:#9CA3AF;width:12px;text-align:center;}
+.phase-timeline-cell{padding:0!important;}
+.task-tr td{border-bottom:1px solid #F3F4F6;vertical-align:middle;}
+.task-tr:hover td{background:#FAFAFA;}
+.task-tr td.td-sticky{background:#fff;}
+.task-tr:hover td.td-sticky{background:#FAFAFA;}
+.task-tr.task-highlight td{background:#FEF9C3!important;transition:background 0.5s;}
+.task-name-td{padding:6px 12px 6px 28px;position:sticky;}
+.task-name{font-size:12px;color:#374151;}
+.tl-inner{position:relative;width:100%;}
+.tl-grid{display:flex;position:absolute;inset:0;pointer-events:none;z-index:0;}
+.tl-month{flex:1;border-left:1px solid #F3F4F6;}
+.tl-month:first-child{border-left:none;}
+.tl-bar{position:absolute;border-radius:3px;display:flex;align-items:center;padding:0 6px;overflow:hidden;white-space:nowrap;font-size:10px;font-weight:600;color:#fff;cursor:pointer;z-index:1;transition:opacity .13s;}
+.tl-bar:hover{opacity:.85;}
+.bar-phase-bg{background:#CBD5E1;height:8px;top:50%;transform:translateY(-50%);border-radius:2px;}
+.bar-task-full{background:#2563EB;}
+.bar-task-unassigned{background:#E5E7EB;border:1.5px dashed #CBD5E1;color:#9CA3AF;font-weight:500;}
+.bar-available{background:transparent;color:#9CA3AF;font-size:10px;font-weight:400;border:none;}
+.btn-primary{padding:6px 16px;background:#2563EB;color:#fff;border:none;border-radius:5px;font-size:12.5px;font-weight:500;cursor:pointer;}
+.btn-primary:hover{background:#1D4ED8;}
+.btn-primary:disabled{background:#93C5FD;cursor:not-allowed;}
+.btn-secondary{padding:6px 14px;background:#fff;border:1px solid #D1D5DB;border-radius:5px;font-size:12.5px;cursor:pointer;color:#374151;}
+.btn-secondary:hover{background:#F9FAFB;}
+.btn-cancel{padding:6px 16px;background:#fff;border:1px solid #D1D5DB;border-radius:5px;font-size:12.5px;cursor:pointer;}
+.btn-cancel:hover{background:#F9FAFB;}
+.toolbar{padding:10px 24px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.toolbar label{font-size:12px;color:#6B7280;font-weight:500;}
+.toolbar select{padding:5px 10px;border:1px solid #D1D5DB;border-radius:5px;font-size:12.5px;color:#111827;background:#fff;cursor:pointer;min-width:280px;}
+.view-toggle{display:flex;background:#E5E7EB;border-radius:6px;padding:3px;width:fit-content;}
+.toggle-btn{padding:5px 18px;border-radius:4px;border:none;background:transparent;cursor:pointer;font-size:12.5px;font-weight:500;color:#6B7280;transition:all .14s;}
+.toggle-btn.active{background:#fff;color:#111827;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+.mini-toggle{display:flex;background:#E5E7EB;border-radius:5px;padding:2px;}
+.mini-btn{padding:3px 10px;border-radius:3px;border:none;background:transparent;cursor:pointer;font-size:11.5px;font-weight:500;color:#6B7280;transition:all .12s;}
+.mini-btn.active{background:#fff;color:#111827;box-shadow:0 1px 2px rgba(0,0,0,.1);}
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:#fff;border-radius:10px;padding:24px;box-shadow:0 20px 48px rgba(0,0,0,.2);}
+.modal h2{font-size:15px;font-weight:600;margin-bottom:8px;color:#111827;}
+.modal-wide{width:440px;}
+.modal-narrow{width:400px;}
+.modal-block{width:460px;}
+.modal-msg{font-size:13px;color:#6B7280;margin-bottom:16px;line-height:1.5;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:11.5px;font-weight:500;color:#374151;margin-bottom:4px;}
+.form-group input,.form-group select{width:100%;padding:6px 10px;border:1px solid #D1D5DB;border-radius:5px;font-size:12.5px;color:#111827;}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.1);}
+.form-group input.error{border-color:#DC2626;}
+.form-field-error{font-size:11px;color:#DC2626;margin-top:4px;display:none;}
+.form-field-error.visible{display:block;}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid #E5E7EB;}
+/* BLOCK SECTION */
+.block-section{margin-bottom:16px;}
+.block-section-title{font-size:12px;font-weight:600;color:#374151;margin-bottom:2px;}
+.block-section-hint{font-size:11.5px;color:#6B7280;margin-bottom:6px;}
+.block-list{padding:0;list-style:none;max-height:120px;overflow-y:auto;border:1px solid #FECACA;border-radius:5px;background:#FEF2F2;}
+.block-list li{padding:6px 12px;font-size:12px;color:#991B1B;border-bottom:1px solid #FECACA;}
+.block-list li:last-child{border-bottom:none;}
+.block-list-blue{border-color:#BFDBFE;background:#EFF6FF;}
+.block-list-blue li{color:#1D4ED8;border-bottom-color:#BFDBFE;}
+.modal-link{color:#2563EB;text-decoration:underline;cursor:pointer;font-weight:500;}
+.modal-link:hover{color:#1D4ED8;}
+/* DEMO GUIDE */
+.demo-guide{position:fixed;bottom:16px;right:16px;background:#1F2937;color:#F9FAFB;border-radius:8px;padding:12px 16px;font-size:11.5px;line-height:1.7;max-width:300px;z-index:300;box-shadow:0 4px 20px rgba(0,0,0,.3);}
+.demo-guide strong{font-size:12px;color:#60A5FA;display:block;margin-bottom:4px;}
+.demo-guide .dm{color:#9CA3AF;font-size:10.5px;}
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#111827;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:500;opacity:0;transition:all .3s;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.25);}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+/* TOOLTIP */
+#tooltip{position:fixed;background:#1F2937;color:#F9FAFB;padding:8px 12px;border-radius:6px;font-size:11.5px;line-height:1.5;pointer-events:none;z-index:1000;max-width:240px;display:none;box-shadow:0 4px 16px rgba(0,0,0,.25);}
+#tooltip.show{display:block;}
+
+.today-line{position:absolute;top:0;bottom:0;width:2px;background:#EF4444;opacity:.65;pointer-events:none;z-index:4;}
+.milestone-dia{position:absolute;width:10px;height:10px;background:#2563EB;transform:translateX(-50%) rotate(45deg);pointer-events:auto;z-index:2;cursor:default;}
+#tooltip strong{display:block;font-size:12px;margin-bottom:2px;}
+</style>
+</head>
+<body>
+<div id="tooltip"></div>
+<div id="toast"></div>
+
+<!-- DEMO GUIDE -->
+<div class="demo-guide" id="demo-guide">
+  <strong>Demo scenarios</strong>
+  <div><b>Delete Resource:</b></div>
+  <div class="dm">Alex Kim - no tasks - confirmation</div>
+  <div class="dm">Laura Bennett - 4 tasks - blocked</div>
+  <div style="margin-top:6px;"><b>Delete Company:</b></div>
+  <div class="dm">Meridian Group - no blockers - confirmation</div>
+  <div class="dm">CoreBuild LLC - resources only - Section A</div>
+  <div class="dm">Vantara Partners - tasks only - Section B</div>
+  <div class="dm">Avellon Group - both - Sections A+B</div>
+  <div style="margin-top:6px;"><b>Resource Schedule:</b></div>
+  <div class="dm">Companies tab – default view, task lanes</div>
+  <div class="dm">Pinnacle Advisors – 30 assignments, 12 lanes</div>
+  <div class="dm">Resources tab – task-per-lane, overallocation</div>
+  <div class="dm">Scale toggle – Month/Week/Day + today marker</div>
+  <div style="margin-top:6px;font-size:10px;color:#6B7280;cursor:pointer;" onclick="document.getElementById('demo-guide').style.display='none'">x hide</div>
+</div>
+
+<!-- ─── MODALS ─────────────────────────────────────────── -->
+
+<!-- ADD RESOURCE -->
+<div class="modal-overlay" id="modal-add-resource">
+  <div class="modal modal-wide">
+    <h2>Add Resource</h2>
+    <div class="form-row">
+      <div class="form-group"><label>Full Name *</label><input type="text" id="add-res-name" maxlength="256" oninput="validateResForm('add')"></div>
+      <div class="form-group"><label>Email *</label><input type="email" id="add-res-email" maxlength="256" oninput="validateResForm('add')"><div class="form-field-error" id="add-res-email-error"></div></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Company *</label><select id="add-res-company" onchange="validateResForm('add')"><option value="">Select company...</option></select></div>
+      <div class="form-group"><label>Role *</label><select id="add-res-role" onchange="validateResForm('add')"><option value="">Select role...</option></select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-add-resource')">Cancel</button>
+      <button class="btn-primary" id="btn-save-add-resource" onclick="saveAddResource()" disabled>Save Resource</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT RESOURCE -->
+<div class="modal-overlay" id="modal-edit-resource">
+  <div class="modal modal-wide">
+    <h2>Edit Resource</h2>
+    <div class="form-row">
+      <div class="form-group"><label>Full Name *</label><input type="text" id="edit-res-name" maxlength="256" oninput="validateResForm('edit')"></div>
+      <div class="form-group"><label>Email *</label><input type="email" id="edit-res-email" maxlength="256" oninput="validateResForm('edit')"><div class="form-field-error" id="edit-res-email-error"></div></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Company *</label><select id="edit-res-company" onchange="validateResForm('edit')"><option value="">Select company...</option></select></div>
+      <div class="form-group"><label>Role *</label><select id="edit-res-role" onchange="validateResForm('edit')"><option value="">Select role...</option></select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-edit-resource')">Cancel</button>
+      <button class="btn-primary" id="btn-save-edit-resource" onclick="saveEditResource()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE RESOURCE: CONFIRM (no active assignments) -->
+<div class="modal-overlay" id="modal-del-res-confirm">
+  <div class="modal modal-narrow">
+    <h2>Delete resource?</h2>
+    <p class="modal-msg">The resource will be removed from the active list.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-del-res-confirm')">Cancel</button>
+      <button class="btn-primary" style="background:#DC2626;" onclick="doDeleteResource()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE RESOURCE: BLOCKED (has active assignments) -->
+<div class="modal-overlay" id="modal-del-res-blocked">
+  <div class="modal modal-block">
+    <h2>Cannot delete resource.</h2>
+    <p class="modal-msg">This resource has active task assignments. Remove these assignments first.</p>
+    <ul class="block-list" id="block-res-list"></ul>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-del-res-blocked')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD COMPANY -->
+<div class="modal-overlay" id="modal-add-company">
+  <div class="modal modal-wide">
+    <h2>Add Company</h2>
+    <div class="form-group"><label>Company Name *</label><input type="text" id="add-co-name" maxlength="256" oninput="validateCoForm('add')"><div class="form-field-error" id="add-co-name-error"></div></div>
+    <div class="form-group"><label>Role *</label><select id="add-co-role" onchange="validateCoForm('add')"><option value="">Select role...</option></select></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-add-company')">Cancel</button>
+      <button class="btn-primary" id="btn-save-add-company" onclick="saveAddCompany()" disabled>Save Company</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT COMPANY -->
+<div class="modal-overlay" id="modal-edit-company">
+  <div class="modal modal-wide">
+    <h2>Edit Company</h2>
+    <div class="form-group"><label>Company Name *</label><input type="text" id="edit-co-name" maxlength="256" oninput="validateCoForm('edit')"><div class="form-field-error" id="edit-co-name-error"></div></div>
+    <div class="form-group"><label>Role *</label><select id="edit-co-role" onchange="validateCoForm('edit')"><option value="">Select role...</option></select></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-edit-company')">Cancel</button>
+      <button class="btn-primary" id="btn-save-edit-company" onclick="saveEditCompany()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE COMPANY: CONFIRM (no blockers) -->
+<div class="modal-overlay" id="modal-del-co-confirm">
+  <div class="modal modal-narrow">
+    <h2>Delete company?</h2>
+    <p class="modal-msg">The company will be removed from the active list.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-del-co-confirm')">Cancel</button>
+      <button class="btn-primary" style="background:#DC2626;" onclick="doDeleteCompany()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE COMPANY: BLOCKED (has blockers — up to 2 sections) -->
+<div class="modal-overlay" id="modal-del-co-blocked">
+  <div class="modal modal-block">
+    <h2>Cannot delete company.</h2>
+    <p class="modal-msg">This company cannot be deleted. Resolve the items below first.</p>
+    <!-- Section A: active resources -->
+    <div class="block-section" id="co-block-sec-a" style="display:none;">
+      <div class="block-section-title">Active resources linked to this company</div>
+      <div class="block-section-hint">Reassign or delete these resources first.</div>
+      <ul class="block-list" id="co-block-res-list"></ul>
+    </div>
+    <!-- Section B: active task assignments -->
+    <div class="block-section" id="co-block-sec-b" style="display:none;">
+      <div class="block-section-title">Active task assignments</div>
+      <div class="block-section-hint">Remove the company from these tasks first.</div>
+      <ul class="block-list block-list-blue" id="co-block-task-list"></ul>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-del-co-blocked')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── APP ───────────────────────────────────────────────── -->
+<div style="display:flex;height:100vh;width:100%;overflow:hidden;">
+<nav class="sidebar">
+  <div class="logo"><div class="logo-main">Nexora.</div><div class="logo-sub">Real Estate Insights</div></div>
+  <div class="nav-section">
+    <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Maps</div>
+    <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>Dashboards<span class="nav-arrow">▶</span></div>
+    <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>Grids<span class="nav-arrow">▶</span></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Resource Mgmt</div>
+    <div class="nav-item sub" id="nav-resources" onclick="goTo('resources')">Resources</div>
+    <div class="nav-item sub" id="nav-companies" onclick="goTo('companies')">Companies</div>
+    <div class="nav-item sub" id="nav-schedule" onclick="goTo('schedule')">Schedule</div>
+  </div>
+  <div class="nav-section" style="margin-top:auto;padding-bottom:12px;">
+    <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>Data changes log</div>
+    <div class="nav-item"><svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Settings</div>
+  </div>
+</nav>
+
+<main class="main">
+
+  <!-- RESOURCES PAGE -->
+  <div class="page" id="page-resources">
+    <div class="page-header"><h1>Resources</h1><p>People available for task assignment</p></div>
+    <div class="header-actions">
+      <div style="font-size:12px;color:#6B7280;" id="res-count"></div>
+      <button class="btn-primary" onclick="openAddResourceModal()">+ Add Resource</button>
+    </div>
+    <div class="search-filter-bar" id="res-sfbar">
+      <div class="search-wrap"><input class="search-input" id="res-sq" type="text" placeholder="Search by name or email" maxlength="256" oninput="onResSearch()"><span class="search-clear" id="res-sc" onclick="clearResSearch()">✕</span></div>
+      <div class="filter-wrap">
+        <button class="filter-btn" id="res-rf-btn" onclick="toggleDD('res-rd')"><span id="res-rf-lbl">Role</span><span class="filter-arrow">▾</span></button>
+        <div class="filter-dropdown" id="res-rd"><div class="filter-dropdown-header"><span style="font-size:11px;color:#6B7280;font-weight:500;">Role</span><span class="filter-clear-link" onclick="clearResRF()">Clear</span></div><div id="res-ro"></div></div>
+      </div>
+      <div class="filter-wrap">
+        <button class="filter-btn" id="res-cf-btn" onclick="toggleDD('res-cd')"><span id="res-cf-lbl">Company</span><span class="filter-arrow">▾</span></button>
+        <div class="filter-dropdown" id="res-cd"><div class="filter-dropdown-header"><span style="font-size:11px;color:#6B7280;font-weight:500;">Company</span><span class="filter-clear-link" onclick="clearResCF()">Clear</span></div><div id="res-co"></div></div>
+      </div>
+      <span class="clear-all-link" id="res-ca" style="display:none" onclick="clearAllRes()">Clear all</span>
+    </div>
+    <div class="table-wrap">
+      <table class="res-table"><thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Role</th><th style="width:72px;"></th></tr></thead><tbody id="res-tbody"></tbody></table>
+      <div id="res-empty" class="empty-state" style="display:none;"><div class="empty-icon">👤</div><p id="res-empty-msg"></p></div>
+    </div>
+  </div>
+
+  <!-- COMPANIES PAGE -->
+  <div class="page" id="page-companies">
+    <div class="page-header"><h1>Companies</h1><p>Companies used to organize resources and assign to project tasks</p></div>
+    <div class="header-actions">
+      <div style="font-size:12px;color:#6B7280;" id="co-count"></div>
+      <button class="btn-primary" onclick="openAddCompanyModal()">+ Add Company</button>
+    </div>
+    <div class="search-filter-bar" id="co-sfbar">
+      <div class="search-wrap"><input class="search-input" id="co-sq" type="text" placeholder="Search by company name" maxlength="256" oninput="onCoSearch()"><span class="search-clear" id="co-sc" onclick="clearCoSearch()">✕</span></div>
+      <div class="filter-wrap">
+        <button class="filter-btn" id="co-rf-btn" onclick="toggleDD('co-rd')"><span id="co-rf-lbl">Role</span><span class="filter-arrow">▾</span></button>
+        <div class="filter-dropdown" id="co-rd"><div class="filter-dropdown-header"><span style="font-size:11px;color:#6B7280;font-weight:500;">Role</span><span class="filter-clear-link" onclick="clearCoRF()">Clear</span></div><div id="co-ro"></div></div>
+      </div>
+      <span class="clear-all-link" id="co-ca" style="display:none" onclick="clearAllCo()">Clear all</span>
+    </div>
+    <div class="table-wrap">
+      <table class="res-table"><thead><tr><th>Company Name</th><th>Role</th><th style="width:72px;"></th></tr></thead><tbody id="co-tbody"></tbody></table>
+      <div id="co-empty" class="empty-state" style="display:none;"><div class="empty-icon">🏢</div><p id="co-empty-msg"></p></div>
+    </div>
+  </div>
+
+  <!-- SCHEDULE PAGE -->
+  <div class="page" id="page-schedule">
+    <div class="page-header"><h1>Schedule</h1><p>Resource timeline by project or by person</p></div>
+    <div class="header-actions" style="padding-top:10px;">
+      <div class="view-toggle">
+        <button class="toggle-btn active" id="btn-proj" onclick="switchView('projects')">Projects Schedule</button>
+        <button class="toggle-btn" id="btn-people" onclick="switchView('people')">Resource Schedule</button>
+      </div>
+    </div>
+    <div id="view-projects" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="toolbar">
+        <label>Project:</label>
+        <select id="project-select" onchange="renderPS(this.value)">
+          <option value="SNY00142">SNY00142 – 11 Corporate Woods</option>
+          <option value="CHI00089">CHI00089 – 350 N Orleans, Regional Hub</option>
+          <option value="DAL00231">DAL00231 – 2222 McKinney Ave</option>
+        </select>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;color:#6B7280;font-weight:500;">View:</span>
+          <div class="mini-toggle">
+            <button class="mini-btn active" id="scale-M" onclick="setScale('M')">Month</button>
+            <button class="mini-btn" id="scale-W" onclick="setScale('W')">Week</button>
+            <button class="mini-btn" id="scale-D" onclick="setScale('D')">Day</button>
+          </div>
+        </div>
+      </div>
+      <div class="sched-wrap"><table class="sched-table"><thead id="sched-thead"></thead><tbody id="sched-tbody"></tbody></table></div>
+    </div>
+    <div id="view-people" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="toolbar">
+        <div class="view-toggle">
+          <button class="toggle-btn active" id="btn-entity-co" onclick="switchEntity('companies')">Companies</button>
+          <button class="toggle-btn" id="btn-entity-res" onclick="switchEntity('resources')">Resources</button>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;color:#6B7280;font-weight:500;">View:</span>
+          <div class="mini-toggle">
+            <button class="mini-btn active" id="rm-scale-M" onclick="setRMScale('M')">Month</button>
+            <button class="mini-btn" id="rm-scale-W" onclick="setRMScale('W')">Week</button>
+            <button class="mini-btn" id="rm-scale-D" onclick="setRMScale('D')">Day</button>
+          </div>
+        </div>
+      </div>
+      <!-- Companies sub-view -->
+      <div id="view-entity-companies" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+        <div class="sched-wrap" style="margin-top:0;">
+          <table class="sched-table"><thead id="co-sched-thead"></thead><tbody id="co-sched-tbody"></tbody></table>
+          <div id="co-sched-empty" class="empty-state" style="display:none;"><div class="empty-icon">🏢</div><p>No companies found. Add companies to the Companies List to get started.</p></div>
+        </div>
+      </div>
+      <!-- Resources sub-view -->
+      <div id="view-entity-resources" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+        <div class="sched-wrap" style="margin-top:0;">
+          <table class="sched-table"><thead id="ppl-thead"></thead><tbody id="ppl-tbody"></tbody></table>
+          <div id="ppl-empty" class="empty-state" style="display:none;"><div class="empty-icon">👤</div><p>No resources found. Add resources to the Resources List to get started.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+/* ═══════════ SVG ICONS ══════ */
+const ICON_EDIT=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+const ICON_DEL=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>`;
+
+/* ═══════════ DATA ════════════
+   DEMO SCENARIOS
+   Resources:
+    - Alex Kim (id:8)  → 0 task assignments → shows CONFIRMATION flow
+    - Laura Bennett (id:1) → 4 tasks across 3 projects → shows BLOCKING flow
+
+   Companies:
+    - Meridian Group (id:5) → 0 resources + 0 task assignments → CONFIRMATION
+    - CoreBuild LLC (id:4)  → Alex Kim linked (no task assignments) → Section A only
+    - Vantara Partners (id:2) → 0 person resources + company on t15,t16 → Section B only
+    - Avellon Group (id:1)  → 6 person resources with tasks + company on t9,t10 → BOTH sections
+══════════════════════════════ */
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const PERSON_ROLES=['Portfolio Leader','Strategy Lead','Transaction Manager','Workplace Experience Designer','Architect','EPM','CM','Program Manager','FFE','AV'];
+const COMPANY_ROLES=['Architect','EPM','CM','PM','GC','FFE','AV'];
+const PROJ_NAMES={'SNY00142':'11 Corporate Woods','CHI00089':'350 N Orleans','DAL00231':'2222 McKinney Ave','NYC00099':'East Side Tower','MIA00077':'Brickell Place'};
+const PROJ_COLORS={'SNY00142':'#2563EB','CHI00089':'#059669','DAL00231':'#DC2626'};
+
+let companies=[
+  {id:1,name:'Avellon Group',        role:'EPM'},
+  {id:2,name:'Vantara Partners',     role:'PM' },
+  {id:3,name:'Stratford Design Group',role:'Architect'},
+  {id:4,name:'CoreBuild LLC',        role:'CM' },
+  {id:5,name:'Meridian Group',       role:'GC' },
+  {id:6,name:'Pinnacle Advisors',    role:'GC' },
+];
+
+let resources=[
+  {id:1,name:'Laura Bennett',  email:'laura.bennett@avellon.com',  companyId:1,company:'Avellon Group',         role:'Portfolio Leader',             initials:'LB',color:'#7C3AED'},
+  {id:2,name:'Daniel Reyes',   email:'daniel.reyes@avellon.com',   companyId:1,company:'Avellon Group',         role:'Strategy Lead',                initials:'DR',color:'#EF4444'},
+  {id:3,name:'Sophie Marsh',   email:'sophie.marsh@avellon.com',   companyId:1,company:'Avellon Group',         role:'Workplace Experience Designer', initials:'SM',color:'#6D28D9'},
+  {id:4,name:'Chris Wade',     email:'chris.wade@avellon.com',     companyId:1,company:'Avellon Group',         role:'Transaction Manager',          initials:'CW',color:'#0D9488'},
+  {id:5,name:'Ryan Kowalski',  email:'ryan.kowalski@avellon.com',  companyId:1,company:'Avellon Group',         role:'Architect',                    initials:'RK',color:'#16A34A'},
+  {id:6,name:'James Porter',   email:'j.porter@avellon.com',       companyId:1,company:'Avellon Group',         role:'EPM',                          initials:'JP',color:'#EA580C'},
+  {id:7,name:'Mia Chen',       email:'m.chen@stratforddesign.com', companyId:3,company:'Stratford Design Group',role:'Architect',                    initials:'MC',color:'#3B82F6'},
+  {id:8,name:'Alex Kim',       email:'a.kim@corebuild.com',        companyId:4,company:'CoreBuild LLC',         role:'FFE',                          initials:'AK',color:'#CA8A04'},
+];
+
+const schedule={
+  'SNY00142':[
+    {id:'ph1',name:'Strategy',startMonth:0,endMonth:1,tasks:[
+      {id:'t1',name:'Project Kickoff',         startMonth:0,endMonth:0,assigned:[1,2],   assignedCompanies:[]},
+      {id:'t2',name:'Prepare Launch Deck',     startMonth:0,endMonth:1,assigned:[2,3],   assignedCompanies:[]},
+      {id:'t3',name:'Project Launch w/ Locals',startMonth:1,endMonth:1,assigned:[1,2,3], assignedCompanies:[]},
+    ]},
+    {id:'ph2',name:'Leasing',startMonth:1,endMonth:7,tasks:[
+      {id:'t4',name:'Engage Broker',startMonth:1,endMonth:1,assigned:[2,4],assignedCompanies:[]},
+      {id:'t5',name:'Long List',    startMonth:2,endMonth:3,assigned:[2,4,3],assignedCompanies:[]},
+      {id:'t6',name:'Short List',   startMonth:4,endMonth:5,assigned:[4],  assignedCompanies:[]},
+    ]},
+    {id:'ph3',name:'Design',startMonth:4,endMonth:11,tasks:[
+      {id:'t7', name:'Programming Validation',startMonth:4,endMonth:5,assigned:[5,3],assignedCompanies:[]},
+      {id:'t8', name:'Test Fit',              startMonth:5,endMonth:7,assigned:[5,3],assignedCompanies:[]},
+      {id:'t9', name:'CM RFP & Award',        startMonth:5,endMonth:8,assigned:[6],  assignedCompanies:[1]}, // Avellon company-assigned
+      {id:'t10',name:'Permit Submission',     startMonth:8,endMonth:9,assigned:[],   assignedCompanies:[1]}, // Avellon company-assigned
+    ]},
+  ],
+  'CHI00089':[
+    {id:'ph4',name:'Strategy',startMonth:1,endMonth:3,tasks:[
+      {id:'t11',name:'Project Kickoff',        startMonth:1,endMonth:1,assigned:[1,2],assignedCompanies:[]},
+      {id:'t12',name:'Site Assessment',        startMonth:2,endMonth:3,assigned:[2],  assignedCompanies:[]},
+    ]},
+    {id:'ph5',name:'Design',startMonth:4,endMonth:8,tasks:[
+      {id:'t13',name:'Programming Validation', startMonth:4,endMonth:5,assigned:[5],  assignedCompanies:[]},
+      {id:'t14',name:'Concept Design',         startMonth:5,endMonth:8,assigned:[7],  assignedCompanies:[]},
+    ]},
+  ],
+  'DAL00231':[
+    {id:'ph6',name:'Strategy',startMonth:3,endMonth:5,tasks:[
+      {id:'t15',name:'Kickoff & Discovery',   startMonth:3,endMonth:4,assigned:[1],  assignedCompanies:[2]},
+      {id:'t16',name:'Stakeholder Alignment', startMonth:4,endMonth:5,assigned:[],   assignedCompanies:[2]},
+    ]},
+  ],
+  'NYC00099':[
+    {id:'ph10',name:'Strategy',startMonth:0,endMonth:3,tasks:[
+      {id:'tn01',name:'Site Survey',              startMonth:0,endMonth:1,assigned:[],assignedCompanies:[6]},
+      {id:'tn02',name:'Environmental Assessment', startMonth:0,endMonth:2,assigned:[],assignedCompanies:[6]},
+      {id:'tn03',name:'Geotechnical Study',       startMonth:0,endMonth:2,assigned:[],assignedCompanies:[6]},
+      {id:'tn04',name:'Zoning Analysis',          startMonth:1,endMonth:3,assigned:[],assignedCompanies:[6]},
+      {id:'tn05',name:'Program Kickoff',          startMonth:0,endMonth:0,assigned:[],assignedCompanies:[6]},
+    ]},
+    {id:'ph11',name:'Design',startMonth:2,endMonth:7,tasks:[
+      {id:'tn06',name:'Concept Design',           startMonth:2,endMonth:4,assigned:[],assignedCompanies:[6]},
+      {id:'tn07',name:'Schematic Design',         startMonth:2,endMonth:5,assigned:[],assignedCompanies:[6]},
+      {id:'tn08',name:'MEP Basis of Design',      startMonth:3,endMonth:5,assigned:[],assignedCompanies:[6]},
+      {id:'tn09',name:'Structural Concept',       startMonth:2,endMonth:4,assigned:[],assignedCompanies:[6]},
+      {id:'tn10',name:'Civil Concept',            startMonth:3,endMonth:5,assigned:[],assignedCompanies:[6]},
+      {id:'tn11',name:'Interior Programming',     startMonth:2,endMonth:3,assigned:[],assignedCompanies:[6]},
+      {id:'tn12',name:'Design Development',       startMonth:4,endMonth:7,assigned:[],assignedCompanies:[6]},
+      {id:'tn13',name:'Permit Drawings',          startMonth:5,endMonth:7,assigned:[],assignedCompanies:[6]},
+      {id:'tn14',name:'Technical Specifications', startMonth:5,endMonth:6,assigned:[],assignedCompanies:[6]},
+      {id:'tn15',name:'CM Pre-Construction',      startMonth:4,endMonth:6,assigned:[],assignedCompanies:[6]},
+    ]},
+    {id:'ph12',name:'Permitting',startMonth:5,endMonth:9,tasks:[
+      {id:'tn16',name:'Value Engineering',        startMonth:5,endMonth:7,assigned:[],assignedCompanies:[6]},
+      {id:'tn17',name:'Permit Application',       startMonth:6,endMonth:7,assigned:[],assignedCompanies:[6]},
+      {id:'tn18',name:'Agency Review',            startMonth:7,endMonth:9,assigned:[],assignedCompanies:[6]},
+      {id:'tn19',name:'Permit Issuance',          startMonth:9,endMonth:9,assigned:[],assignedCompanies:[6]},
+      {id:'tn20',name:'BIM Coordination',         startMonth:6,endMonth:9,assigned:[],assignedCompanies:[6]},
+    ]},
+  ],
+  'MIA00077':[
+    {id:'ph13',name:'Strategy',startMonth:0,endMonth:4,tasks:[
+      {id:'tm01',name:'Project Kickoff',          startMonth:0,endMonth:0,assigned:[],assignedCompanies:[6]},
+      {id:'tm02',name:'Market Analysis',          startMonth:0,endMonth:2,assigned:[],assignedCompanies:[6]},
+      {id:'tm03',name:'Site Assessment',          startMonth:1,endMonth:3,assigned:[],assignedCompanies:[6]},
+      {id:'tm04',name:'Program Validation',       startMonth:2,endMonth:4,assigned:[],assignedCompanies:[6]},
+    ]},
+    {id:'ph14',name:'Design',startMonth:3,endMonth:11,tasks:[
+      {id:'tm05',name:'Concept Design',           startMonth:3,endMonth:5,assigned:[],assignedCompanies:[6]},
+      {id:'tm06',name:'Schematic Design',         startMonth:4,endMonth:7,assigned:[],assignedCompanies:[6]},
+      {id:'tm07',name:'Civil Coordination',       startMonth:3,endMonth:6,assigned:[],assignedCompanies:[6]},
+      {id:'tm08',name:'Landscape Design',         startMonth:5,endMonth:8,assigned:[],assignedCompanies:[6]},
+      {id:'tm09',name:'Permit Submission',        startMonth:7,endMonth:8,assigned:[],assignedCompanies:[6]},
+      {id:'tm10',name:'Construction Docs',        startMonth:7,endMonth:11,assigned:[],assignedCompanies:[6]},
+    ]},
+  ],
+};
+
+/* ═══════════ STATE ══════════ */
+const expanded={};
+let currentScale='M';
+let editingResId=null, deletingResId=null;
+let editingCoId=null,  deletingCoId=null;
+let nextResId=9,nextCoId=7;
+let deletedResources=new Set();
+let deletedCompanies=new Set();
+let resSearchQ='',resRoleF=new Set(),resCoF=new Set();
+let coSearchQ='',coRoleF=new Set();
+
+/* ═══════════ HELPERS ════════ */
+function getRes(id){return resources.find(r=>r.id===id);}
+function getCo(id){return companies.find(c=>c.id===id);}
+function mkInitials(n){const p=n.trim().split(' ');return(p[0][0]+(p[1]?p[1][0]:'')).toUpperCase();}
+function randomColor(){const c=['#7C3AED','#EF4444','#0D9488','#16A34A','#EA580C','#3B82F6','#DB2777','#CA8A04'];return c[Math.floor(Math.random()*c.length)];}
+function isValidEmail(v){return/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function calcCov(phase){const t=phase.tasks.length,c=phase.tasks.filter(t=>t.assigned.length>0||t.assignedCompanies.length>0).length;return{covered:c,total:t,pct:Math.round((c/t)*100)};}
+function covBadge(cov){const cls=cov.pct===100?'badge-cov-full':cov.pct>0?'badge-cov-partial':'badge-cov-none';return`<span class="badge ${cls}">${cov.covered}/${cov.total} covered</span>`;}
+
+function getResTaskAssignments(resId){
+  const r=[];
+  for(const[pid,phases]of Object.entries(schedule))
+    for(const ph of phases)
+      for(const t of ph.tasks)
+        if(t.assigned.includes(resId)) r.push({projectId:pid,projectName:PROJ_NAMES[pid],taskId:t.id,taskName:t.name});
+  return r;
+}
+
+function getCoTaskAssignments(coId){
+  const r=[];
+  for(const[pid,phases]of Object.entries(schedule))
+    for(const ph of phases)
+      for(const t of ph.tasks)
+        if((t.assignedCompanies||[]).includes(coId)) r.push({projectId:pid,projectName:PROJ_NAMES[pid],taskId:t.id,taskName:t.name});
+  return r;
+}
+
+function activeCoResources(coId){return resources.filter(r=>r.companyId===coId&&!deletedResources.has(r.id));}
+
+/* ═══════════ TOAST ══════════ */
+let toastTimer=null;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3000);}
+
+/* ═══════════ SCHEDULE LINK ══ */
+// Opens schedule tab and highlights task (stays in same tab for POC; modal stays open)
+function openScheduleLink(projectId,taskId,e){
+  e && e.preventDefault();
+  showToast(`Opening Scheduling Grid: ${projectId} → ${PROJ_NAMES[projectId]}`);
+  // Navigate to schedule and highlight task
+  setTimeout(()=>{
+    goTo('schedule');
+    document.getElementById('project-select').value=projectId;
+    renderPS(projectId);
+    // expand all phases and highlight
+    const tbody=document.getElementById('sched-tbody');
+    setTimeout(()=>{
+      const row=document.querySelector(`tr[data-task-id="${taskId}"]`);
+      if(row){row.classList.add('task-highlight');row.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>row.classList.remove('task-highlight'),3000);}
+    },200);
+  },300);
+}
+
+/* ═══════════ NAV ════════════ */
+function goTo(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item.sub').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const nav=document.getElementById('nav-'+page);if(nav)nav.classList.add('active');
+  closeAllDD();
+  if(page==='resources') renderResources();
+  if(page==='companies') renderCompanies();
+  if(page==='schedule')  switchView('projects');
+}
+
+/* ═══════════ DROPDOWN ═══════ */
+function toggleDD(id){const dd=document.getElementById(id);const was=dd.classList.contains('open');closeAllDD();if(!was)dd.classList.add('open');}
+function closeAllDD(){document.querySelectorAll('.filter-dropdown').forEach(d=>d.classList.remove('open'));}
+document.addEventListener('click',e=>{if(!e.target.closest('.filter-wrap'))closeAllDD();});
+
+/* ═══════════ RESOURCES LIST ══ */
+function activeResources(){return resources.filter(r=>!deletedResources.has(r.id));}
+
+function getFilteredRes(){
+  let list=activeResources();
+  const q=resSearchQ.trim().toLowerCase();
+  if(q.length>=3) list=list.filter(r=>r.name.toLowerCase().includes(q)||r.email.toLowerCase().includes(q));
+  if(resRoleF.size>0) list=list.filter(r=>resRoleF.has(r.role));
+  if(resCoF.size>0)   list=list.filter(r=>resCoF.has(r.company));
+  return list.sort((a,b)=>a.name.localeCompare(b.name));
+}
+
+function buildResFilterOptions(){
+  const all=activeResources();
+  const roles=[...new Set(all.map(r=>r.role))].sort();
+  document.getElementById('res-ro').innerHTML=roles.map(v=>`<div class="filter-option"><input type="checkbox" id="rrf-${v.replace(/\s/g,'_')}" ${resRoleF.has(v)?'checked':''} onchange="toggleResF('role','${v}')"><label for="rrf-${v.replace(/\s/g,'_')}">${v}</label></div>`).join('');
+  const cos=[...new Set(all.map(r=>r.company))].sort();
+  document.getElementById('res-co').innerHTML=cos.map(v=>`<div class="filter-option"><input type="checkbox" id="rcf-${v.replace(/\s/g,'_')}" ${resCoF.has(v)?'checked':''} onchange="toggleResF('company','${v}')"><label for="rcf-${v.replace(/\s/g,'_')}">${v}</label></div>`).join('');
+}
+
+function toggleResF(type,val){const s=type==='role'?resRoleF:resCoF;s.has(val)?s.delete(val):s.add(val);updateResFilterUI();renderResources();}
+function clearResRF(){resRoleF.clear();buildResFilterOptions();updateResFilterUI();renderResources();}
+function clearResCF(){resCoF.clear();buildResFilterOptions();updateResFilterUI();renderResources();}
+function clearAllRes(){resSearchQ='';resRoleF.clear();resCoF.clear();document.getElementById('res-sq').value='';document.getElementById('res-sc').classList.remove('visible');buildResFilterOptions();updateResFilterUI();renderResources();}
+function onResSearch(){resSearchQ=document.getElementById('res-sq').value;document.getElementById('res-sc').classList.toggle('visible',resSearchQ.length>0);updateResFilterUI();renderResources();}
+function clearResSearch(){resSearchQ='';document.getElementById('res-sq').value='';document.getElementById('res-sc').classList.remove('visible');updateResFilterUI();renderResources();}
+
+function updateResFilterUI(){
+  const ra=resRoleF.size>0,ca=resCoF.size>0,any=ra||ca||resSearchQ.trim().length>=3;
+  document.getElementById('res-rf-btn').classList.toggle('active',ra);
+  document.getElementById('res-rf-lbl').textContent=resRoleF.size===0?'Role':resRoleF.size===1?[...resRoleF][0]:`${resRoleF.size} selected`;
+  document.getElementById('res-cf-btn').classList.toggle('active',ca);
+  document.getElementById('res-cf-lbl').textContent=resCoF.size===0?'Company':resCoF.size===1?[...resCoF][0]:`${resCoF.size} selected`;
+  document.getElementById('res-ca').style.display=any?'inline':'none';
+}
+
+function renderResources(){
+  const filtered=getFilteredRes();
+  const total=activeResources().length;
+  const isF=resSearchQ.trim().length>=3||resRoleF.size>0||resCoF.size>0;
+  document.getElementById('res-count').textContent=isF?`${filtered.length} of ${total} resources`:`${total} resource${total===1?'':'s'}`;
+  document.getElementById('res-sfbar').style.display=total===0?'none':'flex';
+  buildResFilterOptions();
+  const tbody=document.getElementById('res-tbody');
+  const emptyEl=document.getElementById('res-empty');
+  if(total===0){tbody.innerHTML='';emptyEl.style.display='flex';document.getElementById('res-empty-msg').textContent='No resources found. Start by adding resources to the Resources List.';return;}
+  if(filtered.length===0){tbody.innerHTML='';emptyEl.style.display='flex';document.getElementById('res-empty-msg').innerHTML='No resources match your search. <button class="btn-secondary" style="margin-top:8px;font-size:11.5px;" onclick="clearAllRes()">Clear search</button>';return;}
+  emptyEl.style.display='none';
+  tbody.innerHTML=filtered.map(r=>`
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:9px;"><div class="av" style="background:${r.color}">${r.initials}</div><span style="font-weight:500;color:#111827;">${r.name}</span></div></td>
+      <td style="color:#6B7280;">${r.email}</td>
+      <td style="color:#374151;">${r.company}</td>
+      <td style="color:#374151;">${r.role}</td>
+      <td><div class="row-actions">
+        <button class="icon-btn icon-edit" title="Edit" onclick="openEditResourceModal(${r.id})">${ICON_EDIT}</button>
+        <button class="icon-btn icon-delete" title="Delete" onclick="openDeleteResModal(${r.id})">${ICON_DEL}</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+/* ═══════════ ADD RESOURCE ═══ */
+function validateResForm(m){
+  const px=m==='add'?'add-res':'edit-res';
+  const name=document.getElementById(px+'-name')?.value.trim()||'';
+  const email=document.getElementById(px+'-email')?.value.trim()||'';
+  const coId=document.getElementById(px+'-company')?.value||'';
+  const role=document.getElementById(px+'-role')?.value||'';
+  const errEl=document.getElementById(px+'-email-error');
+  const eInp=document.getElementById(px+'-email');
+  let eOk=true;
+  if(email&&!isValidEmail(email)){errEl.textContent='Please enter a valid email address.';errEl.classList.add('visible');eInp.classList.add('error');eOk=false;}
+  else{errEl.classList.remove('visible');eInp.classList.remove('error');}
+  const btnId=m==='add'?'btn-save-add-resource':'btn-save-edit-resource';
+  document.getElementById(btnId).disabled=!(name&&email&&eOk&&coId&&role);
+}
+
+function activeCompanyOptions(){return companies.filter(c=>!deletedCompanies.has(c.id));}
+
+function openAddResourceModal(){
+  document.getElementById('add-res-name').value='';
+  document.getElementById('add-res-email').value='';
+  document.getElementById('add-res-email-error').classList.remove('visible');
+  document.getElementById('add-res-email').classList.remove('error');
+  document.getElementById('btn-save-add-resource').disabled=true;
+  document.getElementById('add-res-role').innerHTML='<option value="">Select role...</option>'+PERSON_ROLES.map(r=>`<option>${r}</option>`).join('');
+  const cos=activeCompanyOptions();
+  const coSel=document.getElementById('add-res-company');
+  coSel.disabled=cos.length===0;
+  coSel.innerHTML=cos.length===0?'<option value="">No companies available. Please add a company first.</option>':'<option value="">Select company...</option>'+cos.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('modal-add-resource').classList.add('open');
+}
+
+function saveAddResource(){
+  const name=document.getElementById('add-res-name').value.trim();
+  const email=document.getElementById('add-res-email').value.trim();
+  const coId=parseInt(document.getElementById('add-res-company').value);
+  const role=document.getElementById('add-res-role').value;
+  if(activeResources().some(r=>r.email===email)){const e=document.getElementById('add-res-email-error');e.textContent='A resource with this email already exists.';e.classList.add('visible');document.getElementById('add-res-email').classList.add('error');document.getElementById('btn-save-add-resource').disabled=true;return;}
+  const co=getCo(coId);
+  resources.push({id:nextResId++,name,email,companyId:coId,company:co?.name||'',role,initials:mkInitials(name),color:randomColor()});
+  closeModal('modal-add-resource');
+  renderResources();
+}
+
+/* ═══════════ EDIT RESOURCE ══ */
+function openEditResourceModal(id){
+  editingResId=id;
+  const r=getRes(id);if(!r)return;
+  document.getElementById('edit-res-name').value=r.name;
+  document.getElementById('edit-res-email').value=r.email;
+  document.getElementById('edit-res-email-error').classList.remove('visible');
+  document.getElementById('edit-res-email').classList.remove('error');
+  document.getElementById('btn-save-edit-resource').disabled=false;
+  document.getElementById('edit-res-role').innerHTML='<option value="">Select role...</option>'+PERSON_ROLES.map(ro=>`<option ${ro===r.role?'selected':''}>${ro}</option>`).join('');
+  const cos=activeCompanyOptions();
+  document.getElementById('edit-res-company').innerHTML='<option value="">Select company...</option>'+cos.map(c=>`<option value="${c.id}" ${c.id===r.companyId?'selected':''}>${c.name}</option>`).join('');
+  document.getElementById('modal-edit-resource').classList.add('open');
+}
+
+function saveEditResource(){
+  const r=getRes(editingResId);if(!r)return;
+  const name=document.getElementById('edit-res-name').value.trim();
+  const email=document.getElementById('edit-res-email').value.trim();
+  const coId=parseInt(document.getElementById('edit-res-company').value);
+  const role=document.getElementById('edit-res-role').value;
+  if(email!==r.email&&activeResources().some(x=>x.email===email&&x.id!==editingResId)){const e=document.getElementById('edit-res-email-error');e.textContent='A resource with this email already exists.';e.classList.add('visible');document.getElementById('edit-res-email').classList.add('error');return;}
+  if(name){r.name=name;r.initials=mkInitials(name);}
+  if(email)r.email=email;
+  if(coId){r.companyId=coId;const co=getCo(coId);if(co)r.company=co.name;}
+  if(role)r.role=role;
+  closeModal('modal-edit-resource');
+  renderResources();
+  showToast('Resource updated.');
+}
+
+/* ═══════════ DELETE RESOURCE ══
+   Check eligibility FIRST, then show appropriate modal
+═══════════════════════════════ */
+function openDeleteResModal(id){
+  deletingResId=id;
+  const assignments=getResTaskAssignments(id);
+  if(assignments.length===0){
+    // No active assignments → show confirmation
+    document.getElementById('modal-del-res-confirm').classList.add('open');
+  } else {
+    // Has active assignments → skip confirmation, show blocking modal directly
+    document.getElementById('block-res-list').innerHTML=assignments.map(a=>
+      `<li><a class="modal-link" href="javascript:void(0)" onclick="openScheduleLink('${a.projectId}','${a.taskId}',event)">${a.projectName}</a> – <a class="modal-link" href="javascript:void(0)" onclick="openScheduleLink('${a.projectId}','${a.taskId}',event)">${a.taskName}</a></li>`
+    ).join('');
+    document.getElementById('modal-del-res-blocked').classList.add('open');
+  }
+}
+
+function doDeleteResource(){
+  closeModal('modal-del-res-confirm');
+  deletedResources.add(deletingResId);
+  renderResources();
+  showToast('Resource deleted.');
+}
+
+/* ═══════════ COMPANIES LIST ══ */
+function activeCompanies(){return companies.filter(c=>!deletedCompanies.has(c.id));}
+
+function getFilteredCo(){
+  let list=activeCompanies();
+  const q=coSearchQ.trim().toLowerCase();
+  if(q.length>=3) list=list.filter(c=>c.name.toLowerCase().includes(q));
+  if(coRoleF.size>0) list=list.filter(c=>coRoleF.has(c.role));
+  return list.sort((a,b)=>a.name.localeCompare(b.name));
+}
+
+function buildCoFilterOptions(){
+  const all=activeCompanies();
+  const roles=[...new Set(all.map(c=>c.role))].sort();
+  document.getElementById('co-ro').innerHTML=roles.map(v=>`<div class="filter-option"><input type="checkbox" id="crf-${v}" ${coRoleF.has(v)?'checked':''} onchange="toggleCoF('${v}')"><label for="crf-${v}">${v}</label></div>`).join('');
+}
+
+function toggleCoF(val){coRoleF.has(val)?coRoleF.delete(val):coRoleF.add(val);updateCoFilterUI();renderCompanies();}
+function clearCoRF(){coRoleF.clear();buildCoFilterOptions();updateCoFilterUI();renderCompanies();}
+function clearAllCo(){coSearchQ='';coRoleF.clear();document.getElementById('co-sq').value='';document.getElementById('co-sc').classList.remove('visible');buildCoFilterOptions();updateCoFilterUI();renderCompanies();}
+function onCoSearch(){coSearchQ=document.getElementById('co-sq').value;document.getElementById('co-sc').classList.toggle('visible',coSearchQ.length>0);updateCoFilterUI();renderCompanies();}
+function clearCoSearch(){coSearchQ='';document.getElementById('co-sq').value='';document.getElementById('co-sc').classList.remove('visible');updateCoFilterUI();renderCompanies();}
+
+function updateCoFilterUI(){
+  const ra=coRoleF.size>0,any=ra||coSearchQ.trim().length>=3;
+  document.getElementById('co-rf-btn').classList.toggle('active',ra);
+  document.getElementById('co-rf-lbl').textContent=coRoleF.size===0?'Role':coRoleF.size===1?[...coRoleF][0]:`${coRoleF.size} selected`;
+  document.getElementById('co-ca').style.display=any?'inline':'none';
+}
+
+function renderCompanies(){
+  const filtered=getFilteredCo();
+  const total=activeCompanies().length;
+  const isF=coSearchQ.trim().length>=3||coRoleF.size>0;
+  document.getElementById('co-count').textContent=isF?`${filtered.length} of ${total} companies`:`${total} compan${total===1?'y':'ies'}`;
+  document.getElementById('co-sfbar').style.display=total===0?'none':'flex';
+  buildCoFilterOptions();
+  const tbody=document.getElementById('co-tbody');
+  const emptyEl=document.getElementById('co-empty');
+  if(total===0){tbody.innerHTML='';emptyEl.style.display='flex';document.getElementById('co-empty-msg').textContent='No companies found. Start by adding companies.';return;}
+  if(filtered.length===0){tbody.innerHTML='';emptyEl.style.display='flex';document.getElementById('co-empty-msg').innerHTML='No companies match your search. <button class="btn-secondary" style="margin-top:8px;font-size:11.5px;" onclick="clearAllCo()">Clear search</button>';return;}
+  emptyEl.style.display='none';
+  tbody.innerHTML=filtered.map(c=>`
+    <tr>
+      <td><span style="font-weight:500;color:#111827;">${c.name}</span></td>
+      <td style="color:#6B7280;">${c.role}</td>
+      <td><div class="row-actions">
+        <button class="icon-btn icon-edit" title="Edit" onclick="openEditCompanyModal(${c.id})">${ICON_EDIT}</button>
+        <button class="icon-btn icon-delete" title="Delete" onclick="openDeleteCoModal(${c.id})">${ICON_DEL}</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+/* ═══════════ ADD COMPANY ════ */
+function validateCoForm(m){
+  const px=m==='add'?'add-co':'edit-co';
+  const name=document.getElementById(px+'-name')?.value.trim()||'';
+  const role=document.getElementById(px+'-role')?.value||'';
+  document.getElementById(m==='add'?'btn-save-add-company':'btn-save-edit-company').disabled=!(name&&role);
+}
+
+function openAddCompanyModal(){
+  document.getElementById('add-co-name').value='';
+  document.getElementById('add-co-name-error').classList.remove('visible');
+  document.getElementById('add-co-name').classList.remove('error');
+  document.getElementById('btn-save-add-company').disabled=true;
+  document.getElementById('add-co-role').innerHTML='<option value="">Select role...</option>'+COMPANY_ROLES.map(r=>`<option>${r}</option>`).join('');
+  document.getElementById('modal-add-company').classList.add('open');
+}
+
+function saveAddCompany(){
+  const name=document.getElementById('add-co-name').value.trim();
+  const role=document.getElementById('add-co-role').value;
+  if(activeCompanies().some(c=>c.name.toLowerCase()===name.toLowerCase())){const e=document.getElementById('add-co-name-error');e.textContent='A company with this name already exists.';e.classList.add('visible');document.getElementById('add-co-name').classList.add('error');document.getElementById('btn-save-add-company').disabled=true;return;}
+  companies.push({id:nextCoId++,name,role});
+  closeModal('modal-add-company');
+  renderCompanies();
+}
+
+/* ═══════════ EDIT COMPANY ═══ */
+function openEditCompanyModal(id){
+  editingCoId=id;
+  const c=getCo(id);if(!c)return;
+  document.getElementById('edit-co-name').value=c.name;
+  document.getElementById('edit-co-name-error').classList.remove('visible');
+  document.getElementById('edit-co-name').classList.remove('error');
+  document.getElementById('btn-save-edit-company').disabled=false;
+  document.getElementById('edit-co-role').innerHTML='<option value="">Select role...</option>'+COMPANY_ROLES.map(r=>`<option ${r===c.role?'selected':''}>${r}</option>`).join('');
+  document.getElementById('modal-edit-company').classList.add('open');
+}
+
+function saveEditCompany(){
+  const c=getCo(editingCoId);if(!c)return;
+  const name=document.getElementById('edit-co-name').value.trim();
+  const role=document.getElementById('edit-co-role').value;
+  if(name!==c.name&&activeCompanies().some(x=>x.name.toLowerCase()===name.toLowerCase()&&x.id!==editingCoId)){const e=document.getElementById('edit-co-name-error');e.textContent='A company with this name already exists.';e.classList.add('visible');document.getElementById('edit-co-name').classList.add('error');return;}
+  const old=c.name;
+  if(name)c.name=name;
+  if(role)c.role=role;
+  if(name&&name!==old) resources.forEach(r=>{if(r.companyId===editingCoId)r.company=c.name;});
+  closeModal('modal-edit-company');
+  renderCompanies();
+  showToast('Company updated.');
+}
+
+/* ═══════════ DELETE COMPANY ══
+   Check TWO conditions in parallel:
+   A) active person resources linked to this company
+   B) active task assignments where this company entity is assigned
+   Show appropriate modal based on result
+═══════════════════════════════ */
+function openDeleteCoModal(id){
+  deletingCoId=id;
+  const linkedRes=activeCoResources(id);
+  const taskAssignments=getCoTaskAssignments(id);
+  const hasA=linkedRes.length>0;
+  const hasB=taskAssignments.length>0;
+
+  if(!hasA&&!hasB){
+    // No blockers → confirmation modal
+    document.getElementById('modal-del-co-confirm').classList.add('open');
+  } else {
+    // Has blockers → skip confirmation, show blocking modal directly
+    // Section A
+    const secA=document.getElementById('co-block-sec-a');
+    if(hasA){
+      secA.style.display='block';
+      document.getElementById('co-block-res-list').innerHTML=linkedRes.map(r=>`<li>${r.name} – ${r.role}</li>`).join('');
+    } else {
+      secA.style.display='none';
+    }
+    // Section B
+    const secB=document.getElementById('co-block-sec-b');
+    if(hasB){
+      secB.style.display='block';
+      document.getElementById('co-block-task-list').innerHTML=taskAssignments.map(a=>
+        `<li><a class="modal-link" href="javascript:void(0)" onclick="openScheduleLink('${a.projectId}','${a.taskId}',event)">${a.projectName}</a> – <a class="modal-link" href="javascript:void(0)" onclick="openScheduleLink('${a.projectId}','${a.taskId}',event)">${a.taskName}</a></li>`
+      ).join('');
+    } else {
+      secB.style.display='none';
+    }
+    document.getElementById('modal-del-co-blocked').classList.add('open');
+  }
+}
+
+function doDeleteCompany(){
+  closeModal('modal-del-co-confirm');
+  deletedCompanies.add(deletingCoId);
+  renderCompanies();
+  showToast('Company deleted.');
+}
+
+/* ═══════════ SCHEDULE ═══════ */
+let currentRMScale='M';
+let currentRMEntity='companies';
+
+const MONTH_LAST_DAY=[31,28,31,30,31,30,31,31,30,31,30,31];
+function fmtDate(monthIdx,isEnd){const m=String(monthIdx+1).padStart(2,'0');const d=String(isEnd?MONTH_LAST_DAY[monthIdx]:1).padStart(2,'0');return`${m}/${d}/2026`;}
+
+function getRMColumns(){
+  if(currentRMScale==='M'){
+    return Array.from({length:12},(_,i)=>{
+      const yr=i<=11?2026:2027;
+      return{label:MONTHS[i]+'<br><span style="font-size:9px;font-weight:400;letter-spacing:0;">'+yr+'</span>',idx:i,total:12};
+    });
+  }
+  if(currentRMScale==='W'){
+    const firstMon=new Date(2026,0,5);
+    return Array.from({length:26},(_,w)=>{
+      const wS=new Date(firstMon.getTime()+w*7*86400000);
+      const wE=new Date(wS.getTime()+6*86400000);
+      const same=wS.getMonth()===wE.getMonth();
+      const l1=same?MONTHS[wS.getMonth()]+' '+wS.getDate()+'–'+wE.getDate():MONTHS[wS.getMonth()]+' '+wS.getDate()+' – '+MONTHS[wE.getMonth()]+' '+wE.getDate();
+      return{label:l1+'<br><span style="font-size:9px;font-weight:400;">Wk '+(w+1)+'</span>',idx:w,total:26};
+    });
+  }
+  const DNAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return Array.from({length:31},(_,d)=>{
+    const dt=new Date(2026,6,1+d);
+    return{label:DNAMES[dt.getDay()]+'<br><span style="font-size:9px;font-weight:400;">Jul '+(d+1)+'</span>',idx:d,total:31};
+  });
+}
+
+function rmBarPos(sM,eM){
+  if(currentRMScale==='M'){
+    return'left:'+(sM/12*100).toFixed(2)+'%;width:'+((eM-sM+1)/12*100).toFixed(2)+'%;';
+  }
+  if(currentRMScale==='W'){
+    const sW=sM*4.33,eW=Math.min((eM+1)*4.33,26);
+    return'left:'+(sW/26*100).toFixed(2)+'%;width:'+Math.max((eW-sW)/26*100,1.5).toFixed(2)+'%;';
+  }
+  // Day: cosmetic zoom on July (month 6)
+  const sD=(sM-6)*30.4,eD=(eM-5)*30.4;
+  const l=Math.max(Math.min(sD,31),0),r=Math.max(Math.min(eD,31),0);
+  return'left:'+(l/31*100).toFixed(2)+'%;width:'+Math.max((r-l)/31*100,1).toFixed(2)+'%;';
+}
+
+function setRMScale(s){currentRMScale=s;['M','W','D'].forEach(x=>document.getElementById('rm-scale-'+x).classList.toggle('active',x===s));if(currentRMEntity==='companies')renderCompanySched();else renderPPL();}
+
+function switchEntity(entity){
+  currentRMEntity=entity;
+  document.getElementById('btn-entity-co').classList.toggle('active',entity==='companies');
+  document.getElementById('btn-entity-res').classList.toggle('active',entity==='resources');
+  document.getElementById('view-entity-companies').style.display=entity==='companies'?'flex':'none';
+  document.getElementById('view-entity-resources').style.display=entity==='resources'?'flex':'none';
+  if(entity==='companies')renderCompanySched();else renderPPL();
+}
+
+function switchView(view){
+  document.getElementById('view-projects').style.display=view==='projects'?'flex':'none';
+  document.getElementById('view-people').style.display=view==='people'?'flex':'none';
+  document.getElementById('btn-proj').classList.toggle('active',view==='projects');
+  document.getElementById('btn-people').classList.toggle('active',view==='people');
+  if(view==='projects') renderPS(document.getElementById('project-select').value);
+  if(view==='people'){
+    // Reset to defaults per story
+    currentRMScale='M';
+    currentRMEntity='companies';
+    ['M','W','D'].forEach(x=>document.getElementById('rm-scale-'+x).classList.toggle('active',x==='M'));
+    document.getElementById('btn-entity-co').classList.add('active');
+    document.getElementById('btn-entity-res').classList.remove('active');
+    document.getElementById('view-entity-companies').style.display='flex';
+    document.getElementById('view-entity-resources').style.display='none';
+    renderCompanySched();
+  }
+}
+
+function setScale(s){currentScale=s;['M','W','D'].forEach(x=>document.getElementById('scale-'+x).classList.toggle('active',x===s));renderPS(document.getElementById('project-select').value);}
+
+
+/* ═══════════ RM HELPERS ═══════ */
+function computeTodayPct(){
+  const now=new Date(),m=now.getMonth(),d=now.getDate();
+  const dim=new Date(now.getFullYear(),m+1,0).getDate();
+  if(currentRMScale==='M') return(m+(d-1)/dim)/12*100;
+  if(currentRMScale==='W'){const fm=new Date(2026,0,5);return((now-fm)/86400000/7)/26*100;}
+  const dby=[0,31,59,90,120,151,181,212,243,273,304,334];
+  return(dby[m]+(d-1))/365*100;
+}
+function rmMilestonePct(mIdx){
+  if(currentRMScale==='M') return((mIdx+0.5)/12*100).toFixed(2);
+  if(currentRMScale==='W') return(((mIdx+0.5)*4.33)/26*100).toFixed(2);
+  return((((mIdx-6)+0.5)*30.4)/31*100).toFixed(2);
+}
+function fmtMonthRange(sM,eM){
+  const y=2026;
+  if(sM===eM) return MONTHS[sM]+' '+y;
+  const ey=2026;
+  return MONTHS[sM]+' '+y+' – '+MONTHS[eM]+' '+ey;
+}
+function fmtMilestoneDate(mIdx){
+  return MONTHS[mIdx]+' 15, 2026';
+}
+
+/* ═══════════ COMPANIES SCHEDULE ═══════ */
+function renderCompanySched(){
+  const all=activeCompanies().sort((a,b)=>a.name.localeCompare(b.name));
+  const emptyEl=document.getElementById('co-sched-empty');
+  if(!all.length){document.getElementById('co-sched-thead').innerHTML='';document.getElementById('co-sched-tbody').innerHTML='';emptyEl.style.display='flex';return;}
+  emptyEl.style.display='none';
+  const cols=getRMColumns();
+  const colW=currentRMScale==='M'?80:currentRMScale==='W'?36:20;
+  const todayPct=computeTodayPct();
+  const todayLine=`<div class="today-line" style="left:${todayPct.toFixed(2)}%;"></div>`;
+  document.getElementById('co-sched-thead').innerHTML=`<tr>
+    <th class="th-info sticky1" style="width:200px;">Company</th>
+    <th class="th-info" style="position:sticky;left:200px;z-index:4;background:#F9FAFB;width:120px;">Role</th>
+    ${cols.map(c=>`<th class="th-month" style="width:${colW}px;min-width:unset;line-height:1.4;">${c.label}</th>`).join('')}
+  </tr>`;
+
+  const LANE_H=18,LANE_GAP=4,ROW_PAD=7;
+
+  document.getElementById('co-sched-tbody').innerHTML=all.map(co=>{
+    const asgn=[];
+    for(const[pid,phases]of Object.entries(schedule)){
+      const pName=PROJ_NAMES[pid]||pid;
+      for(const ph of phases){
+        for(const t of ph.tasks){
+          if((t.assignedCompanies||[]).includes(co.id)){
+            asgn.push({projectId:pid,projectName:pName,taskName:t.name,
+              startMonth:t.startMonth,endMonth:t.endMonth,
+              isMilestone:t.startMonth===t.endMonth});
+          }
+        }
+      }
+    }
+    // Lane packing – sort by start date, greedy earliest available lane
+    const sorted=[...asgn].sort((a,b)=>a.startMonth-b.startMonth||(a.taskName>b.taskName?1:-1));
+    const laneEnd=[];
+    const withL=sorted.map(a=>{
+      let l=laneEnd.findIndex(e=>e<a.startMonth);
+      if(l===-1)l=laneEnd.length;
+      laneEnd[l]=a.endMonth;
+      return{...a,lane:l};
+    });
+    const maxLane=withL.reduce((m,a)=>Math.max(m,a.lane),-1);
+    const rowH=asgn.length===0?34:ROW_PAD*2+(maxLane+1)*(LANE_H+LANE_GAP)-LANE_GAP+ROW_PAD;
+
+    let bars=todayLine;
+    withL.forEach(a=>{
+      const top=ROW_PAD+a.lane*(LANE_H+LANE_GAP);
+      const txt=`${a.projectName} · ${a.taskName}`;
+      const dr=a.isMilestone?fmtMilestoneDate(a.startMonth):fmtMonthRange(a.startMonth,a.endMonth);
+      const tip=`${a.projectName}|${a.taskName}|${dr}`;
+      if(a.isMilestone){
+        const lpct=rmMilestonePct(a.startMonth);
+        bars+=`<div class="milestone-dia" style="left:${lpct}%;top:${top+LANE_H/2}px;" onmouseenter="showTip(event,'${tip.replace(/'/g,'&#39;')}')" onmouseleave="hideTip()"></div>`;
+      } else {
+        bars+=`<div class="tl-bar bar-task-full" style="${rmBarPos(a.startMonth,a.endMonth)}top:${top}px;height:${LANE_H}px;" onmouseenter="showTip(event,'${tip.replace(/'/g,'&#39;')}')" onmouseleave="hideTip()">${txt}</div>`;
+      }
+    });
+
+    const initials=mkInitials(co.name);
+    const laneCount=asgn.length?`<span style="font-size:10px;color:#6B7280;margin-left:6px;">${asgn.length} assignment${asgn.length===1?'':'s'}</span>`:'';
+    return`<tr>
+      <td style="position:sticky;left:0;z-index:2;background:#fff;width:200px;padding:0 12px;height:${rowH}px;vertical-align:middle;">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div class="av" style="background:#475569;flex-shrink:0;">${initials}</div>
+          <div><div style="font-size:12.5px;font-weight:600;color:#111827;">${co.name}</div>${laneCount}</div>
+        </div>
+      </td>
+      <td style="position:sticky;left:200px;z-index:2;background:#fff;width:120px;padding:0 12px;font-size:11px;color:#6B7280;vertical-align:middle;">${co.role}</td>
+      <td colspan="${cols.length}" style="padding:0;border-bottom:1px solid #E5E7EB;">
+        <div class="tl-inner" style="height:${rowH}px;">
+          <div class="tl-grid">${cols.map(()=>'<div class="tl-month"></div>').join('')}</div>
+          ${bars}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+
+
+function getColumns(){
+  if(currentScale==='M') return Array.from({length:12},(_,i)=>({label:MONTHS[i]+' 2026',idx:i,total:12}));
+  if(currentScale==='W'){const c=[];for(let w=1;w<=26;w++)c.push({label:'W'+w,idx:w-1,total:26});return c;}
+  const c=[];for(let d=1;d<=31;d++)c.push({label:d+'',idx:d-1,total:31});return c;
+}
+
+function barPos(sM,eM){const total=getColumns().length;let s,e;if(currentScale==='M'){s=sM;e=eM;}else if(currentScale==='W'){s=Math.round(sM*4.33);e=Math.min(Math.round((eM+1)*4.33)-1,25);}else{s=Math.round(sM*2.58);e=Math.min(Math.round((eM+1)*2.58)-1,30);}s=Math.max(0,Math.min(s,total-1));e=Math.max(s,Math.min(e,total-1));return `left:${(s/total*100).toFixed(2)}%;width:${((e-s+1)/total*100).toFixed(2)}%;`;}
+
+function tlInner(h,barHtml){const cols=getColumns();return `<div class="tl-inner" style="height:${h}px;"><div class="tl-grid">${cols.map(()=>'<div class="tl-month"></div>').join('')}</div>${barHtml}</div>`;}
+
+// Build "Assigned To" cell showing persons + companies, with (Deleted) labels
+function buildAssignedCell(task){
+  const persons=task.assigned.map(id=>{
+    const r=getRes(id);if(!r)return '';
+    const isDel=deletedResources.has(id);
+    const style=`background:${r.color};width:22px;height:22px;font-size:8px;border:2px solid #fff;margin-left:-6px;${isDel?'opacity:.45;':''}`;
+    const title=r.name+(isDel?' (Deleted)':'');
+    return `<div class="av" style="${style}" title="${title}">${r.initials}${isDel?'*':''}</div>`;
+  }).join('');
+  const cos=(task.assignedCompanies||[]).map(cid=>{
+    const c=getCo(cid);if(!c)return '';
+    const isDel=deletedCompanies.has(cid);
+    return `<span style="font-size:10px;color:${isDel?'#9CA3AF':'#374151'};background:${isDel?'#F3F4F6':'#E0E7FF'};border-radius:4px;padding:1px 5px;margin-left:4px;">${c.name}${isDel?' (Deleted)':''}</span>`;
+  }).join('');
+  if(!persons&&!cos)return '<span style="font-size:11px;color:#9CA3AF;">—</span>';
+  return `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;">${persons}${cos}</div>`;
+}
+
+function renderPS(projectId){
+  const phases=schedule[projectId]||[];
+  const cols=getColumns();
+  const colW=currentScale==='M'?60:currentScale==='W'?28:22;
+  document.getElementById('sched-thead').innerHTML=`<tr><th class="th-info sticky1" style="width:200px;">Task Name</th><th class="th-info sticky2" style="width:160px;left:200px;">Assigned To</th><th class="th-info sticky3" style="width:110px;left:360px;">Status</th>${cols.map(c=>`<th class="th-month" style="width:${colW}px;min-width:unset;">${c.label}</th>`).join('')}</tr>`;
+  let rows='';
+  if(!phases.length){rows=`<tr><td colspan="3" style="text-align:center;padding:32px;color:#6B7280;font-size:12.5px;">No phases found for this project.</td></tr>`;}
+  else phases.forEach(phase=>{
+    const isOpen=expanded[phase.id]!==false;
+    const cov=calcCov(phase);
+    const pbar=`<div class="tl-bar bar-phase-bg" style="${barPos(phase.startMonth,phase.endMonth)}"></div>`;
+    rows+=`<tr class="phase-tr" onclick="togglePhase('${phase.id}','${projectId}')"><td class="phase-td-info sticky1" style="width:200px;"><div class="phase-name-wrap"><span class="expand-icon">${isOpen?'▼':'▶'}</span><span class="phase-name">${phase.name}</span>${covBadge(cov)}</div></td><td class="phase-td-info sticky2" style="width:160px;left:200px;"></td><td class="phase-td-info sticky3" style="width:110px;left:360px;"></td><td colspan="${cols.length}" class="phase-timeline-cell">${tlInner(28,pbar)}</td></tr>`;
+    phase.tasks.forEach(task=>{
+      const hasPersons=task.assigned.length>0;
+      const hasCos=(task.assignedCompanies||[]).length>0;
+      const isA=hasPersons||hasCos;
+      const allDeleted=(task.assigned.every(id=>deletedResources.has(id)))&&(task.assignedCompanies||[]).every(id=>deletedCompanies.has(id));
+      const effectively=isA&&!allDeleted;
+      const cls=effectively?'bar-task-full':isA?'bar-task-unassigned':'bar-task-unassigned';
+      const lbl=effectively?task.assigned.filter(id=>!deletedResources.has(id)).map(id=>getRes(id)?.initials||'').join(', ')||'Co.':'Unassigned';
+      const names=[...task.assigned.map(id=>{const r=getRes(id);return r?(deletedResources.has(id)?r.name+' (Deleted)':r.name):'';}),
+                   ...(task.assignedCompanies||[]).map(id=>{const c=getCo(id);return c?(deletedCompanies.has(id)?c.name+' (Deleted)':c.name):''})].filter(Boolean).join(', ')||'No one assigned';
+      const tip=`📋 ${task.name}|Assigned: ${names}|${MONTHS[task.startMonth]} – ${MONTHS[task.endMonth]} 2026`;
+      const bar=`<div class="tl-bar ${effectively?'bar-task-full':'bar-task-unassigned'}" style="${barPos(task.startMonth,task.endMonth)}top:5px;height:18px;" onmouseenter="showTip(event,'${tip.replace(/'/g,"&#39;")}')" onmouseleave="hideTip()">${lbl}</div>`;
+      const sBadge=effectively?`<span class="badge badge-full">Assigned</span>`:`<span class="badge badge-none">Unassigned</span>`;
+      rows+=`<tr class="task-tr" data-task-id="${task.id}" style="${isOpen?'':'display:none'}"><td class="task-name-td td-sticky sticky1" style="width:200px;"><span class="task-name">${task.name}</span></td><td class="td-assigned td-sticky" style="position:sticky;left:200px;z-index:2;background:#fff;width:160px;">${buildAssignedCell(task)}</td><td class="td-status td-sticky" style="position:sticky;left:360px;z-index:2;background:#fff;width:110px;">${sBadge}</td><td colspan="${cols.length}" class="td-timeline">${tlInner(28,bar)}</td></tr>`;
+    });
+  });
+  document.getElementById('sched-tbody').innerHTML=rows;
+}
+
+function togglePhase(pid,projId){expanded[pid]=expanded[pid]===false?true:false;renderPS(projId||document.getElementById('project-select').value);}
+
+function renderPPL(){
+  const all=activeResources().sort((a,b)=>a.name.localeCompare(b.name));
+  const emptyEl=document.getElementById('ppl-empty');
+  if(!all.length){document.getElementById('ppl-thead').innerHTML='';document.getElementById('ppl-tbody').innerHTML='';emptyEl.style.display='flex';return;}
+  emptyEl.style.display='none';
+  const cols=getRMColumns();
+  const colW=currentRMScale==='M'?80:currentRMScale==='W'?36:20;
+  const todayPct=computeTodayPct();
+  const todayLine=`<div class="today-line" style="left:${todayPct.toFixed(2)}%;"></div>`;
+  document.getElementById('ppl-thead').innerHTML=`<tr>
+    <th class="th-info sticky1" style="width:200px;">Resource</th>
+    <th class="th-info" style="position:sticky;left:200px;z-index:4;background:#F9FAFB;width:130px;">Role</th>
+    <th class="th-info" style="position:sticky;left:330px;z-index:4;background:#F9FAFB;width:130px;">Company</th>
+    ${cols.map(c=>`<th class="th-month" style="width:${colW}px;min-width:unset;line-height:1.4;">${c.label}</th>`).join('')}
+  </tr>`;
+
+  const LANE_H=18,LANE_GAP=4,ROW_PAD=7;
+
+  document.getElementById('ppl-tbody').innerHTML=all.map(r=>{
+    // Collect per-task assignments
+    const asgn=[];
+    for(const[pid,phases]of Object.entries(schedule)){
+      const pName=PROJ_NAMES[pid]||pid;
+      for(const ph of phases){
+        for(const t of ph.tasks){
+          if(t.assigned.includes(r.id)){
+            asgn.push({projectId:pid,projectName:pName,taskName:t.name,
+              startMonth:t.startMonth,endMonth:t.endMonth,
+              isMilestone:t.startMonth===t.endMonth});
+          }
+        }
+      }
+    }
+    // Overallocation: per calendar month, 2+ overlapping assignments
+    const overM=Array.from({length:12},(_,m)=>m).filter(m=>
+      asgn.filter(a=>a.startMonth<=m&&a.endMonth>=m).length>=2
+    );
+    // Lane packing
+    const sorted=[...asgn].sort((a,b)=>a.startMonth-b.startMonth);
+    const laneEnd=[];
+    const withL=sorted.map(a=>{
+      let l=laneEnd.findIndex(e=>e<a.startMonth);
+      if(l===-1)l=laneEnd.length;
+      laneEnd[l]=a.endMonth;
+      return{...a,lane:l};
+    });
+    const maxLane=withL.reduce((m,a)=>Math.max(m,a.lane),-1);
+    const rowH=asgn.length===0?34:ROW_PAD*2+(maxLane+1)*(LANE_H+LANE_GAP)-LANE_GAP+ROW_PAD;
+
+    let bars=todayLine;
+    // Red overallocation overlay per overallocated month
+    if(overM.length){
+      // Group into contiguous ranges
+      let ranges=[],rS=overM[0],rE=overM[0];
+      for(let i=1;i<overM.length;i++){
+        if(overM[i]===rE+1)rE=overM[i];
+        else{ranges.push({s:rS,e:rE});rS=overM[i];rE=overM[i];}
+      }
+      ranges.push({s:rS,e:rE});
+      ranges.forEach(rg=>{
+        const lp=(rg.s/12*100).toFixed(2),wp=((rg.e-rg.s+1)/12*100).toFixed(2);
+        bars+=`<div style="position:absolute;left:${lp}%;width:${wp}%;top:0;bottom:0;background:rgba(220,38,38,.07);border-top:2px solid rgba(220,38,38,.4);pointer-events:none;z-index:2;"></div>`;
+      });
+    }
+    withL.forEach(a=>{
+      const top=ROW_PAD+a.lane*(LANE_H+LANE_GAP);
+      const txt=`${a.projectName} · ${a.taskName}`;
+      const dr=a.isMilestone?fmtMilestoneDate(a.startMonth):fmtMonthRange(a.startMonth,a.endMonth);
+      const tip=`${a.projectName}|${a.taskName}|${dr}`;
+      if(a.isMilestone){
+        const lpct=rmMilestonePct(a.startMonth);
+        bars+=`<div class="milestone-dia" style="left:${lpct}%;top:${top+LANE_H/2}px;" onmouseenter="showTip(event,'${tip.replace(/'/g,'&#39;')}')" onmouseleave="hideTip()"></div>`;
+      } else {
+        bars+=`<div class="tl-bar bar-task-full" style="${rmBarPos(a.startMonth,a.endMonth)}top:${top}px;height:${LANE_H}px;" onmouseenter="showTip(event,'${tip.replace(/'/g,'&#39;')}')" onmouseleave="hideTip()">${txt}</div>`;
+      }
+    });
+
+    const overB=overM.length?`<span class="badge badge-overalloc">! Overallocated</span>`:'';
+    return`<tr>
+      <td style="position:sticky;left:0;z-index:2;background:#fff;width:200px;padding:0 12px;height:${rowH}px;vertical-align:middle;">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div class="av" style="background:${r.color};flex-shrink:0;">${r.initials}</div>
+          <div><div style="font-size:12.5px;font-weight:600;color:#111827;">${r.name}</div>${overB}</div>
+        </div>
+      </td>
+      <td style="position:sticky;left:200px;z-index:2;background:#fff;width:130px;padding:0 12px;font-size:11px;color:#6B7280;vertical-align:middle;">${r.role}</td>
+      <td style="position:sticky;left:330px;z-index:2;background:#fff;width:130px;padding:0 12px;font-size:11px;color:#6B7280;vertical-align:middle;">${r.company}</td>
+      <td colspan="${cols.length}" style="padding:0;border-bottom:1px solid #E5E7EB;">
+        <div class="tl-inner" style="height:${rowH}px;">
+          <div class="tl-grid">${cols.map(()=>'<div class="tl-month"></div>').join('')}</div>
+          ${bars}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════ TOOLTIP ════════ */
+function showTip(e,raw){
+  const parts=raw.replace(/&#39;/g,"'").split('|');
+  const t=document.getElementById('tooltip');
+  t.innerHTML='<strong>'+parts[0]+'</strong>'+(parts[1]?'<span style="color:#9CA3AF;font-size:10.5px;display:block;">'+parts[1]+'</span>':'')+
+    (parts[2]?'<span style="color:#D1D5DB;font-size:10.5px;display:block;">'+parts[2]+'</span>':'');
+  t.classList.add('show');moveTip(e);
+}
+function moveTip(e){const t=document.getElementById('tooltip');t.style.left=Math.min(e.clientX+14,window.innerWidth-260)+'px';t.style.top=Math.max(e.clientY-10,4)+'px';}
+function hideTip(){document.getElementById('tooltip').classList.remove('show');}
+document.addEventListener('mousemove',e=>{if(document.getElementById('tooltip').classList.contains('show'))moveTip(e);});
+
+/* ═══════════ INIT ════════════ */
+goTo('resources');
+</script>
+</body>
+</html>
