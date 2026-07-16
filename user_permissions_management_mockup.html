@@ -1,60 +1,391 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Management – HDS-RealEstate</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font-sans);font-size:14px;color:var(--text-primary)}
-.wrap{padding:1.5rem 0}
-.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:12px}
-.search{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:0.5px solid var(--border);border-radius:var(--radius);padding:6px 12px;flex:1;max-width:280px}
-.search input{border:none;background:transparent;outline:none;font-size:14px;color:var(--text-primary);width:100%}
-.search input::placeholder{color:var(--text-muted)}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:var(--surface-2);color:var(--text-primary);font-size:13px;cursor:pointer;white-space:nowrap}
-.btn-primary{background:var(--fill-accent);border-color:var(--fill-accent);color:var(--on-accent)}
-table{width:100%;border-collapse:collapse}
-thead tr{border-bottom:0.5px solid var(--border-strong)}
-th{text-align:left;font-size:12px;font-weight:500;color:var(--text-secondary);padding:8px 12px;white-space:nowrap}
-td{padding:10px 12px;border-bottom:0.5px solid var(--border);vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:var(--surface-1)}
-.avatar{width:30px;height:30px;border-radius:50%;background:var(--bg-accent);color:var(--text-accent);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
-.user-cell{display:flex;align-items:center;gap:10px}
-.user-name{font-weight:500;font-size:13px}
-.user-email{font-size:12px;color:var(--text-secondary)}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap}
-.badge-admin{background:var(--bg-danger);color:var(--text-danger)}
-.badge-deloitte{background:var(--bg-accent);color:var(--text-accent)}
-.badge-pgm{background:var(--bg-pro);color:var(--text-pro)}
-.badge-epm{background:var(--bg-success);color:var(--text-success)}
-.dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-.actions{display:flex;gap:8px;opacity:0}
-tr:hover .actions{opacity:1}
-.icon-btn{border:none;background:none;cursor:pointer;color:var(--text-secondary);padding:4px;border-radius:4px;display:flex;align-items:center}
-.icon-btn:hover{background:var(--surface-0);color:var(--text-primary)}
-.pagination{display:flex;align-items:center;justify-content:space-between;margin-top:1rem;font-size:13px;color:var(--text-secondary)}
-.page-btns{display:flex;gap:4px}
-.page-btn{padding:4px 10px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--surface-2);cursor:pointer;font-size:13px;color:var(--text-secondary)}
-.page-btn.active{background:var(--fill-accent);border-color:var(--fill-accent);color:var(--on-accent)}
-</style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-<div class="wrap">
-  <div class="toolbar">
-    <div class="search">
-      <i class="ti ti-search" style="font-size:16px;color:var(--text-muted)" aria-hidden="true"></i>
-      <input type="text" placeholder="Search by name or email...">
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    background: #F4F5F7;
+    color: #172B4D;
+    min-height: 100vh;
+  }
+
+  /* ── Top nav ── */
+  .topnav {
+    background: #fff;
+    border-bottom: 1px solid #DFE1E6;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    height: 52px;
+    gap: 24px;
+  }
+  .topnav-logo {
+    font-weight: 700;
+    font-size: 15px;
+    color: #0052CC;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+  }
+  .topnav-links {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+  }
+  .topnav-link {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #42526E;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .topnav-link:hover { background: #F4F5F7; color: #172B4D; }
+  .topnav-link.active { background: #DEEBFF; color: #0052CC; font-weight: 500; }
+
+  /* ── Page layout ── */
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .page-title { font-size: 20px; font-weight: 600; color: #172B4D; }
+  .page-subtitle { font-size: 13px; color: #6B778C; margin-top: 4px; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background 0.12s;
+    white-space: nowrap;
+  }
+  .btn-primary { background: #0052CC; color: #fff; }
+  .btn-primary:hover { background: #0747A6; }
+  .btn-default { background: #fff; color: #42526E; border: 1px solid #DFE1E6; }
+  .btn-default:hover { background: #F4F5F7; }
+  .btn-danger { background: #FFEBE6; color: #BF2600; border: none; }
+  .btn-danger:hover { background: #FFBDAD; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #DFE1E6;
+    border-radius: 4px;
+    padding: 6px 12px;
+    flex: 1;
+    max-width: 320px;
+  }
+  .search-wrap svg { color: #8993A4; flex-shrink: 0; }
+  .search-wrap input {
+    border: none;
+    outline: none;
+    font-size: 13px;
+    color: #172B4D;
+    width: 100%;
+    background: transparent;
+  }
+  .search-wrap input::placeholder { color: #A5ADBA; }
+
+  .filter-select {
+    background: #fff;
+    border: 1px solid #DFE1E6;
+    border-radius: 4px;
+    padding: 7px 12px;
+    font-size: 13px;
+    color: #42526E;
+    cursor: pointer;
+    outline: none;
+  }
+  .filter-select:focus { border-color: #4C9AFF; }
+
+  /* ── Stats row ── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: #fff;
+    border: 1px solid #DFE1E6;
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .stat-label { font-size: 11px; color: #6B778C; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 600; color: #172B4D; }
+  .stat-admin { }
+  .stat-deloitte { }
+  .stat-pgm { }
+  .stat-epm { }
+
+  /* ── Table ── */
+  .table-wrap {
+    background: #fff;
+    border: 1px solid #DFE1E6;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: #F4F5F7; }
+  th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6B778C;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #DFE1E6;
+    white-space: nowrap;
+  }
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #F4F5F7;
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: #FAFBFF; }
+
+  .user-cell { display: flex; align-items: center; }
+  .user-name  { font-size: 13px; font-weight: 500; color: #172B4D; }
+  .user-email { font-size: 12px; color: #6B778C; }
+
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px; font-weight: 500;
+    white-space: nowrap;
+    background: #F4F5F7;
+    color: #42526E;
+    border: 1px solid #DFE1E6;
+  }
+  .b-admin, .b-deloitte, .b-pgm, .b-epm { }
+
+  .date-cell { font-size: 12px; color: #6B778C; }
+
+  .actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.1s; }
+  tbody tr:hover .actions { opacity: 1; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer;
+    padding: 4px 6px; border-radius: 4px;
+    color: #6B778C; display: flex; align-items: center;
+  }
+  .icon-btn:hover { background: #F4F5F7; color: #172B4D; }
+  .icon-btn.danger:hover { background: #FFEBE6; color: #BF2600; }
+
+  /* ── Pagination ── */
+  .pagination {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    font-size: 13px; color: #6B778C;
+  }
+  .page-btns { display: flex; gap: 4px; }
+  .page-btn {
+    min-width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #DFE1E6;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 13px; color: #42526E;
+    cursor: pointer;
+  }
+  .page-btn.active { background: #0052CC; border-color: #0052CC; color: #fff; font-weight: 500; }
+  .page-btn:hover:not(.active) { background: #F4F5F7; }
+
+  /* ── Modal overlay ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(9, 30, 66, 0.5);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: #fff;
+    border-radius: 8px;
+    width: 440px;
+    box-shadow: 0 8px 32px rgba(9, 30, 66, 0.25);
+    overflow: hidden;
+  }
+  .modal-header {
+    padding: 20px 24px 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title { font-size: 16px; font-weight: 600; color: #172B4D; }
+  .modal-close {
+    background: none; border: none; cursor: pointer;
+    color: #6B778C; padding: 4px; border-radius: 4px;
+    display: flex; align-items: center;
+  }
+  .modal-close:hover { background: #F4F5F7; color: #172B4D; }
+
+  .modal-body { padding: 20px 24px; }
+
+  .modal-user {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    background: #F4F5F7;
+    border-radius: 6px;
+    margin-bottom: 20px;
+  }
+  .modal-user-info .name { font-size: 14px; font-weight: 500; }
+  .modal-user-info .email { font-size: 12px; color: #6B778C; margin-top: 2px; }
+
+  .form-label { font-size: 12px; font-weight: 600; color: #6B778C; margin-bottom: 6px; display: block; }
+  .form-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #DFE1E6;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #172B4D;
+    background: #fff;
+    outline: none;
+    cursor: pointer;
+  }
+  .form-select:focus { border-color: #4C9AFF; box-shadow: 0 0 0 2px rgba(76,154,255,0.2); }
+
+  .role-info {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: #DEEBFF;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #0052CC;
+    display: none;
+  }
+  .role-info.visible { display: block; }
+
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #DFE1E6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  /* ── Add user modal ── */
+  .form-group { margin-bottom: 16px; }
+  .form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #DFE1E6;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #172B4D;
+    background: #fff;
+    outline: none;
+  }
+  .form-input:focus { border-color: #4C9AFF; box-shadow: 0 0 0 2px rgba(76,154,255,0.2); }
+  .form-input::placeholder { color: #A5ADBA; }
+</style>
+</head>
+<body>
+
+<!-- Top nav -->
+<nav class="topnav">
+  <span class="topnav-logo">HDS RealEstate</span>
+  <div class="topnav-links">
+    <a class="topnav-link">Map</a>
+    <a class="topnav-link">Dashboards</a>
+    <a class="topnav-link">Grids</a>
+    <a class="topnav-link">Resource Management</a>
+    <a class="topnav-link active">Settings</a>
+  </div>
+</nav>
+
+<!-- Page -->
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">User Management</div>
+      <div class="page-subtitle">Manage users and their access roles</div>
     </div>
-    <div style="display:flex;gap:8px;flex-shrink:0">
-      <button class="btn">
-        <i class="ti ti-filter" style="font-size:15px" aria-hidden="true"></i>
-        Filter by role
-      </button>
-      <button class="btn btn-primary">
-        <i class="ti ti-plus" style="font-size:15px" aria-hidden="true"></i>
-        Add user
-      </button>
+    <button class="btn btn-primary" onclick="openAddModal()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Add user
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Admin</div>
+      <div class="stat-value stat-admin">3</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">DeloitteUser</div>
+      <div class="stat-value stat-deloitte">12</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">PGM</div>
+      <div class="stat-value stat-pgm">4</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">EPM</div>
+      <div class="stat-value stat-epm">5</div>
     </div>
   </div>
 
-  <div style="background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;overflow:hidden">
-    <table>
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <circle cx="6.5" cy="6.5" r="4.5" stroke="#8993A4" stroke-width="1.5"/>
+        <path d="M10 10l3 3" stroke="#8993A4" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <input type="text" id="searchInput" placeholder="Search by name or email..." oninput="filterTable()">
+    </div>
+    <select class="filter-select" id="roleFilter" onchange="filterTable()">
+      <option value="">All roles</option>
+      <option value="Admin">Admin</option>
+      <option value="DeloitteUser">DeloitteUser</option>
+      <option value="PGM">PGM</option>
+      <option value="EPM">EPM</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table id="userTable">
       <thead>
         <tr>
           <th>User</th>
@@ -63,108 +394,14 @@ tr:hover .actions{opacity:1}
           <th></th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td>
-            <div class="user-cell">
-              <div class="avatar" style="background:var(--bg-danger);color:var(--text-danger)">BR</div>
-              <div>
-                <div class="user-name">Brian Reynolds</div>
-                <div class="user-email">b.reynolds@deloitte.com</div>
-              </div>
-            </div>
-          </td>
-          <td><span class="badge badge-admin"><span class="dot"></span>Admin</span></td>
-          <td style="color:var(--text-secondary);font-size:13px">Jul 10, 2026</td>
-          <td>
-            <div class="actions">
-              <button class="icon-btn" title="Edit role"><i class="ti ti-edit" style="font-size:16px"></i></button>
-              <button class="icon-btn" title="Remove user"><i class="ti ti-trash" style="font-size:16px"></i></button>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <div class="user-cell">
-              <div class="avatar" style="background:var(--bg-accent);color:var(--text-accent)">RK</div>
-              <div>
-                <div class="user-name">Rachel Kim</div>
-                <div class="user-email">r.kim@deloitte.com</div>
-              </div>
-            </div>
-          </td>
-          <td><span class="badge badge-deloitte"><span class="dot"></span>DeloitteUser</span></td>
-          <td style="color:var(--text-secondary);font-size:13px">Jul 10, 2026</td>
-          <td>
-            <div class="actions">
-              <button class="icon-btn"><i class="ti ti-edit" style="font-size:16px"></i></button>
-              <button class="icon-btn"><i class="ti ti-trash" style="font-size:16px"></i></button>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <div class="user-cell">
-              <div class="avatar" style="background:var(--bg-pro);color:var(--text-pro)">AM</div>
-              <div>
-                <div class="user-name">Andrew Miller</div>
-                <div class="user-email">a.miller@deloitte.com</div>
-              </div>
-            </div>
-          </td>
-          <td><span class="badge badge-pgm"><span class="dot"></span>PGM</span></td>
-          <td style="color:var(--text-secondary);font-size:13px">Jul 10, 2026</td>
-          <td>
-            <div class="actions">
-              <button class="icon-btn"><i class="ti ti-edit" style="font-size:16px"></i></button>
-              <button class="icon-btn"><i class="ti ti-trash" style="font-size:16px"></i></button>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <div class="user-cell">
-              <div class="avatar" style="background:var(--bg-success);color:var(--text-success)">SW</div>
-              <div>
-                <div class="user-name">Sarah Wilson</div>
-                <div class="user-email">s.wilson@client.com</div>
-              </div>
-            </div>
-          </td>
-          <td><span class="badge badge-epm"><span class="dot"></span>EPM</span></td>
-          <td style="color:var(--text-secondary);font-size:13px">Jul 10, 2026</td>
-          <td>
-            <div class="actions">
-              <button class="icon-btn"><i class="ti ti-edit" style="font-size:16px"></i></button>
-              <button class="icon-btn"><i class="ti ti-trash" style="font-size:16px"></i></button>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <div class="user-cell">
-              <div class="avatar" style="background:var(--bg-success);color:var(--text-success)">JT</div>
-              <div>
-                <div class="user-name">James Torres</div>
-                <div class="user-email">j.torres@client.com</div>
-              </div>
-            </div>
-          </td>
-          <td><span class="badge badge-epm"><span class="dot"></span>EPM</span></td>
-          <td style="color:var(--text-secondary);font-size:13px">Jul 11, 2026</td>
-          <td>
-            <div class="actions">
-              <button class="icon-btn"><i class="ti ti-edit" style="font-size:16px"></i></button>
-              <button class="icon-btn"><i class="ti ti-trash" style="font-size:16px"></i></button>
-            </div>
-          </td>
-        </tr>
+      <tbody id="tableBody">
       </tbody>
     </table>
   </div>
 
+  <!-- Pagination -->
   <div class="pagination">
-    <span>Showing 5 of 24 users</span>
+    <span id="paginationInfo"></span>
     <div class="page-btns">
       <button class="page-btn active">1</button>
       <button class="page-btn">2</button>
@@ -172,4 +409,227 @@ tr:hover .actions{opacity:1}
       <button class="page-btn">→</button>
     </div>
   </div>
+
 </div>
+
+<!-- Edit role modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Edit role</span>
+      <button class="modal-close" onclick="closeModal('editModal')">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-user">
+        <div class="modal-user-info">
+          <div class="name" id="editName"></div>
+          <div class="email" id="editEmail"></div>
+        </div>
+      </div>
+      <label class="form-label">Role</label>
+      <select class="form-select" id="editRoleSelect" onchange="updateRoleInfo()">
+        <option value="Admin">Admin</option>
+        <option value="DeloitteUser">DeloitteUser</option>
+        <option value="PGM">PGM</option>
+        <option value="EPM">EPM</option>
+      </select>
+      <div class="role-info" id="roleInfo"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeModal('editModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRole()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add user modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add user</span>
+      <button class="modal-close" onclick="closeModal('addModal')">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Full name</label>
+        <input class="form-input" id="newName" type="text" placeholder="e.g. John Smith">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="newEmail" type="email" placeholder="e.g. j.smith@deloitte.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select class="form-select" id="newRole">
+          <option value="Admin">Admin</option>
+          <option value="DeloitteUser" selected>DeloitteUser</option>
+          <option value="PGM">PGM</option>
+          <option value="EPM">EPM</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeModal('addModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addUser()">Add user</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ROLE_INFO = {
+  Admin:       'Full access to all pages, including edit on Scheduling Grid, Resources, Companies, and Settings.',
+  DeloitteUser:'Read-only access to all pages. Cannot edit any content.',
+  PGM:         'Read-only access to all pages, plus edit access on the Project Grid (Scheduling).',
+  EPM:         'View access to Map, Dashboards, and Grids only. No access to Resource Management and Settings.'
+};
+
+
+
+let users = [
+  { id:1, name:'Brian Reynolds',   email:'b.reynolds@deloitte.com', role:'Admin',        added:'Jul 10, 2026' },
+  { id:2, name:'Rachel Kim',       email:'r.kim@deloitte.com',      role:'Admin',        added:'Jul 10, 2026' },
+  { id:3, name:'Andy Chen',        email:'a.chen@deloitte.com',     role:'Admin',        added:'Jul 10, 2026' },
+  { id:4, name:'Laura Scott',      email:'l.scott@deloitte.com',    role:'DeloitteUser', added:'Jul 10, 2026' },
+  { id:5, name:'Michael Brown',    email:'m.brown@deloitte.com',    role:'DeloitteUser', added:'Jul 10, 2026' },
+  { id:6, name:'Jennifer Davis',   email:'j.davis@deloitte.com',    role:'DeloitteUser', added:'Jul 11, 2026' },
+  { id:7, name:'Andrew Miller',    email:'a.miller@deloitte.com',   role:'PGM',          added:'Jul 10, 2026' },
+  { id:8, name:'Sophia Johnson',   email:'s.johnson@deloitte.com',  role:'PGM',          added:'Jul 10, 2026' },
+  { id:9, name:'Carlos Martinez',  email:'c.martinez@deloitte.com', role:'PGM',          added:'Jul 10, 2026' },
+  { id:10,name:'Emma Thompson',    email:'e.thompson@deloitte.com', role:'PGM',          added:'Jul 11, 2026' },
+  { id:11,name:'Sarah Wilson',     email:'s.wilson@client.com',     role:'EPM',          added:'Jul 10, 2026' },
+  { id:12,name:'James Torres',     email:'j.torres@client.com',     role:'EPM',          added:'Jul 10, 2026' },
+  { id:13,name:'Diana Clark',      email:'d.clark@client.com',      role:'EPM',          added:'Jul 11, 2026' },
+  { id:14,name:'Robert Lewis',     email:'r.lewis@client.com',      role:'EPM',          added:'Jul 11, 2026' },
+  { id:15,name:'Patricia Walker',  email:'p.walker@client.com',     role:'EPM',          added:'Jul 12, 2026' },
+];
+
+let editingId = null;
+
+function renderTable() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const roleFilter = document.getElementById('roleFilter').value;
+
+  const filtered = users.filter(u => {
+    const matchSearch = u.name.toLowerCase().includes(search) || u.email.toLowerCase().includes(search);
+    const matchRole = !roleFilter || u.role === roleFilter;
+    return matchSearch && matchRole;
+  });
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:32px;color:#6B778C;">No users found</td></tr>`;
+    document.getElementById('paginationInfo').textContent = '0 users';
+    return;
+  }
+
+  filtered.forEach(u => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div class="user-cell">
+          <div>
+            <div class="user-name">${u.name}</div>
+            <div class="user-email">${u.email}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="badge b-${u.role.toLowerCase()}">${u.role}</span></td>
+      <td class="date-cell">${u.added}</td>
+      <td>
+        <div class="actions">
+          <button class="icon-btn" title="Edit role" onclick="openEditModal(${u.id})">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M11 2l3 3-8 8H3v-3l8-8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="icon-btn danger" title="Remove user" onclick="removeUser(${u.id})">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('paginationInfo').textContent = `Showing ${filtered.length} of ${users.length} users`;
+}
+
+function filterTable() { renderTable(); }
+
+function openEditModal(id) {
+  const u = users.find(u => u.id === id);
+  if (!u) return;
+  editingId = id;
+  document.getElementById('editName').textContent = u.name;
+  document.getElementById('editEmail').textContent = u.email;
+  document.getElementById('editRoleSelect').value = u.role;
+  updateRoleInfo();
+  document.getElementById('editModal').classList.add('open');
+}
+
+function updateRoleInfo() {
+  const role = document.getElementById('editRoleSelect').value;
+  const info = document.getElementById('roleInfo');
+  info.textContent = ROLE_INFO[role] || '';
+  info.classList.toggle('visible', !!ROLE_INFO[role]);
+}
+
+function saveRole() {
+  const newRole = document.getElementById('editRoleSelect').value;
+  const u = users.find(u => u.id === editingId);
+  if (u) u.role = newRole;
+  closeModal('editModal');
+  renderTable();
+}
+
+function openAddModal() {
+  document.getElementById('newName').value = '';
+  document.getElementById('newEmail').value = '';
+  document.getElementById('newRole').value = 'DeloitteUser';
+  document.getElementById('addModal').classList.add('open');
+}
+
+function addUser() {
+  const name = document.getElementById('newName').value.trim();
+  const email = document.getElementById('newEmail').value.trim();
+  const role = document.getElementById('newRole').value;
+  if (!name || !email) {
+    alert('Please enter name and email.');
+    return;
+  }
+  const today = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  users.push({ id: Date.now(), name, email, role, added: today });
+  closeModal('addModal');
+  renderTable();
+}
+
+function removeUser(id) {
+  if (!confirm('Remove this user?')) return;
+  users = users.filter(u => u.id !== id);
+  renderTable();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+renderTable();
+</script>
+</body>
+</html>
