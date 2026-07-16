@@ -162,7 +162,6 @@ table.sched-table thead th.th-month{text-align:center;padding:9px 0;border-left:
 #tooltip{position:fixed;background:#1F2937;color:#F9FAFB;padding:8px 12px;border-radius:6px;font-size:11.5px;line-height:1.5;pointer-events:none;z-index:1000;max-width:240px;display:none;box-shadow:0 4px 16px rgba(0,0,0,.25);}
 #tooltip.show{display:block;}
 
-.today-line{position:absolute;top:0;bottom:0;width:2px;background:#EF4444;opacity:.65;pointer-events:none;z-index:4;}
 .milestone-dia{position:absolute;width:10px;height:10px;background:#2563EB;transform:translateX(-50%) rotate(45deg);pointer-events:auto;z-index:2;cursor:default;}
 #tooltip strong{display:block;font-size:12px;margin-bottom:2px;}
 </style>
@@ -1097,10 +1096,6 @@ function rowHeight(numLanes){
 }
 
 /* ═══════════ TODAY LINE ════════════════════════════════════════════ */
-function todayLineHtml(){
-  const pct=computeTodayPct();
-  return`<div style="position:absolute;left:${pct.toFixed(2)}%;top:0;bottom:0;width:2px;background:#EF4444;opacity:.6;pointer-events:none;z-index:4;"></div>`;
-}
 
 /* ═══════════ RENDER COMPANIES SCHEDULE ════════════════════════════ */
 function renderCompanySched(){
@@ -1122,7 +1117,6 @@ function renderCompanySched(){
   ];
   document.getElementById('co-sched-thead').innerHTML=buildRMThead(infoCols,cols);
 
-  const today=todayLineHtml();
 
   document.getElementById('co-sched-tbody').innerHTML=all.map(co=>{
     // Collect this company's task assignments
@@ -1148,7 +1142,7 @@ function renderCompanySched(){
     const withL=sortedLanes(asgn);
     const rH=rowHeight(withL.length);
 
-    let bars=today;
+    let bars='';
     withL.forEach(a=>{
       const top=ROW_PAD+a.lane*(LANE_H+LANE_GAP);
       const tip=a.isMilestone
@@ -1209,7 +1203,6 @@ function renderPPL(){
   ];
   document.getElementById('ppl-thead').innerHTML=buildRMThead(infoCols,cols);
 
-  const today=todayLineHtml();
 
   document.getElementById('ppl-tbody').innerHTML=all.map(r=>{
     // Collect per-task assignments
@@ -1239,7 +1232,7 @@ function renderPPL(){
     const withL=sortedLanes(asgn);
     const rH=rowHeight(withL.length);
 
-    let bars=today;
+    let bars='';
     // Red overallocation overlay per run of days
     overRuns.forEach(run=>{
       bars+=`<div style="position:absolute;${dayRunToBarStyle(run.s,run.e)}top:0;bottom:0;background:rgba(220,38,38,.09);border-top:2px solid rgba(220,38,38,.45);pointer-events:none;z-index:2;"></div>`;
