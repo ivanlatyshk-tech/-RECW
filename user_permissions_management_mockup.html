@@ -1,0 +1,175 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:14px;color:var(--text-primary)}
+.wrap{padding:1.5rem 0}
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:12px}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:0.5px solid var(--border);border-radius:var(--radius);padding:6px 12px;flex:1;max-width:280px}
+.search input{border:none;background:transparent;outline:none;font-size:14px;color:var(--text-primary);width:100%}
+.search input::placeholder{color:var(--text-muted)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:var(--surface-2);color:var(--text-primary);font-size:13px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:var(--fill-accent);border-color:var(--fill-accent);color:var(--on-accent)}
+table{width:100%;border-collapse:collapse}
+thead tr{border-bottom:0.5px solid var(--border-strong)}
+th{text-align:left;font-size:12px;font-weight:500;color:var(--text-secondary);padding:8px 12px;white-space:nowrap}
+td{padding:10px 12px;border-bottom:0.5px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface-1)}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--bg-accent);color:var(--text-accent);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.user-cell{display:flex;align-items:center;gap:10px}
+.user-name{font-weight:500;font-size:13px}
+.user-email{font-size:12px;color:var(--text-secondary)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap}
+.badge-admin{background:var(--bg-danger);color:var(--text-danger)}
+.badge-deloitte{background:var(--bg-accent);color:var(--text-accent)}
+.badge-pgm{background:var(--bg-pro);color:var(--text-pro)}
+.badge-epm{background:var(--bg-success);color:var(--text-success)}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.actions{display:flex;gap:8px;opacity:0}
+tr:hover .actions{opacity:1}
+.icon-btn{border:none;background:none;cursor:pointer;color:var(--text-secondary);padding:4px;border-radius:4px;display:flex;align-items:center}
+.icon-btn:hover{background:var(--surface-0);color:var(--text-primary)}
+.pagination{display:flex;align-items:center;justify-content:space-between;margin-top:1rem;font-size:13px;color:var(--text-secondary)}
+.page-btns{display:flex;gap:4px}
+.page-btn{padding:4px 10px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--surface-2);cursor:pointer;font-size:13px;color:var(--text-secondary)}
+.page-btn.active{background:var(--fill-accent);border-color:var(--fill-accent);color:var(--on-accent)}
+</style>
+
+<div class="wrap">
+  <div class="toolbar">
+    <div class="search">
+      <i class="ti ti-search" style="font-size:16px;color:var(--text-muted)" aria-hidden="true"></i>
+      <input type="text" placeholder="Search by name or email...">
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button class="btn">
+        <i class="ti ti-filter" style="font-size:15px" aria-hidden="true"></i>
+        Filter by role
+      </button>
+      <button class="btn btn-primary">
+        <i class="ti ti-plus" style="font-size:15px" aria-hidden="true"></i>
+        Add user
+      </button>
+    </div>
+  </div>
+
+  <div style="background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;overflow:hidden">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>Added</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="user-cell">
+              <div class="avatar" style="background:var(--bg-danger);color:var(--text-danger)">BR</div>
+              <div>
+                <div class="user-name">Brian Reynolds</div>
+                <div class="user-email">b.reynolds@deloitte.com</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-admin"><span class="dot"></span>Admin</span></td>
+          <td style="color:var(--text-secondary);font-size:13px">Jul 10, 2026</td>
+          <td>
+            <div class="actions">
+              <button class="icon-btn" title="Edit role"><i class="ti ti-edit" style="font-size:16px"></i></button>
+              <button class="icon-btn" title="Remove user"><i class="ti ti-trash" style="font-size:16px"></i></button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="user-cell">
+              <div class="avatar" style="background:var(--bg-accent);color:var(--text-accent)">RK</div>
+              <div>
+                <div class="user-name">Rachel Kim</div>
+                <div class="user-email">r.kim@deloitte.com</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-deloitte"><span class="dot"></span>DeloitteUser</span></td>
+          <td style="color:var(--text-secondary);font-size:13px">Jul 10, 2026</td>
+          <td>
+            <div class="actions">
+              <button class="icon-btn"><i class="ti ti-edit" style="font-size:16px"></i></button>
+              <button class="icon-btn"><i class="ti ti-trash" style="font-size:16px"></i></button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="user-cell">
+              <div class="avatar" style="background:var(--bg-pro);color:var(--text-pro)">AM</div>
+              <div>
+                <div class="user-name">Andrew Miller</div>
+                <div class="user-email">a.miller@deloitte.com</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-pgm"><span class="dot"></span>PGM</span></td>
+          <td style="color:var(--text-secondary);font-size:13px">Jul 10, 2026</td>
+          <td>
+            <div class="actions">
+              <button class="icon-btn"><i class="ti ti-edit" style="font-size:16px"></i></button>
+              <button class="icon-btn"><i class="ti ti-trash" style="font-size:16px"></i></button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="user-cell">
+              <div class="avatar" style="background:var(--bg-success);color:var(--text-success)">SW</div>
+              <div>
+                <div class="user-name">Sarah Wilson</div>
+                <div class="user-email">s.wilson@client.com</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-epm"><span class="dot"></span>EPM</span></td>
+          <td style="color:var(--text-secondary);font-size:13px">Jul 10, 2026</td>
+          <td>
+            <div class="actions">
+              <button class="icon-btn"><i class="ti ti-edit" style="font-size:16px"></i></button>
+              <button class="icon-btn"><i class="ti ti-trash" style="font-size:16px"></i></button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="user-cell">
+              <div class="avatar" style="background:var(--bg-success);color:var(--text-success)">JT</div>
+              <div>
+                <div class="user-name">James Torres</div>
+                <div class="user-email">j.torres@client.com</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-epm"><span class="dot"></span>EPM</span></td>
+          <td style="color:var(--text-secondary);font-size:13px">Jul 11, 2026</td>
+          <td>
+            <div class="actions">
+              <button class="icon-btn"><i class="ti ti-edit" style="font-size:16px"></i></button>
+              <button class="icon-btn"><i class="ti ti-trash" style="font-size:16px"></i></button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <span>Showing 5 of 24 users</span>
+    <div class="page-btns">
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <button class="page-btn">→</button>
+    </div>
+  </div>
+</div>
