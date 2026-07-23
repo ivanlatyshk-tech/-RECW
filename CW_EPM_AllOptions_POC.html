@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EPM Project Access - All Options</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;background:#F4F5F7;color:#172B4D}
+
+/* switcher */
+.switcher{background:#172B4D;padding:10px 24px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sw-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#A5ADBA;margin-right:4px;white-space:nowrap}
+.opt-btn{padding:5px 12px;border-radius:4px;border:1px solid #42526E;background:transparent;color:#DFE1E6;font-size:12px;cursor:pointer;white-space:nowrap}
+.opt-btn.active{background:#0052CC;border-color:#0052CC;color:#fff;font-weight:500}
+.sw-desc{font-size:11px;color:#A5ADBA;margin-left:8px}
+
+/* topnav */
+.topnav{background:#fff;border-bottom:1px solid #DFE1E6;display:flex;align-items:center;padding:0 24px;height:52px;gap:24px;position:relative;z-index:10}
+.topnav-logo{font-weight:700;font-size:15px;color:#0052CC}
+.topnav-links{display:flex;gap:4px}
+.tnl{padding:6px 12px;border-radius:4px;font-size:13px;color:#42526E;cursor:pointer}
+.tnl.active{background:#DEEBFF;color:#0052CC;font-weight:500}
+
+/* page */
+.page{max-width:1100px;margin:0 auto;padding:28px 24px;position:relative}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:20px;font-weight:600}
+.page-subtitle{font-size:13px;color:#6B778C;margin-top:4px}
+.breadcrumb{font-size:12px;color:#6B778C;margin-bottom:8px}
+.breadcrumb a{color:#0052CC;cursor:pointer}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;border:none;white-space:nowrap}
+.btn-primary{background:#0052CC;color:#fff}.btn-primary:hover{background:#0747A6}
+.btn-default{background:#fff;color:#42526E;border:1px solid #DFE1E6}.btn-default:hover{background:#F4F5F7}
+.btn-link{background:none;border:none;color:#0052CC;font-size:12px;cursor:pointer;padding:0}
+
+/* toolbar */
+.toolbar{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.search-wrap{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #DFE1E6;border-radius:4px;padding:6px 12px;flex:1;max-width:320px}
+.search-wrap input{border:none;outline:none;font-size:13px;width:100%;background:transparent}
+.search-wrap input::placeholder{color:#A5ADBA}
+.filter-sel{background:#fff;border:1px solid #DFE1E6;border-radius:4px;padding:7px 12px;font-size:13px;color:#42526E;cursor:pointer;outline:none}
+
+/* table */
+.table-wrap{background:#fff;border:1px solid #DFE1E6;border-radius:6px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead{background:#F4F5F7}
+th{text-align:left;font-size:11px;font-weight:600;color:#6B778C;text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;border-bottom:1px solid #DFE1E6}
+td{padding:12px 16px;border-bottom:1px solid #F4F5F7;vertical-align:top}
+tbody tr:last-child>td{border-bottom:none}
+tbody tr:hover>td{background:#FAFBFF}
+.user-name{font-size:13px;font-weight:500}
+.user-email{font-size:12px;color:#6B778C}
+.badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:500;background:#F4F5F7;color:#42526E;border:1px solid #DFE1E6}
+.proj-none{font-size:13px;color:#BF2600}
+.dash{color:#A5ADBA}
+.row-actions{display:flex;gap:6px;opacity:0;align-items:center}
+tr:hover .row-actions{opacity:1}
+.icon-btn{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:4px;color:#6B778C;display:flex;align-items:center;font-size:15px}
+.icon-btn:hover{background:#F4F5F7;color:#172B4D}
+.link-action{background:none;border:none;color:#0052CC;font-size:12px;cursor:pointer;padding:4px 6px;border-radius:4px;white-space:nowrap}
+.link-action:hover{background:#DEEBFF}
+
+/* tooltip */
+.proj-count-wrap{position:relative;display:inline-block}
+.proj-count{font-size:13px;color:#0052CC;cursor:default;text-decoration:underline dotted;text-underline-offset:2px}
+.tip{display:none;position:absolute;left:0;top:calc(100% + 6px);background:#172B4D;color:#fff;border-radius:6px;padding:10px 12px;font-size:12px;min-width:260px;max-width:320px;z-index:300;box-shadow:0 4px 16px rgba(9,30,66,.3);line-height:1.5}
+.tip::before{content:'';position:absolute;top:-5px;left:12px;border:5px solid transparent;border-bottom-color:#172B4D;border-top:none}
+.proj-count-wrap:hover .tip{display:block}
+.tip-title{font-weight:600;margin-bottom:6px;color:#B3D4FF}
+.tip-list{list-style:none;max-height:160px;overflow-y:auto}
+.tip-list li{padding:2px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.tip-list li:last-child{border-bottom:none}
+
+/* inline expansion (opt3) */
+.inline-expand{display:none;background:#F0F7FF;border-top:1px solid #B3D4FF}
+.inline-expand.open{display:table-row}
+.inline-inner{padding:14px 16px}
+.inline-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.inline-title{font-size:12px;font-weight:600;color:#0052CC}
+.inline-list{border:1px solid #DFE1E6;border-radius:4px;max-height:180px;overflow-y:auto;background:#fff;margin-bottom:10px}
+.proj-item{display:flex;align-items:flex-start;gap:10px;padding:7px 12px;border-bottom:1px solid #F4F5F7;cursor:pointer;font-size:13px;line-height:1.35}
+.proj-item:last-child{border-bottom:none}
+.proj-item:hover{background:#FAFBFF}
+.proj-item input{margin-top:2px;flex-shrink:0;cursor:pointer}
+.inline-footer{display:flex;justify-content:flex-end;gap:8px}
+
+/* modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(9,30,66,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:8px;width:500px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(9,30,66,.25)}
+.modal-header{padding:20px 24px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:16px;font-weight:600}
+.modal-close{background:none;border:none;cursor:pointer;color:#6B778C;padding:4px;border-radius:4px;font-size:18px;line-height:1}
+.modal-body{padding:20px 24px;overflow-y:auto;flex:1}
+.modal-footer{padding:14px 24px;border-top:1px solid #DFE1E6;display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
+.modal-user{padding:12px 14px;background:#F4F5F7;border-radius:6px;margin-bottom:18px}
+.modal-user .name{font-size:14px;font-weight:500}
+.modal-user .email{font-size:12px;color:#6B778C;margin-top:2px}
+.form-label{font-size:12px;font-weight:600;color:#6B778C;margin-bottom:6px;display:block}
+.form-select{width:100%;padding:8px 12px;border:1px solid #DFE1E6;border-radius:4px;font-size:14px;background:#fff;outline:none;cursor:pointer}
+.role-info{margin-top:8px;padding:10px 12px;background:#DEEBFF;border-radius:4px;font-size:12px;color:#0052CC}
+.proj-section{margin-top:18px;border-top:1px solid #DFE1E6;padding-top:14px}
+.proj-sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.proj-sec-title{font-size:12px;font-weight:600;color:#6B778C;text-transform:uppercase;letter-spacing:.4px}
+.proj-toggle{background:none;border:none;color:#0052CC;font-size:12px;cursor:pointer;padding:0}
+.proj-search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #DFE1E6;border-radius:4px;padding:6px 10px;margin-bottom:8px}
+.proj-search input{border:none;outline:none;font-size:13px;width:100%;background:transparent}
+.proj-list{border:1px solid #DFE1E6;border-radius:4px;max-height:200px;overflow-y:auto;background:#fff}
+.epm-notice{margin-top:12px;padding:12px 14px;background:#FFF0B3;border:1px solid #F6C000;border-radius:6px;font-size:13px}
+.epm-notice strong{display:block;margin-bottom:4px}
+.epm-notice .na{margin-top:8px}
+
+/* separate page (opt2) */
+.picker-user{padding:12px 16px;background:#fff;border:1px solid #DFE1E6;border-radius:6px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.transfer{display:grid;grid-template-columns:1fr 12px 1fr;background:#fff;border:1px solid #DFE1E6;border-radius:6px;overflow:hidden;min-height:420px}
+.tcol{display:flex;flex-direction:column;min-height:420px}
+.tcol+.tcol{border-left:1px solid #DFE1E6}
+.thead2{padding:10px 14px;border-bottom:1px solid #DFE1E6;background:#F4F5F7;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.thead2-title{font-size:11px;font-weight:600;color:#6B778C;text-transform:uppercase;letter-spacing:.4px}
+.thead2-count{font-size:12px;color:#42526E}
+.tsearch{padding:8px 12px;border-bottom:1px solid #DFE1E6;flex-shrink:0}
+.tlist{flex:1;overflow-y:auto}
+.titem{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;border-bottom:1px solid #F4F5F7;cursor:pointer;font-size:13px;line-height:1.35}
+.titem:last-child{border-bottom:none}
+.titem:hover{background:#FAFBFF}
+.titem input{margin-top:2px;flex-shrink:0;cursor:pointer}
+.titem.asgn{background:#F0F7FF}
+.titem.asgn:hover{background:#E6F0FF}
+.tmid{background:#F4F5F7;border-left:1px solid #DFE1E6;border-right:1px solid #DFE1E6}
+.t-empty{padding:32px 12px;text-align:center;color:#6B778C;font-size:13px}
+.tfooter{padding:12px 16px;border-top:1px solid #DFE1E6;display:flex;justify-content:space-between;align-items:center;background:#fff}
+
+/* drawer (opt4) */
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(9,30,66,.3);z-index:150}
+.drawer-overlay.open{display:block}
+.drawer{position:fixed;top:0;right:-480px;width:460px;height:100vh;background:#fff;border-left:1px solid #DFE1E6;z-index:151;display:flex;flex-direction:column;transition:right .25s ease;box-shadow:-4px 0 24px rgba(9,30,66,.15)}
+.drawer.open{right:0}
+.drawer-header{padding:18px 20px;border-bottom:1px solid #DFE1E6;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+.drawer-title{font-size:15px;font-weight:600}
+.drawer-subtitle{font-size:12px;color:#6B778C;margin-top:3px}
+.drawer-close{background:none;border:none;cursor:pointer;color:#6B778C;font-size:20px;padding:2px;line-height:1;border-radius:4px}
+.drawer-close:hover{background:#F4F5F7}
+.drawer-user{padding:12px 20px;border-bottom:1px solid #DFE1E6;background:#F4F5F7;flex-shrink:0}
+.drawer-body{padding:14px 20px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.drawer-footer{padding:14px 20px;border-top:1px solid #DFE1E6;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+
+/* popover (opt5) */
+.popover-wrap{position:relative;display:inline-block}
+.popover{display:none;position:absolute;left:0;top:calc(100% + 6px);background:#fff;border:1px solid #DFE1E6;border-radius:8px;width:300px;z-index:250;box-shadow:0 8px 24px rgba(9,30,66,.2)}
+.popover.open{display:block}
+.popover-header{padding:10px 12px;border-bottom:1px solid #DFE1E6;font-size:12px;font-weight:600;color:#6B778C;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;justify-content:space-between}
+.popover-search{padding:8px 12px;border-bottom:1px solid #DFE1E6}
+.popover-list{max-height:220px;overflow-y:auto}
+.popover-item{display:flex;align-items:flex-start;gap:10px;padding:7px 12px;border-bottom:1px solid #F4F5F7;cursor:pointer;font-size:13px;line-height:1.3}
+.popover-item:last-child{border-bottom:none}
+.popover-item:hover{background:#FAFBFF}
+.popover-item input{margin-top:2px;flex-shrink:0;cursor:pointer}
+.popover-footer{padding:10px 12px;border-top:1px solid #DFE1E6;display:flex;justify-content:flex-end;gap:8px}
+
+/* shared proj item */
+.p-empty{padding:20px;text-align:center;color:#6B778C;font-size:13px}
+
+/* hidden */
+.hidden{display:none!important}
+
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#172B4D;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;box-shadow:0 4px 16px rgba(9,30,66,.3);z-index:500}
+</style>
+</head>
+<body>
+
+<div class="switcher">
+  <span class="sw-label">Option</span>
+  <button class="opt-btn active" onclick="setOpt(1)">1 - Modal</button>
+  <button class="opt-btn" onclick="setOpt(2)">2 - Separate page</button>
+  <button class="opt-btn" onclick="setOpt(3)">3 - Inline expand</button>
+  <button class="opt-btn" onclick="setOpt(4)">4 - Drawer</button>
+  <button class="opt-btn" onclick="setOpt(5)">5 - Popover</button>
+  <span class="sw-desc" id="swDesc"></span>
+</div>
+
+<nav class="topnav">
+  <span class="topnav-logo">HDS RealEstate</span>
+  <div class="topnav-links">
+    <span class="tnl">Map</span><span class="tnl">Dashboards</span>
+    <span class="tnl">Grids</span><span class="tnl">Resource Management</span>
+    <span class="tnl active">Settings</span>
+  </div>
+</nav>
+
+<!-- ===== LIST PAGE ===== -->
+<div class="page" id="listPage">
+  <div class="page-header">
+    <div><div class="page-title">User Management</div><div class="page-subtitle">Manage users and their access roles</div></div>
+    <button class="btn btn-primary">+ Add user</button>
+  </div>
+  <div class="toolbar">
+    <div class="search-wrap"><span style="color:#8993A4">&#9906;</span><input type="text" id="uSearch" placeholder="Search by name or email" oninput="renderUsers()"></div>
+    <select class="filter-sel" id="uRole" onchange="renderUsers()">
+      <option value="">All roles</option><option>Admin</option><option>DeloitteUser</option><option>PGM</option><option>EPM</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>User</th><th>Role</th><th>Assigned projects</th><th>Date added</th><th></th></tr></thead>
+      <tbody id="uBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== OPT2: SEPARATE PAGE ===== -->
+<div class="page hidden" id="pickerPage">
+  <div class="breadcrumb"><a onclick="backToList()">User Management</a> / Manage projects</div>
+  <div class="page-header">
+    <div><div class="page-title">Manage projects</div><div class="page-subtitle">Select which projects this EPM can access</div></div>
+  </div>
+  <div class="picker-user">
+    <div><div class="user-name" id="pkName"></div><div class="user-email" id="pkEmail"></div></div>
+    <span class="badge">EPM</span>
+  </div>
+  <div class="transfer">
+    <div class="tcol">
+      <div class="thead2"><span class="thead2-title">All projects</span><span class="thead2-count" id="lCount"></span></div>
+      <div class="tsearch"><div class="search-wrap" style="max-width:100%"><span style="color:#8993A4">&#9906;</span><input type="text" id="lSearch" placeholder="Search projects" oninput="renderTransfer()"></div></div>
+      <div class="tlist" id="lList"></div>
+    </div>
+    <div class="tmid"></div>
+    <div class="tcol">
+      <div class="thead2"><span class="thead2-title">Assigned</span><span class="thead2-count" id="rCount"></span></div>
+      <div class="tsearch"><div class="search-wrap" style="max-width:100%"><span style="color:#8993A4">&#9906;</span><input type="text" id="rSearch" placeholder="Search assigned" oninput="renderTransfer()"></div></div>
+      <div class="tlist" id="rList"></div>
+    </div>
+  </div>
+  <div class="tfooter">
+    <span style="font-size:13px;color:#6B778C" id="pkFooter"></span>
+    <span style="display:flex;gap:8px">
+      <button class="btn btn-default" onclick="backToList()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePicker()">Save</button>
+    </span>
+  </div>
+</div>
+
+<!-- ===== EDIT MODAL (opt1 + opt2 role change) ===== -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Edit user</span><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="modal-user"><div class="name" id="mName"></div><div class="email" id="mEmail"></div></div>
+      <label class="form-label">Role</label>
+      <select class="form-select" id="mRole" onchange="onRoleChange()">
+        <option>Admin</option><option>DeloitteUser</option><option>PGM</option><option>EPM</option>
+      </select>
+      <div class="role-info" id="mRoleInfo"></div>
+      <div class="epm-notice hidden" id="mNotice">
+        <strong>This user will be assigned the EPM role.</strong>
+        After saving, you will need to select which projects this user can access.
+        <div class="na"><button class="btn btn-primary" style="font-size:12px;padding:5px 12px" onclick="saveAndGoToPicker()">Save and manage projects</button></div>
+      </div>
+      <div class="proj-section hidden" id="mProjSec">
+        <div class="proj-sec-head">
+          <span class="proj-sec-title">Assigned projects</span>
+          <button class="proj-toggle" id="mProjToggle" onclick="toggleSelOnly()"></button>
+        </div>
+        <div class="proj-search"><span style="color:#8993A4">&#9906;</span><input type="text" id="mProjSearch" placeholder="Search projects" oninput="renderModalProjs()"></div>
+        <div class="proj-list" id="mProjList"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="mSaveBtn" onclick="saveModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DRAWER (opt4) ===== -->
+<div class="drawer-overlay" id="dOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div><div class="drawer-title">Manage projects</div><div class="drawer-subtitle" id="dSubtitle"></div></div>
+    <button class="drawer-close" onclick="closeDrawer()">&times;</button>
+  </div>
+  <div class="drawer-user"><div class="user-name" id="dName"></div><div class="user-email" id="dEmail"></div></div>
+  <div class="drawer-body">
+    <div class="toolbar" style="margin-bottom:0">
+      <div class="search-wrap" style="max-width:100%;flex:1"><span style="color:#8993A4">&#9906;</span><input type="text" id="dSearch" placeholder="Search projects" oninput="renderDrawer()"></div>
+      <select class="filter-sel" id="dFilter" onchange="renderDrawer()">
+        <option value="all">All</option><option value="sel">Assigned</option><option value="unsel">Not assigned</option>
+      </select>
+    </div>
+    <div style="font-size:12px;color:#6B778C" id="dSummary"></div>
+    <div class="proj-list" style="max-height:none;flex:1" id="dList"></div>
+  </div>
+  <div class="drawer-footer">
+    <span style="font-size:13px;color:#6B778C" id="dFooter"></span>
+    <span style="display:flex;gap:8px">
+      <button class="btn btn-default" onclick="closeDrawer()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDrawer()">Save</button>
+    </span>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast hidden" id="toast"></div>
+
+<script>
+const ROLE_INFO={
+  Admin:'Full access to all pages, including edit on Scheduling Grid, Resources, Companies, and Settings.',
+  DeloitteUser:'Read-only access to all pages.',
+  PGM:'Read-only access to all pages, plus edit on Project Grid (Scheduling).',
+  EPM:'View access to Map, Dashboards, and Grids. Access is limited to assigned projects only.'
+};
+const OPT_DESC={
+  1:'Projects selected inside the Edit user modal',
+  2:'Projects managed on a separate page (transfer list)',
+  3:'Row expands inline in the table',
+  4:'Slide-over drawer from the right',
+  5:'Popover dropdown from the table cell'
+};
+const PROJECTS=[
+  "Albany (11 Corporate Woods) - GPS Project Office",
+  "Atlanta (1230 Peachtree St) - Hub Strategy",
+  "Atlanta (1230 Peachtree) - AV Refresh",
+  "Atlanta (1230 Peachtree) - Hub 27th Floor",
+  "Austin (500 W 2nd St) - Workplace Refresh",
+  "Baltimore (100 E Pratt) - Spoke Buildout",
+  "Boston (200 Berkeley St) - Hub Buildout",
+  "Boston (200 Berkeley St) - FY26 Dark Days",
+  "Charlotte (550 South Tryon) - AV Refresh",
+  "Chicago (111 S Wacker) - Hub 32nd Floor",
+  "Chicago (111 S Wacker) - FY25 Lighting",
+  "Cincinnati (250 E 5th St) - Spoke Buildout",
+  "Cleveland (127 Public Square) - Workplace Refresh",
+  "Columbus (41 S High St) - DAS Patch & Paint",
+  "Dallas (2323 Cedar Springs) - Hub Buildout",
+  "Dallas (6605 Warren Pkwy) - Frisco Spoke",
+  "DCLI (2501 Westlake) - FY26 Dark Days - DAS Patch & Paint",
+  "Denver (1225 17th St) - Hub Strategy",
+  "Detroit (200 Renaissance Ctr) - AV Refresh",
+  "Hartford (185 Asylum St) - Spoke Consolidation",
+  "Houston (1111 Bagby St) - Hub Buildout",
+  "Houston (1111 Bagby St) - FY25 Furniture",
+  "Indianapolis (111 Monument Cir) - Workplace Refresh",
+  "Jacksonville (1301 Riverplace) - Spoke Buildout",
+  "Kansas City (1100 Walnut St) - AV Refresh",
+  "Las Vegas (3993 Howard Hughes) - Spoke Buildout",
+  "Los Angeles (555 W 5th St) - Hub 21st Floor",
+  "Los Angeles (555 W 5th St) - FY26 Dark Days",
+  "Memphis (6410 Poplar Ave) - Workplace Refresh",
+  "Miami (333 SE 2nd Ave) - Hub Strategy",
+  "Milwaukee (555 E Wells St) - Spoke Buildout",
+  "Minneapolis (50 S 6th St) - AV Refresh",
+  "Nashville (424 Church St) - Hub Buildout",
+  "New Orleans (701 Poydras St) - Workplace Refresh",
+  "New York (30 Rockefeller Plaza) - Hub 41st Floor",
+  "New York (30 Rockefeller Plaza) - FY26 Lighting",
+  "New York (30 Rockefeller Plaza) - DAS Patch & Paint",
+  "Philadelphia (1700 Market St) - Hub Buildout",
+  "Phoenix (2901 N Central Ave) - Spoke Buildout",
+  "Pittsburgh (600 Grant St) - AV Refresh",
+  "Portland (111 SW 5th Ave) - Workplace Refresh",
+  "Raleigh (150 Fayetteville St) - Spoke Buildout",
+  "Sacramento (400 Capitol Mall) - AV Refresh",
+  "Salt Lake City (111 S Main St) - Hub Strategy",
+  "San Diego (600 B St) - Spoke Buildout",
+  "San Francisco (555 Mission St) - Hub 30th Floor",
+  "Seattle (925 4th Ave) - Hub Buildout",
+  "St. Louis (100 S 4th St) - Workplace Refresh",
+  "Tampa (201 N Franklin St) - Spoke Buildout",
+  "Washington DC (655 New York Ave) - Hub Buildout"
+].map((name,i)=>({id:i+1,name}));
+
+let users=[
+  {id:1,name:'Brian Reynolds',email:'b.reynolds@deloitte.com',role:'Admin',added:'Jul 10, 2026',projects:[]},
+  {id:2,name:'Rachel Kim',email:'r.kim@deloitte.com',role:'Admin',added:'Jul 10, 2026',projects:[]},
+  {id:3,name:'Laura Scott',email:'l.scott@deloitte.com',role:'DeloitteUser',added:'Jul 10, 2026',projects:[]},
+  {id:4,name:'Andrew Miller',email:'a.miller@deloitte.com',role:'PGM',added:'Jul 10, 2026',projects:[]},
+  {id:5,name:'Sophia Johnson',email:'s.johnson@deloitte.com',role:'PGM',added:'Jul 10, 2026',projects:[]},
+  {id:6,name:'Sarah Wilson',email:'s.wilson@client.com',role:'EPM',added:'Jul 10, 2026',projects:[1,3,15,16,35]},
+  {id:7,name:'James Torres',email:'j.torres@client.com',role:'EPM',added:'Jul 10, 2026',projects:[7,8,10,11,12,20,21,26,27,33,38,46,47,50]},
+  {id:8,name:'Diana Clark',email:'d.clark@client.com',role:'EPM',added:'Jul 11, 2026',projects:[]},
+  {id:9,name:'Robert Lewis',email:'r.lewis@client.com',role:'EPM',added:'Jul 11, 2026',projects:[2,5,9,14,17,19,22,23,25,28,30,31,34,36,37,39,40,42,44,45,48,49]}
+];
+
+let currentOpt=1, editingId=null, originalRole='', modalSel=new Set(), showSelOnly=false;
+let pickerId=null, pickerSel=new Set();
+let drawerSel=new Set();
+let expandedId=null, inlineSel={};
+let popoverUid=null, popoverSel=new Set();
+
+/* ---- option switch ---- */
+function setOpt(n){
+  currentOpt=n;
+  document.querySelectorAll('.opt-btn').forEach((b,i)=>b.classList.toggle('active',i===n-1));
+  document.getElementById('swDesc').textContent=OPT_DESC[n];
+  closeAllOverlays();
+  backToList();
+  expandedId=null;
+  renderUsers();
+}
+
+function closeAllOverlays(){
+  document.getElementById('editModal').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('dOverlay').classList.remove('open');
+  document.querySelectorAll('.popover').forEach(p=>p.classList.remove('open'));
+}
+
+/* ---- proj count cell ---- */
+function projCell(u){
+  if(u.role!=='EPM') return '<span class="dash">-</span>';
+  if(!u.projects.length) return '<span class="proj-none">None assigned</span>';
+  const names=u.projects.map(pid=>PROJECTS.find(p=>p.id===pid)?.name||'').filter(Boolean);
+  return `<div class="proj-count-wrap">
+    <span class="proj-count">${u.projects.length} of ${PROJECTS.length}</span>
+    <div class="tip"><div class="tip-title">Assigned projects</div><ul class="tip-list">${names.map(n=>`<li>${n}</li>`).join('')}</ul></div>
+  </div>`;
+}
+
+/* ---- actions cell per option ---- */
+function actionsCell(u){
+  const isEPM=u.role==='EPM';
+  let extra='';
+  if(isEPM){
+    if(currentOpt===2) extra=`<button class="link-action" onclick="openPicker(${u.id})">Manage projects</button>`;
+    if(currentOpt===3) extra=`<button class="link-action" onclick="toggleInline(${u.id})">${expandedId===u.id?'Close':'Manage projects'}</button>`;
+    if(currentOpt===4) extra=`<button class="link-action" onclick="openDrawer(${u.id})">Manage projects</button>`;
+    if(currentOpt===5) extra=`<div class="popover-wrap" style="display:inline-block">
+      <button class="link-action" onclick="togglePopover(event,${u.id})">Manage projects</button>
+      <div class="popover" id="pop_${u.id}">
+        <div class="popover-header"><span id="popHdr_${u.id}"></span><button class="btn-link" onclick="closePopover(${u.id})">&#10005;</button></div>
+        <div class="popover-search"><div class="search-wrap" style="max-width:100%"><span style="color:#8993A4">&#9906;</span><input type="text" id="popSearch_${u.id}" placeholder="Search" oninput="renderPopover(${u.id})"></div></div>
+        <div class="popover-list" id="popList_${u.id}"></div>
+        <div class="popover-footer"><button class="btn btn-default btn-sm" onclick="closePopover(${u.id})">Cancel</button><button class="btn btn-primary btn-sm" onclick="savePopover(${u.id})">Save</button></div>
+      </div>
+    </div>`;
+  }
+  return `<div class="row-actions">${extra}<button class="icon-btn" onclick="openModal(${u.id})">&#9998;</button><button class="icon-btn">&#128465;</button></div>`;
+}
+
+/* ---- render users ---- */
+function renderUsers(){
+  const q=document.getElementById('uSearch').value.toLowerCase();
+  const rf=document.getElementById('uRole').value;
+  const list=users.filter(u=>(u.name.toLowerCase().includes(q)||u.email.toLowerCase().includes(q))&&(!rf||u.role===rf));
+  const tb=document.getElementById('uBody');
+  tb.innerHTML='';
+  list.forEach(u=>{
+    const tr=document.createElement('tr');
+    tr.id=`row_${u.id}`;
+    tr.innerHTML=`
+      <td><div class="user-name">${u.name}</div><div class="user-email">${u.email}</div></td>
+      <td><span class="badge">${u.role}</span></td>
+      <td>${projCell(u)}</td>
+      <td style="font-size:12px;color:#6B778C">${u.added}</td>
+      <td>${actionsCell(u)}</td>`;
+    tb.appendChild(tr);
+    if(currentOpt===3 && expandedId===u.id && u.role==='EPM'){
+      const exp=document.createElement('tr');
+      exp.className='inline-expand open';
+      exp.id=`exp_${u.id}`;
+      const iSel=inlineSel[u.id]||new Set(u.projects);
+      exp.innerHTML=`<td colspan="5">
+        <div class="inline-inner">
+          <div class="inline-head">
+            <span class="inline-title">Assigned projects - ${u.name} <span style="font-weight:400;color:#6B778C">(${iSel.size} of ${PROJECTS.length} selected)</span></span>
+            <span style="display:flex;gap:8px">
+              <button class="btn-link" onclick="bulkInline(${u.id},true)">Select all</button>
+              <button class="btn-link" onclick="bulkInline(${u.id},false)">Clear all</button>
+            </span>
+          </div>
+          <div class="proj-search"><span style="color:#8993A4">&#9906;</span><input type="text" id="iSearch_${u.id}" placeholder="Search projects" oninput="renderInlineList(${u.id})"></div>
+          <div class="inline-list" id="iList_${u.id}"></div>
+          <div class="inline-footer">
+            <button class="btn btn-default" onclick="closeInline(${u.id})">Cancel</button>
+            <button class="btn btn-primary" onclick="saveInline(${u.id})">Save</button>
+          </div>
+        </div>
+      </td>`;
+      tb.appendChild(exp);
+      renderInlineList(u.id);
+    }
+  });
+}
+
+/* ---- modal (opt1 + opt2) ---- */
+function openModal(id){
+  const u=users.find(x=>x.id===id); if(!u)return;
+  editingId=id; originalRole=u.role;
+  modalSel=new Set(u.projects); showSelOnly=false;
+  document.getElementById('mName').textContent=u.name;
+  document.getElementById('mEmail').textContent=u.email;
+  document.getElementById('mRole').value=u.role;
+  document.getElementById('mProjSearch').value='';
+  onRoleChange();
+  document.getElementById('editModal').classList.add('open');
+}
+function onRoleChange(){
+  const role=document.getElementById('mRole').value;
+  document.getElementById('mRoleInfo').textContent=ROLE_INFO[role];
+  const isEPM=role==='EPM', becameEPM=isEPM&&originalRole!=='EPM';
+  const showProj=currentOpt===1&&isEPM;
+  document.getElementById('mProjSec').classList.toggle('hidden',!showProj);
+  if(showProj){showSelOnly=false;renderModalProjs();}
+  const showNotice=currentOpt===2&&becameEPM;
+  document.getElementById('mNotice').classList.toggle('hidden',!showNotice);
+  document.getElementById('mSaveBtn').classList.toggle('hidden',showNotice);
+}
+function renderModalProjs(){
+  const q=document.getElementById('mProjSearch').value.toLowerCase();
+  let list=PROJECTS.filter(p=>p.name.toLowerCase().includes(q));
+  if(showSelOnly) list=list.filter(p=>modalSel.has(p.id));
+  const cnt=modalSel.size;
+  document.getElementById('mProjToggle').textContent=cnt>0||showSelOnly?(showSelOnly?`Show all (${PROJECTS.length})`:`Selected: ${cnt}`):'';
+  document.getElementById('mProjList').innerHTML=list.length
+    ?list.map(p=>`<label class="proj-item"><input type="checkbox" ${modalSel.has(p.id)?'checked':''} onchange="toggleModal(${p.id},this.checked)"><span>${p.name}</span></label>`).join('')
+    :'<div class="p-empty">No projects match your search.</div>';
+}
+function toggleModal(id,on){on?modalSel.add(id):modalSel.delete(id);renderModalProjs();}
+function toggleSelOnly(){showSelOnly=!showSelOnly;document.getElementById('mProjSearch').value='';renderModalProjs();}
+function saveModal(){
+  const u=users.find(x=>x.id===editingId);if(!u)return;
+  u.role=document.getElementById('mRole').value;
+  u.projects=u.role==='EPM'?[...modalSel]:[];
+  closeModal();renderUsers();showToast('Saved.');
+}
+function saveAndGoToPicker(){
+  const u=users.find(x=>x.id===editingId);if(!u)return;
+  u.role='EPM';u.projects=[];
+  closeModal();renderUsers();openPicker(u.id);
+}
+function closeModal(){
+  document.getElementById('editModal').classList.remove('open');
+  document.getElementById('mSaveBtn').classList.remove('hidden');
+}
+
+/* ---- opt2: separate page ---- */
+function openPicker(id){
+  const u=users.find(x=>x.id===id);if(!u)return;
+  pickerId=id;pickerSel=new Set(u.projects);
+  document.getElementById('pkName').textContent=u.name;
+  document.getElementById('pkEmail').textContent=u.email;
+  document.getElementById('lSearch').value='';
+  document.getElementById('rSearch').value='';
+  document.getElementById('listPage').classList.add('hidden');
+  document.getElementById('pickerPage').classList.remove('hidden');
+  renderTransfer();
+}
+function renderTransfer(){
+  const lq=document.getElementById('lSearch').value.toLowerCase();
+  const rq=document.getElementById('rSearch').value.toLowerCase();
+  const left=PROJECTS.filter(p=>!pickerSel.has(p.id)&&p.name.toLowerCase().includes(lq));
+  const right=PROJECTS.filter(p=>pickerSel.has(p.id)&&p.name.toLowerCase().includes(rq));
+  document.getElementById('lCount').textContent=`${PROJECTS.length-pickerSel.size} projects`;
+  document.getElementById('rCount').textContent=`${pickerSel.size} assigned`;
+  document.getElementById('pkFooter').textContent=`${pickerSel.size} of ${PROJECTS.length} projects assigned`;
+  document.getElementById('lList').innerHTML=left.length
+    ?left.map(p=>`<label class="titem"><input type="checkbox" onchange="assignProj(${p.id},true)"><span>${p.name}</span></label>`).join('')
+    :'<div class="t-empty">No projects to add.</div>';
+  document.getElementById('rList').innerHTML=right.length
+    ?right.map(p=>`<label class="titem asgn"><input type="checkbox" checked onchange="assignProj(${p.id},false)"><span>${p.name}</span></label>`).join('')
+    :'<div class="t-empty">No projects assigned yet.</div>';
+}
+function assignProj(id,on){on?pickerSel.add(id):pickerSel.delete(id);renderTransfer();}
+function savePicker(){
+  const u=users.find(x=>x.id===pickerId);if(!u)return;
+  u.projects=[...pickerSel];backToList();renderUsers();showToast('Saved.');
+}
+function backToList(){
+  document.getElementById('pickerPage').classList.add('hidden');
+  document.getElementById('listPage').classList.remove('hidden');
+}
+
+/* ---- opt3: inline expand ---- */
+function toggleInline(id){
+  if(expandedId===id){closeInline(id);return;}
+  const u=users.find(x=>x.id===id);if(!u)return;
+  expandedId=id;
+  if(!inlineSel[id]) inlineSel[id]=new Set(u.projects);
+  renderUsers();
+}
+function renderInlineList(id){
+  const q=(document.getElementById(`iSearch_${id}`)||{}).value||'';
+  const sel=inlineSel[id]||new Set();
+  const list=PROJECTS.filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));
+  const el=document.getElementById(`iList_${id}`);
+  if(!el)return;
+  el.innerHTML=list.map(p=>`<label class="proj-item"><input type="checkbox" ${sel.has(p.id)?'checked':''} onchange="toggleInlineSel(${id},${p.id},this.checked)"><span>${p.name}</span></label>`).join('');
+}
+function toggleInlineSel(uid,pid,on){if(!inlineSel[uid])inlineSel[uid]=new Set();on?inlineSel[uid].add(pid):inlineSel[uid].delete(pid);renderInlineList(uid);}
+function bulkInline(id,on){if(!inlineSel[id])inlineSel[id]=new Set();PROJECTS.forEach(p=>on?inlineSel[id].add(p.id):inlineSel[id].delete(p.id));renderInlineList(id);}
+function saveInline(id){const u=users.find(x=>x.id===id);if(!u)return;u.projects=[...(inlineSel[id]||new Set())];closeInline(id);}
+function closeInline(id){expandedId=null;delete inlineSel[id];renderUsers();}
+
+/* ---- opt4: drawer ---- */
+function openDrawer(id){
+  const u=users.find(x=>x.id===id);if(!u)return;
+  drawerSel=new Set(u.projects);
+  pickerId=id;
+  document.getElementById('dName').textContent=u.name;
+  document.getElementById('dEmail').textContent=u.email;
+  document.getElementById('dSearch').value='';
+  document.getElementById('dFilter').value='all';
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('dOverlay').classList.add('open');
+  renderDrawer();
+}
+function renderDrawer(){
+  const q=document.getElementById('dSearch').value.toLowerCase();
+  const f=document.getElementById('dFilter').value;
+  let list=PROJECTS.filter(p=>p.name.toLowerCase().includes(q));
+  if(f==='sel') list=list.filter(p=>drawerSel.has(p.id));
+  if(f==='unsel') list=list.filter(p=>!drawerSel.has(p.id));
+  document.getElementById('dSummary').textContent=`${drawerSel.size} of ${PROJECTS.length} projects assigned`;
+  document.getElementById('dFooter').textContent=`${drawerSel.size} assigned`;
+  document.getElementById('dList').innerHTML=list.map(p=>`
+    <label class="proj-item"><input type="checkbox" ${drawerSel.has(p.id)?'checked':''} onchange="toggleDrawer(${p.id},this.checked)"><span>${p.name}</span></label>`).join('');
+}
+function toggleDrawer(id,on){on?drawerSel.add(id):drawerSel.delete(id);renderDrawer();}
+function saveDrawer(){const u=users.find(x=>x.id===pickerId);if(!u)return;u.projects=[...drawerSel];closeDrawer();renderUsers();showToast('Saved.');}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('dOverlay').classList.remove('open');}
+
+/* ---- opt5: popover ---- */
+function togglePopover(e,id){
+  e.stopPropagation();
+  const pop=document.getElementById(`pop_${id}`);
+  const isOpen=pop.classList.contains('open');
+  document.querySelectorAll('.popover').forEach(p=>p.classList.remove('open'));
+  if(!isOpen){
+    const u=users.find(x=>x.id===id);
+    popoverUid=id; popoverSel=new Set(u?u.projects:[]);
+    document.getElementById(`popSearch_${id}`).value='';
+    document.getElementById(`popHdr_${id}`).textContent=`${popoverSel.size} of ${PROJECTS.length}`;
+    pop.classList.add('open');
+    renderPopover(id);
+  }
+}
+function renderPopover(id){
+  const q=(document.getElementById(`popSearch_${id}`)||{}).value||'';
+  const list=PROJECTS.filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));
+  const el=document.getElementById(`popList_${id}`);
+  if(!el)return;
+  el.innerHTML=list.length
+    ?list.map(p=>`<label class="popover-item"><input type="checkbox" ${popoverSel.has(p.id)?'checked':''} onchange="togglePop(${id},${p.id},this.checked)"><span>${p.name}</span></label>`).join('')
+    :'<div class="p-empty">No projects match.</div>';
+  const hdr=document.getElementById(`popHdr_${id}`);
+  if(hdr) hdr.textContent=`${popoverSel.size} of ${PROJECTS.length}`;
+}
+function togglePop(uid,pid,on){on?popoverSel.add(pid):popoverSel.delete(pid);renderPopover(uid);}
+function closePopover(id){document.getElementById(`pop_${id}`).classList.remove('open');}
+function savePopover(id){const u=users.find(x=>x.id===id);if(!u)return;u.projects=[...popoverSel];closePopover(id);renderUsers();showToast('Saved.');}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.popover-wrap')) document.querySelectorAll('.popover').forEach(p=>p.classList.remove('open'));
+});
+
+/* ---- toast ---- */
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),2500);}
+
+setOpt(1);
+</script>
+</body>
+</html>
