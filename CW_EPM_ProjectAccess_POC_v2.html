@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EPM Project Access - Option Comparison</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;background:#F4F5F7;color:#172B4D}
+
+.switcher{background:#172B4D;color:#fff;padding:10px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.switcher-label{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#A5ADBA}
+.opt-btn{padding:6px 14px;border-radius:4px;border:1px solid #42526E;background:transparent;color:#DFE1E6;font-size:13px;cursor:pointer}
+.opt-btn.active{background:#0052CC;border-color:#0052CC;color:#fff;font-weight:500}
+.opt-note{font-size:12px;color:#A5ADBA;margin-left:auto}
+
+.topnav{background:#fff;border-bottom:1px solid #DFE1E6;display:flex;align-items:center;padding:0 24px;height:52px;gap:24px}
+.topnav-logo{font-weight:700;font-size:15px;color:#0052CC}
+.topnav-links{display:flex;gap:4px}
+.topnav-link{padding:6px 12px;border-radius:4px;font-size:13px;color:#42526E;cursor:pointer}
+.topnav-link.active{background:#DEEBFF;color:#0052CC;font-weight:500}
+
+.page{max-width:1100px;margin:0 auto;padding:28px 24px}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:20px;font-weight:600}
+.page-subtitle{font-size:13px;color:#6B778C;margin-top:4px}
+.breadcrumb{font-size:12px;color:#6B778C;margin-bottom:8px}
+.breadcrumb a{color:#0052CC;cursor:pointer}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;border:none;white-space:nowrap}
+.btn-primary{background:#0052CC;color:#fff}
+.btn-primary:hover{background:#0747A6}
+.btn-default{background:#fff;color:#42526E;border:1px solid #DFE1E6}
+.btn-default:hover{background:#F4F5F7}
+.btn-link{background:none;border:none;color:#0052CC;font-size:13px;cursor:pointer;padding:0;text-decoration:underline}
+
+.toolbar{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.search-wrap{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #DFE1E6;border-radius:4px;padding:6px 12px;flex:1;max-width:340px}
+.search-wrap input{border:none;outline:none;font-size:13px;width:100%;background:transparent}
+.search-wrap input::placeholder{color:#A5ADBA}
+.filter-select{background:#fff;border:1px solid #DFE1E6;border-radius:4px;padding:7px 12px;font-size:13px;color:#42526E;cursor:pointer;outline:none}
+
+.table-wrap{background:#fff;border:1px solid #DFE1E6;border-radius:6px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead{background:#F4F5F7}
+th{text-align:left;font-size:11px;font-weight:600;color:#6B778C;text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;border-bottom:1px solid #DFE1E6}
+td{padding:12px 16px;border-bottom:1px solid #F4F5F7}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FAFBFF}
+.user-name{font-size:13px;font-weight:500}
+.user-email{font-size:12px;color:#6B778C}
+.badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:500;background:#F4F5F7;color:#42526E;border:1px solid #DFE1E6}
+.proj-none{font-size:13px;color:#BF2600}
+.dash{color:#A5ADBA}
+.row-actions{display:flex;gap:6px;opacity:0;align-items:center}
+tbody tr:hover .row-actions{opacity:1}
+.icon-btn{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:4px;color:#6B778C;display:flex;align-items:center}
+.icon-btn:hover{background:#F4F5F7;color:#172B4D}
+.link-action{background:none;border:none;color:#0052CC;font-size:12px;cursor:pointer;padding:4px 6px;border-radius:4px;white-space:nowrap}
+.link-action:hover{background:#DEEBFF}
+
+/* tooltip */
+.proj-count-wrap{position:relative;display:inline-block}
+.proj-count{font-size:13px;color:#0052CC;cursor:default;text-decoration:underline dotted;text-underline-offset:2px}
+.tooltip{display:none;position:absolute;left:0;top:calc(100% + 6px);background:#172B4D;color:#fff;border-radius:6px;padding:10px 12px;font-size:12px;min-width:260px;max-width:320px;z-index:200;box-shadow:0 4px 16px rgba(9,30,66,.3);line-height:1.5}
+.tooltip::before{content:'';position:absolute;top:-5px;left:12px;border:5px solid transparent;border-bottom-color:#172B4D;border-top:none}
+.proj-count-wrap:hover .tooltip{display:block}
+.tooltip-title{font-weight:600;margin-bottom:6px;color:#B3D4FF}
+.tooltip-list{list-style:none;max-height:180px;overflow-y:auto}
+.tooltip-list li{padding:2px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.tooltip-list li:last-child{border-bottom:none}
+
+/* modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(9,30,66,.5);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:8px;width:500px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(9,30,66,.25)}
+.modal-header{padding:20px 24px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:16px;font-weight:600}
+.modal-close{background:none;border:none;cursor:pointer;color:#6B778C;padding:4px;border-radius:4px;font-size:18px;line-height:1}
+.modal-body{padding:20px 24px;overflow-y:auto;flex:1}
+.modal-footer{padding:14px 24px;border-top:1px solid #DFE1E6;display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-shrink:0}
+.modal-user{padding:12px 14px;background:#F4F5F7;border-radius:6px;margin-bottom:20px}
+.modal-user .name{font-size:14px;font-weight:500}
+.modal-user .email{font-size:12px;color:#6B778C;margin-top:2px}
+.form-label{font-size:12px;font-weight:600;color:#6B778C;margin-bottom:6px;display:block}
+.form-select{width:100%;padding:8px 12px;border:1px solid #DFE1E6;border-radius:4px;font-size:14px;background:#fff;outline:none;cursor:pointer}
+.role-info{margin-top:8px;padding:10px 12px;background:#DEEBFF;border-radius:4px;font-size:12px;color:#0052CC}
+
+/* EPM notice after role change */
+.epm-notice{margin-top:12px;padding:12px 14px;background:#FFF0B3;border:1px solid #F6C000;border-radius:6px;font-size:13px;color:#172B4D}
+.epm-notice strong{display:block;margin-bottom:4px}
+.epm-notice .notice-action{margin-top:8px}
+
+/* project section inside modal */
+.proj-section{margin-top:20px;border-top:1px solid #DFE1E6;padding-top:16px}
+.proj-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.proj-section-title{font-size:12px;font-weight:600;color:#6B778C;text-transform:uppercase;letter-spacing:.5px}
+.proj-toggle{background:none;border:none;color:#0052CC;font-size:12px;cursor:pointer;padding:0}
+.proj-search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #DFE1E6;border-radius:4px;padding:6px 10px;margin-bottom:8px}
+.proj-search input{border:none;outline:none;font-size:13px;width:100%;background:transparent}
+.proj-list{border:1px solid #DFE1E6;border-radius:4px;max-height:200px;overflow-y:auto;background:#fff}
+.proj-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-bottom:1px solid #F4F5F7;cursor:pointer;font-size:13px;line-height:1.35}
+.proj-item:last-child{border-bottom:none}
+.proj-item:hover{background:#FAFBFF}
+.proj-item input{margin-top:2px;flex-shrink:0;cursor:pointer}
+.proj-empty{padding:20px;text-align:center;color:#6B778C;font-size:13px}
+
+/* Option 2 - full page picker */
+.picker-user{padding:12px 16px;background:#fff;border:1px solid #DFE1E6;border-radius:6px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.transfer{display:grid;grid-template-columns:1fr 44px 1fr;gap:0;background:#fff;border:1px solid #DFE1E6;border-radius:6px;overflow:hidden;min-height:440px}
+.transfer-col{display:flex;flex-direction:column;min-height:440px}
+.transfer-col+.transfer-col{border-left:1px solid #DFE1E6}
+.transfer-head{padding:12px 14px;border-bottom:1px solid #DFE1E6;background:#F4F5F7;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.transfer-head-title{font-size:12px;font-weight:600;color:#6B778C;text-transform:uppercase;letter-spacing:.4px}
+.transfer-head-count{font-size:12px;color:#42526E}
+.transfer-search{padding:10px 12px;border-bottom:1px solid #DFE1E6;flex-shrink:0}
+.transfer-search .search-wrap{max-width:100%}
+.transfer-list{flex:1;overflow-y:auto}
+.transfer-item{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;border-bottom:1px solid #F4F5F7;cursor:pointer;font-size:13px;line-height:1.35}
+.transfer-item:last-child{border-bottom:none}
+.transfer-item:hover{background:#FAFBFF}
+.transfer-item input{margin-top:2px;flex-shrink:0;cursor:pointer}
+.transfer-item.selected-row{background:#F0F7FF}
+.transfer-item.selected-row:hover{background:#E6F0FF}
+.transfer-empty{padding:32px 16px;text-align:center;color:#6B778C;font-size:13px}
+.transfer-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px 6px;border-left:1px solid #DFE1E6;border-right:1px solid #DFE1E6;background:#F4F5F7}
+
+.transfer-footer{padding:12px 16px;border-top:1px solid #DFE1E6;display:flex;justify-content:space-between;align-items:center;background:#fff}
+
+.hidden{display:none!important}
+
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#172B4D;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 16px rgba(9,30,66,.3);z-index:500;transition:opacity .3s}
+.toast a{color:#79E2F2;cursor:pointer;text-decoration:underline;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<div class="switcher">
+  <span class="switcher-label">Prototype</span>
+  <button class="opt-btn active" id="btnOpt1" onclick="setOption(1)">Option 1 - Inside Edit User modal</button>
+  <button class="opt-btn" id="btnOpt2" onclick="setOption(2)">Option 2 - Separate Manage projects screen</button>
+  <span class="opt-note" id="optNote"></span>
+</div>
+
+<nav class="topnav">
+  <span class="topnav-logo">HDS RealEstate</span>
+  <div class="topnav-links">
+    <span class="topnav-link">Map</span>
+    <span class="topnav-link">Dashboards</span>
+    <span class="topnav-link">Grids</span>
+    <span class="topnav-link">Resource Management</span>
+    <span class="topnav-link active">Settings</span>
+  </div>
+</nav>
+
+<!-- USER LIST -->
+<div class="page" id="listPage">
+  <div class="page-header">
+    <div>
+      <div class="page-title">User Management</div>
+      <div class="page-subtitle">Manage users and their access roles</div>
+    </div>
+    <button class="btn btn-primary">+ Add user</button>
+  </div>
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span style="color:#8993A4">&#9906;</span>
+      <input type="text" id="userSearch" placeholder="Search by name or email" oninput="renderUsers()">
+    </div>
+    <select class="filter-select" id="roleFilter" onchange="renderUsers()">
+      <option value="">All roles</option>
+      <option>Admin</option><option>DeloitteUser</option><option>PGM</option><option>EPM</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th><th>Role</th><th>Assigned projects</th><th>Date added</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="userBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- OPTION 2: MANAGE PROJECTS PAGE -->
+<div class="page hidden" id="pickerPage">
+  <div class="breadcrumb"><a onclick="backToList()">User Management</a> / Manage projects</div>
+  <div class="page-header">
+    <div>
+      <div class="page-title">Manage projects</div>
+      <div class="page-subtitle">Select which projects this EPM can access</div>
+    </div>
+  </div>
+  <div class="picker-user">
+    <div>
+      <div class="user-name" id="pkName"></div>
+      <div class="user-email" id="pkEmail"></div>
+    </div>
+    <span class="badge">EPM</span>
+  </div>
+
+  <div class="transfer">
+    <div class="transfer-col">
+      <div class="transfer-head">
+        <span class="transfer-head-title">All projects</span>
+        <span class="transfer-head-count" id="leftCount"></span>
+      </div>
+      <div class="transfer-search">
+        <div class="search-wrap" style="max-width:100%">
+          <span style="color:#8993A4">&#9906;</span>
+          <input type="text" id="leftSearch" placeholder="Search projects" oninput="renderTransfer()">
+        </div>
+      </div>
+      <div class="transfer-list" id="leftList"></div>
+    </div>
+
+    <div class="transfer-mid" style="background:#F4F5F7;border-left:1px solid #DFE1E6;border-right:1px solid #DFE1E6;width:12px"></div>
+
+    <div class="transfer-col">
+      <div class="transfer-head">
+        <span class="transfer-head-title">Assigned</span>
+        <span class="transfer-head-count" id="rightCount"></span>
+      </div>
+      <div class="transfer-search">
+        <div class="search-wrap" style="max-width:100%">
+          <span style="color:#8993A4">&#9906;</span>
+          <input type="text" id="rightSearch" placeholder="Search assigned" oninput="renderTransfer()">
+        </div>
+      </div>
+      <div class="transfer-list" id="rightList"></div>
+    </div>
+  </div>
+
+  <div class="transfer-footer">
+    <span style="font-size:13px;color:#6B778C" id="pkFooterCount"></span>
+    <span style="display:flex;gap:8px">
+      <button class="btn btn-default" onclick="backToList()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePicker()">Save</button>
+    </span>
+  </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Edit user</span>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-user">
+        <div class="name" id="mName"></div>
+        <div class="email" id="mEmail"></div>
+      </div>
+
+      <label class="form-label">Role</label>
+      <select class="form-select" id="mRole" onchange="onRoleChange()">
+        <option>Admin</option><option>DeloitteUser</option><option>PGM</option><option>EPM</option>
+      </select>
+      <div class="role-info" id="mRoleInfo"></div>
+
+      <!-- EPM notice for Option 2: role changed TO EPM -->
+      <div class="epm-notice hidden" id="mEpmNotice">
+        <strong>This user will be assigned the EPM role.</strong>
+        After saving, you will need to select which projects this user can access.
+        <div class="notice-action">
+          <button class="btn btn-primary" style="font-size:12px;padding:5px 12px" onclick="saveAndGoToPicker()">Save and manage projects</button>
+        </div>
+      </div>
+
+      <!-- Project section for Option 1 -->
+      <div class="proj-section hidden" id="mProjSection">
+        <div class="proj-section-head">
+          <span class="proj-section-title">Assigned projects</span>
+          <button class="proj-toggle" id="mProjToggle" onclick="toggleShowSelected()"></button>
+        </div>
+        <div class="proj-search">
+          <span style="color:#8993A4">&#9906;</span>
+          <input type="text" id="mProjSearch" placeholder="Search projects" oninput="renderModalProjects()">
+        </div>
+        <div class="proj-list" id="mProjList"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="mSaveBtn" onclick="saveModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast hidden" id="toast"></div>
+
+<script>
+const PROJECTS=[
+ "Albany (11 Corporate Woods) - GPS Project Office",
+ "Atlanta (1230 Peachtree St) - Hub Strategy",
+ "Atlanta (1230 Peachtree) - AV Refresh",
+ "Atlanta (1230 Peachtree) - Hub 27th Floor",
+ "Austin (500 W 2nd St) - Workplace Refresh",
+ "Baltimore (100 E Pratt) - Spoke Buildout",
+ "Boston (200 Berkeley St) - Hub Buildout",
+ "Boston (200 Berkeley St) - FY26 Dark Days",
+ "Charlotte (550 South Tryon) - AV Refresh",
+ "Chicago (111 S Wacker) - Hub 32nd Floor",
+ "Chicago (111 S Wacker) - FY25 Lighting",
+ "Cincinnati (250 E 5th St) - Spoke Buildout",
+ "Cleveland (127 Public Square) - Workplace Refresh",
+ "Columbus (41 S High St) - DAS Patch & Paint",
+ "Dallas (2323 Cedar Springs) - Hub Buildout",
+ "Dallas (6605 Warren Pkwy) - Frisco Spoke",
+ "DCLI (2501 Westlake) - FY26 Dark Days - DAS Patch & Paint",
+ "Denver (1225 17th St) - Hub Strategy",
+ "Detroit (200 Renaissance Ctr) - AV Refresh",
+ "Hartford (185 Asylum St) - Spoke Consolidation",
+ "Houston (1111 Bagby St) - Hub Buildout",
+ "Houston (1111 Bagby St) - FY25 Furniture",
+ "Indianapolis (111 Monument Cir) - Workplace Refresh",
+ "Jacksonville (1301 Riverplace) - Spoke Buildout",
+ "Kansas City (1100 Walnut St) - AV Refresh",
+ "Las Vegas (3993 Howard Hughes) - Spoke Buildout",
+ "Los Angeles (555 W 5th St) - Hub 21st Floor",
+ "Los Angeles (555 W 5th St) - FY26 Dark Days",
+ "Memphis (6410 Poplar Ave) - Workplace Refresh",
+ "Miami (333 SE 2nd Ave) - Hub Strategy",
+ "Milwaukee (555 E Wells St) - Spoke Buildout",
+ "Minneapolis (50 S 6th St) - AV Refresh",
+ "Nashville (424 Church St) - Hub Buildout",
+ "New Orleans (701 Poydras St) - Workplace Refresh",
+ "New York (30 Rockefeller Plaza) - Hub 41st Floor",
+ "New York (30 Rockefeller Plaza) - FY26 Lighting",
+ "New York (30 Rockefeller Plaza) - DAS Patch & Paint",
+ "Philadelphia (1700 Market St) - Hub Buildout",
+ "Phoenix (2901 N Central Ave) - Spoke Buildout",
+ "Pittsburgh (600 Grant St) - AV Refresh",
+ "Portland (111 SW 5th Ave) - Workplace Refresh",
+ "Raleigh (150 Fayetteville St) - Spoke Buildout",
+ "Sacramento (400 Capitol Mall) - AV Refresh",
+ "Salt Lake City (111 S Main St) - Hub Strategy",
+ "San Diego (600 B St) - Spoke Buildout",
+ "San Francisco (555 Mission St) - Hub 30th Floor",
+ "Seattle (925 4th Ave) - Hub Buildout",
+ "St. Louis (100 S 4th St) - Workplace Refresh",
+ "Tampa (201 N Franklin St) - Spoke Buildout",
+ "Washington DC (655 New York Ave) - Hub Buildout"
+].map((name,i)=>({id:i+1,name}));
+
+const ROLE_INFO={
+  Admin:'Full access to all pages, including edit on Scheduling Grid, Resources, Companies, and Settings.',
+  DeloitteUser:'Read-only access to all pages.',
+  PGM:'Read-only access to all pages, plus edit on Project Grid (Scheduling).',
+  EPM:'View access to Map, Dashboards, and Grids. Access is limited to assigned projects only.'
+};
+
+let users=[
+  {id:1,name:'Brian Reynolds',email:'b.reynolds@deloitte.com',role:'Admin',added:'Jul 10, 2026',projects:[]},
+  {id:2,name:'Rachel Kim',email:'r.kim@deloitte.com',role:'Admin',added:'Jul 10, 2026',projects:[]},
+  {id:3,name:'Laura Scott',email:'l.scott@deloitte.com',role:'DeloitteUser',added:'Jul 10, 2026',projects:[]},
+  {id:4,name:'Andrew Miller',email:'a.miller@deloitte.com',role:'PGM',added:'Jul 10, 2026',projects:[]},
+  {id:5,name:'Sophia Johnson',email:'s.johnson@deloitte.com',role:'PGM',added:'Jul 10, 2026',projects:[]},
+  {id:6,name:'Sarah Wilson',email:'s.wilson@client.com',role:'EPM',added:'Jul 10, 2026',projects:[1,3,15,16,35]},
+  {id:7,name:'James Torres',email:'j.torres@client.com',role:'EPM',added:'Jul 10, 2026',projects:[7,8,10,11,12,20,21,26,27,33,38,46,47,50]},
+  {id:8,name:'Diana Clark',email:'d.clark@client.com',role:'EPM',added:'Jul 11, 2026',projects:[]},
+  {id:9,name:'Robert Lewis',email:'r.lewis@client.com',role:'EPM',added:'Jul 11, 2026',projects:[2,5,9,14,17,19,22,23,25,28,30,31,34,36,37,39,40,42,44,45,48,49]}
+];
+
+let currentOption=1, editingId=null, modalSel=new Set(), originalRole='';
+let showSelectedOnly=false;
+let pickerId=null, pickerSel=new Set();
+
+/* ---- option switch ---- */
+function setOption(n){
+  currentOption=n;
+  document.getElementById('btnOpt1').classList.toggle('active',n===1);
+  document.getElementById('btnOpt2').classList.toggle('active',n===2);
+  document.getElementById('optNote').textContent=n===1
+    ?'Projects are selected inside the Edit user modal'
+    :'Projects are managed on a separate screen';
+  backToList();
+  renderUsers();
+}
+
+/* ---- user list ---- */
+function renderUsers(){
+  const q=document.getElementById('userSearch').value.toLowerCase();
+  const rf=document.getElementById('roleFilter').value;
+  const list=users.filter(u=>(u.name.toLowerCase().includes(q)||u.email.toLowerCase().includes(q))&&(!rf||u.role===rf));
+  const tb=document.getElementById('userBody');
+  tb.innerHTML='';
+  list.forEach(u=>{
+    const isEPM=u.role==='EPM';
+    let projCell='<span class="dash">-</span>';
+    if(isEPM){
+      if(u.projects.length){
+        const names=u.projects.map(pid=>PROJECTS.find(p=>p.id===pid)?.name||'').filter(Boolean);
+        const tipItems=names.map(n=>`<li>${n}</li>`).join('');
+        projCell=`<div class="proj-count-wrap">
+          <span class="proj-count">${u.projects.length} of ${PROJECTS.length}</span>
+          <div class="tooltip">
+            <div class="tooltip-title">Assigned projects</div>
+            <ul class="tooltip-list">${tipItems}</ul>
+          </div>
+        </div>`;
+      } else {
+        projCell='<span class="proj-none">None assigned</span>';
+      }
+    }
+    const manageBtn=(currentOption===2&&isEPM)
+      ?`<button class="link-action" onclick="openPicker(${u.id})">Manage projects</button>`:'';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><div class="user-name">${u.name}</div><div class="user-email">${u.email}</div></td>
+      <td><span class="badge">${u.role}</span></td>
+      <td>${projCell}</td>
+      <td style="font-size:12px;color:#6B778C">${u.added}</td>
+      <td><div class="row-actions">${manageBtn}
+        <button class="icon-btn" title="Edit user" onclick="openModal(${u.id})">&#9998;</button>
+        <button class="icon-btn" title="Remove user">&#128465;</button>
+      </div></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* ---- modal ---- */
+function openModal(id){
+  const u=users.find(x=>x.id===id); if(!u)return;
+  editingId=id; originalRole=u.role;
+  modalSel=new Set(u.projects);
+  showSelectedOnly=false;
+  document.getElementById('mName').textContent=u.name;
+  document.getElementById('mEmail').textContent=u.email;
+  document.getElementById('mRole').value=u.role;
+  document.getElementById('mProjSearch').value='';
+  onRoleChange();
+  document.getElementById('editModal').classList.add('open');
+}
+
+function onRoleChange(){
+  const role=document.getElementById('mRole').value;
+  document.getElementById('mRoleInfo').textContent=ROLE_INFO[role];
+
+  const isEPM=role==='EPM';
+  const wasEPM=originalRole==='EPM';
+  const becameEPM=isEPM&&!wasEPM;
+
+  // Option 1: show project section if EPM
+  const showProj=currentOption===1&&isEPM;
+  document.getElementById('mProjSection').classList.toggle('hidden',!showProj);
+  if(showProj){ showSelectedOnly=false; renderModalProjects(); }
+
+  // Option 2: show notice only if role CHANGED to EPM
+  const showNotice=currentOption===2&&becameEPM;
+  document.getElementById('mEpmNotice').classList.toggle('hidden',!showNotice);
+
+  // Hide save button in Opt2 when notice is shown (user should use "Save and manage projects")
+  document.getElementById('mSaveBtn').classList.toggle('hidden', currentOption===2&&becameEPM);
+}
+
+function renderModalProjects(){
+  const q=document.getElementById('mProjSearch').value.toLowerCase();
+  let list=PROJECTS.filter(p=>p.name.toLowerCase().includes(q));
+  if(showSelectedOnly) list=list.filter(p=>modalSel.has(p.id));
+
+  const selCount=modalSel.size;
+  const toggleLabel=showSelectedOnly?`Show all (${PROJECTS.length})`:`Selected: ${selCount}`;
+  document.getElementById('mProjToggle').textContent=selCount>0||showSelectedOnly?toggleLabel:'';
+
+  const el=document.getElementById('mProjList');
+  el.innerHTML=list.length?list.map(p=>`
+    <label class="proj-item">
+      <input type="checkbox" ${modalSel.has(p.id)?'checked':''} onchange="toggleModal(${p.id},this.checked)">
+      <span>${p.name}</span>
+    </label>`).join('')
+    :'<div class="proj-empty">No projects match your search.</div>';
+}
+
+function toggleShowSelected(){
+  showSelectedOnly=!showSelectedOnly;
+  document.getElementById('mProjSearch').value='';
+  renderModalProjects();
+}
+function toggleModal(id,on){ on?modalSel.add(id):modalSel.delete(id); renderModalProjects(); }
+
+function saveModal(){
+  const u=users.find(x=>x.id===editingId); if(!u)return;
+  u.role=document.getElementById('mRole').value;
+  u.projects=u.role==='EPM'?[...modalSel]:[];
+  closeModal(); renderUsers();
+  showToast('Role updated.');
+}
+
+function saveAndGoToPicker(){
+  const u=users.find(x=>x.id===editingId); if(!u)return;
+  u.role='EPM'; u.projects=[];
+  closeModal(); renderUsers();
+  openPicker(u.id);
+}
+
+function closeModal(){
+  document.getElementById('editModal').classList.remove('open');
+  document.getElementById('mSaveBtn').classList.remove('hidden');
+}
+
+/* ---- Option 2 transfer list ---- */
+function openPicker(id){
+  const u=users.find(x=>x.id===id); if(!u)return;
+  pickerId=id; pickerSel=new Set(u.projects);
+  document.getElementById('pkName').textContent=u.name;
+  document.getElementById('pkEmail').textContent=u.email;
+  document.getElementById('leftSearch').value='';
+  document.getElementById('rightSearch').value='';
+  document.getElementById('listPage').classList.add('hidden');
+  document.getElementById('pickerPage').classList.remove('hidden');
+  renderTransfer();
+}
+
+function renderTransfer(){
+  const lq=document.getElementById('leftSearch').value.toLowerCase();
+  const rq=document.getElementById('rightSearch').value.toLowerCase();
+
+  const leftItems=PROJECTS.filter(p=>!pickerSel.has(p.id)&&p.name.toLowerCase().includes(lq));
+  const rightItems=PROJECTS.filter(p=>pickerSel.has(p.id)&&p.name.toLowerCase().includes(rq));
+
+  document.getElementById('leftCount').textContent=`${PROJECTS.length-pickerSel.size} projects`;
+  document.getElementById('rightCount').textContent=`${pickerSel.size} assigned`;
+  document.getElementById('pkFooterCount').textContent=`${pickerSel.size} of ${PROJECTS.length} projects assigned`;
+
+  const ll=document.getElementById('leftList');
+  ll.innerHTML=leftItems.length?leftItems.map(p=>`
+    <label class="transfer-item">
+      <input type="checkbox" onchange="assignProject(${p.id},true)">
+      <span>${p.name}</span>
+    </label>`).join('')
+    :'<div class="transfer-empty">No projects to add.</div>';
+
+  const rl=document.getElementById('rightList');
+  rl.innerHTML=rightItems.length?rightItems.map(p=>`
+    <label class="transfer-item selected-row">
+      <input type="checkbox" checked onchange="assignProject(${p.id},false)">
+      <span>${p.name}</span>
+    </label>`).join('')
+    :'<div class="transfer-empty">No projects assigned yet.</div>';
+}
+
+function assignProject(id, assign){
+  assign ? pickerSel.add(id) : pickerSel.delete(id);
+  renderTransfer();
+}
+
+function savePicker(){
+  const u=users.find(x=>x.id===pickerId); if(!u)return;
+  u.projects=[...pickerSel];
+  backToList(); renderUsers();
+  showToast('Projects updated.');
+}
+
+function backToList(){
+  document.getElementById('pickerPage').classList.add('hidden');
+  document.getElementById('listPage').classList.remove('hidden');
+}
+
+/* ---- toast ---- */
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.innerHTML=msg;
+  t.classList.remove('hidden');
+  setTimeout(()=>t.classList.add('hidden'),3000);
+}
+
+document.getElementById('editModal').addEventListener('click',e=>{
+  if(e.target.id==='editModal') closeModal();
+});
+
+setOption(1);
+</script>
+</body>
+</html>
