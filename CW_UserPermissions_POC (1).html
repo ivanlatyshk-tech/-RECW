@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Management – CW</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;background:#F4F5F7;color:#172B4D}
+
+.topnav{background:#fff;border-bottom:1px solid #DFE1E6;display:flex;align-items:center;padding:0 24px;height:52px;gap:24px}
+.topnav-logo{font-weight:700;font-size:15px;color:#0052CC}
+.topnav-links{display:flex;gap:4px}
+.tnl{padding:6px 12px;border-radius:4px;font-size:13px;color:#42526E;cursor:pointer}
+.tnl.active{background:#DEEBFF;color:#0052CC;font-weight:500}
+
+.page{max-width:1100px;margin:0 auto;padding:28px 24px}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:20px;font-weight:600}
+.page-subtitle{font-size:13px;color:#6B778C;margin-top:4px}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;border:none;white-space:nowrap}
+.btn-primary{background:#0052CC;color:#fff}.btn-primary:hover{background:#0747A6}
+.btn-primary:disabled{background:#A5ADBA;cursor:not-allowed}
+.btn-default{background:#fff;color:#42526E;border:1px solid #DFE1E6}.btn-default:hover{background:#F4F5F7}
+.btn-link{background:none;border:none;color:#0052CC;font-size:12px;cursor:pointer;padding:0}
+
+.toolbar{display:flex;gap:10px;margin-bottom:14px;align-items:center}
+.search-wrap{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #DFE1E6;border-radius:4px;padding:6px 12px;flex:1;max-width:320px}
+.search-wrap input{border:none;outline:none;font-size:13px;width:100%;background:transparent}
+.search-wrap input::placeholder{color:#A5ADBA}
+.filter-sel{background:#fff;border:1px solid #DFE1E6;border-radius:4px;padding:7px 12px;font-size:13px;color:#42526E;cursor:pointer;outline:none}
+
+.table-wrap{background:#fff;border:1px solid #DFE1E6;border-radius:6px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead{background:#F4F5F7}
+th{text-align:left;font-size:11px;font-weight:600;color:#6B778C;text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;border-bottom:1px solid #DFE1E6;white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid #F4F5F7;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FAFBFF}
+.user-name{font-size:13px;font-weight:500}
+.user-email{font-size:12px;color:#6B778C}
+.badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:500;background:#F4F5F7;color:#42526E;border:1px solid #DFE1E6}
+.proj-none{font-size:13px;color:#DE350B;font-style:italic}
+.proj-all{font-size:13px;color:#6B778C}
+.row-actions{display:flex;gap:6px;opacity:0;align-items:center}
+tbody tr:hover .row-actions{opacity:1}
+.icon-btn{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:4px;color:#6B778C;display:flex;align-items:center;font-size:15px}
+.icon-btn:hover{background:#F4F5F7;color:#172B4D}
+.icon-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* tooltip */
+.proj-count-wrap{position:relative;display:inline-block}
+.proj-count{font-size:13px;color:#0052CC;cursor:default;text-decoration:underline dotted;text-underline-offset:2px}
+.tip{display:none;position:absolute;left:0;top:calc(100% + 6px);background:#172B4D;color:#fff;border-radius:6px;padding:10px 12px;font-size:12px;min-width:260px;max-width:320px;z-index:300;box-shadow:0 4px 16px rgba(9,30,66,.3);line-height:1.6;pointer-events:none}
+.tip::before{content:'';position:absolute;top:-5px;left:12px;border:5px solid transparent;border-bottom-color:#172B4D;border-top:none}
+.proj-count-wrap:hover .tip{display:block}
+.tip-title{font-weight:600;margin-bottom:6px;color:#B3D4FF;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+.tip-list{list-style:none;max-height:180px;overflow-y:auto}
+.tip-list li{padding:2px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.tip-list li:last-child{border-bottom:none}
+
+/* modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(9,30,66,.5);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:8px;width:500px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(9,30,66,.25)}
+.modal-header{padding:20px 24px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:16px;font-weight:600}
+.modal-close{background:none;border:none;cursor:pointer;color:#6B778C;padding:4px;border-radius:4px;font-size:20px;line-height:1}
+.modal-close:hover{background:#F4F5F7}
+.modal-body{padding:20px 24px;overflow-y:auto;flex:1}
+.modal-footer{padding:14px 24px;border-top:1px solid #DFE1E6;display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
+
+.form-group{margin-bottom:16px}
+.form-label{font-size:12px;font-weight:600;color:#6B778C;margin-bottom:6px;display:flex;align-items:center;gap:3px}
+.req{color:#BF2600}
+.form-input{width:100%;padding:8px 12px;border:1px solid #DFE1E6;border-radius:4px;font-size:14px;color:#172B4D;background:#fff;outline:none}
+.form-input:focus{border-color:#4C9AFF;box-shadow:0 0 0 2px rgba(76,154,255,.2)}
+.form-input.error{border-color:#BF2600}
+.form-input::placeholder{color:#A5ADBA}
+.form-select{width:100%;padding:8px 12px;border:1px solid #DFE1E6;border-radius:4px;font-size:14px;color:#172B4D;background:#fff;outline:none;cursor:pointer}
+.form-select:focus{border-color:#4C9AFF}
+.field-error{font-size:12px;color:#BF2600;margin-top:4px}
+.hidden{display:none!important}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.role-counts{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.role-tile{display:flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;border:1px solid #DFE1E6;border-radius:6px;font-size:13px}
+.role-tile-label{color:#6B778C}
+.role-tile-count{font-weight:600;color:#172B4D;font-size:15px}
+.list-summary{font-size:12px;color:#6B778C;margin-bottom:10px;min-height:18px}
+.empty-state{padding:48px 24px;text-align:center;color:#6B778C;background:#fff}
+.empty-state-title{font-size:15px;font-weight:500;color:#172B4D;margin-bottom:6px}
+.empty-state-sub{font-size:13px}
+.no-match{padding:32px 24px;text-align:center;color:#6B778C;background:#fff}
+.no-match p{font-size:13px;margin-bottom:10px}
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid #DFE1E6;background:#fff;font-size:13px;color:#42526E}
+.page-btns{display:flex;gap:4px}
+.page-btn{background:#fff;border:1px solid #DFE1E6;border-radius:4px;padding:5px 10px;font-size:12px;cursor:pointer;color:#42526E}
+.page-btn:hover{background:#F4F5F7}
+.page-btn.active{background:#0052CC;color:#fff;border-color:#0052CC}
+.page-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* assigned projects section */
+.proj-section{margin-top:18px;border-top:1px solid #DFE1E6;padding-top:16px}
+.proj-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.proj-section-label{font-size:12px;font-weight:600;color:#6B778C;text-transform:uppercase;letter-spacing:.4px}
+.proj-section-count{font-size:12px;color:#42526E}
+.proj-toggle{background:none;border:none;color:#0052CC;font-size:12px;cursor:pointer;padding:0;text-decoration:underline}
+.proj-search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #DFE1E6;border-radius:4px;padding:6px 10px;margin-bottom:8px}
+.proj-search input{border:none;outline:none;font-size:13px;width:100%;background:transparent}
+.proj-search input::placeholder{color:#A5ADBA}
+.proj-list{border:1px solid #DFE1E6;border-radius:4px;max-height:210px;overflow-y:auto;background:#fff}
+.proj-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-bottom:1px solid #F4F5F7;cursor:pointer;font-size:13px;line-height:1.35}
+.proj-item:last-child{border-bottom:none}
+.proj-item:hover{background:#FAFBFF}
+.proj-item input{margin-top:2px;flex-shrink:0;cursor:pointer}
+.proj-empty{padding:20px;text-align:center;color:#6B778C;font-size:13px}
+mark{background:#FFF0B3;border-radius:2px;padding:0 1px}
+
+/* confirm/delete dialogs */
+.overlay-base{display:none;position:fixed;inset:0;background:rgba(9,30,66,.5);z-index:200;align-items:center;justify-content:center}
+.overlay-base.open{display:flex}
+.confirm-box{background:#fff;border-radius:8px;width:380px;padding:24px;box-shadow:0 8px 32px rgba(9,30,66,.25)}
+.confirm-title{font-size:16px;font-weight:600;margin-bottom:10px}
+.confirm-msg{font-size:13px;color:#42526E;line-height:1.5;margin-bottom:20px}
+.confirm-btns{display:flex;justify-content:flex-end;gap:8px}
+
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#172B4D;color:#fff;padding:10px 18px;border-radius:6px;font-size:13px;box-shadow:0 4px 16px rgba(9,30,66,.3);z-index:500}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="topnav-logo">HDS RealEstate</span>
+  <div class="topnav-links">
+    <span class="tnl">Map</span>
+    <span class="tnl">Dashboards</span>
+    <span class="tnl">Grids</span>
+    <span class="tnl">Resource Management</span>
+    <span class="tnl active">Settings</span>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">User Management</div>
+      <div class="page-subtitle">Manage users and their access roles</div>
+    </div>
+    <button class="btn btn-primary" onclick="openAddModal()">+ Add user</button>
+  </div>
+
+  <div class="role-counts" id="roleCounts"></div>
+  <div class="list-summary" id="listSummary"></div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span style="color:#8993A4">&#9906;</span>
+      <input type="text" id="uSearch" placeholder="Search by name or email" oninput="onSearchInput()">
+    </div>
+    <select class="filter-sel" id="uRole" onchange="onRoleFilterChange()">
+      <option value="">All roles</option>
+      <option>Admin</option>
+      <option>DeloitteUser</option>
+      <option>PGM</option>
+      <option>EPM</option>
+    </select>
+    <label class="hidden" id="noProjectsWrap" style="display:flex;align-items:center;gap:6px;font-size:13px;color:#42526E;cursor:pointer;white-space:nowrap">
+      <input type="checkbox" id="noProjectsCheck" onchange="renderUsers()">
+      No projects assigned
+    </label>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>Assigned projects</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="uBody"></tbody>
+    </table>
+    <div id="emptyState" class="empty-state hidden">
+      <div class="empty-state-title">No users found</div>
+      <div class="empty-state-sub">Start by adding users.</div>
+    </div>
+    <div id="noMatchState" class="no-match hidden">
+      <p id="noMatchMsg"></p>
+      <button class="btn btn-default" onclick="clearFilters()">Clear filters</button>
+    </div>
+    <div class="pagination hidden" id="pagination">
+      <span id="pageInfo"></span>
+      <div class="page-btns" id="pageBtns"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD USER MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add user</span>
+      <button class="modal-close" onclick="closeAddModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <div class="form-label">Email <span class="req">*</span></div>
+        <input class="form-input" id="aEmail" type="text" maxlength="500" oninput="validateAdd()" onblur="blurEmail('aEmail','aEmailErr')">
+        <div class="field-error hidden" id="aEmailErr"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <div class="form-label">First Name <span class="req">*</span></div>
+          <input class="form-input" id="aFirstName" type="text" maxlength="200" oninput="validateAdd()" onblur="blurRequired('aFirstName','aFirstNameErr','First name is required.')">
+          <div class="field-error hidden" id="aFirstNameErr"></div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <div class="form-label">Last Name <span class="req">*</span></div>
+          <input class="form-input" id="aLastName" type="text" maxlength="200" oninput="validateAdd()" onblur="blurRequired('aLastName','aLastNameErr','Last name is required.')">
+          <div class="field-error hidden" id="aLastNameErr"></div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:16px">
+        <div class="form-label">Role <span class="req">*</span></div>
+        <select class="form-select" id="aRole" onchange="onAddRoleChange()" onblur="blurRequired('aRole','aRoleErr','Role is required.',true)">
+          <option value="">Select role</option>
+          <option>Admin</option>
+          <option>DeloitteUser</option>
+          <option>PGM</option>
+          <option>EPM</option>
+        </select>
+        <div class="field-error hidden" id="aRoleErr"></div>
+      </div>
+
+      <div class="proj-section hidden" id="aProjSection">
+        <div class="proj-section-head">
+          <span class="proj-section-label">Assigned projects</span>
+          <span style="display:flex;align-items:center;gap:10px">
+            <span class="proj-section-count" id="aProjCount">Selected: 0</span>
+            <button class="proj-toggle hidden" id="aToggle" onclick="toggleSelOnly('a')"></button>
+          </span>
+        </div>
+        <div class="proj-search">
+          <span style="color:#8993A4">&#9906;</span>
+          <input type="text" id="aProjSearch" placeholder="Search projects" oninput="renderProjList('a')">
+        </div>
+        <div class="proj-list" id="aProjList"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" id="aSaveBtn" disabled onclick="saveAdd()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Edit user</span>
+      <button class="modal-close" onclick="closeEditModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <div class="form-label">Email <span class="req">*</span></div>
+        <input class="form-input" id="eEmailInput" type="text" maxlength="500" oninput="validateEdit()" onblur="blurEmail('eEmailInput','eEmailErr')">
+        <div class="field-error hidden" id="eEmailErr"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <div class="form-label">First Name <span class="req">*</span></div>
+          <input class="form-input" id="eFirstName" type="text" maxlength="200" oninput="validateEdit()" onblur="blurRequired('eFirstName','eFirstNameErr','First name is required.')">
+          <div class="field-error hidden" id="eFirstNameErr"></div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <div class="form-label">Last Name <span class="req">*</span></div>
+          <input class="form-input" id="eLastName" type="text" maxlength="200" oninput="validateEdit()" onblur="blurRequired('eLastName','eLastNameErr','Last name is required.')">
+          <div class="field-error hidden" id="eLastNameErr"></div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:16px">
+        <div class="form-label">Role <span class="req">*</span></div>
+        <select class="form-select" id="eRole" onchange="onEditRoleChange()">
+          <option>Admin</option>
+          <option>DeloitteUser</option>
+          <option>PGM</option>
+          <option>EPM</option>
+        </select>
+      </div>
+
+      <div class="proj-section hidden" id="eProjSection">
+        <div class="proj-section-head">
+          <span class="proj-section-label">Assigned projects</span>
+          <span style="display:flex;align-items:center;gap:10px">
+            <span class="proj-section-count" id="eProjCount">Selected: 0</span>
+            <button class="proj-toggle hidden" id="eToggle" onclick="toggleSelOnly('e')"></button>
+          </span>
+        </div>
+        <div class="proj-search">
+          <span style="color:#8993A4">&#9906;</span>
+          <input type="text" id="eProjSearch" placeholder="Search projects" oninput="renderProjList('e')">
+        </div>
+        <div class="proj-list" id="eProjList"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-primary" id="eSaveBtn" disabled onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="overlay-base" id="deleteOverlay">
+  <div class="confirm-box">
+    <div class="confirm-title">Remove user?</div>
+    <div class="confirm-msg">This user will lose access to the application immediately.</div>
+    <div class="confirm-btns">
+      <button class="btn btn-default" onclick="closeDeleteConfirm()">Cancel</button>
+      <button class="btn btn-primary" style="background:#BF2600" onclick="confirmDelete()">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- EPM ROLE CONFIRM -->
+<div class="overlay-base" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-title">Remove EPM role?</div>
+    <div class="confirm-msg">This will remove all project assignments for this user. This action cannot be undone.</div>
+    <div class="confirm-btns">
+      <button class="btn btn-default" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmRoleChange()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast hidden" id="toast"></div>
+
+<script>
+const PROJECTS = [
+  "Albany (11 Corporate Woods) - GPS Project Office",
+  "Atlanta (1230 Peachtree St) - Hub Strategy",
+  "Atlanta (1230 Peachtree) - AV Refresh",
+  "Atlanta (1230 Peachtree) - Hub 27th Floor",
+  "Austin (500 W 2nd St) - Workplace Refresh",
+  "Baltimore (100 E Pratt) - Spoke Buildout",
+  "Boston (200 Berkeley St) - Hub Buildout",
+  "Boston (200 Berkeley St) - FY26 Dark Days",
+  "Charlotte (550 South Tryon) - AV Refresh",
+  "Chicago (111 S Wacker) - Hub 32nd Floor",
+  "Chicago (111 S Wacker) - FY25 Lighting",
+  "Cincinnati (250 E 5th St) - Spoke Buildout",
+  "Cleveland (127 Public Square) - Workplace Refresh",
+  "Columbus (41 S High St) - DAS Patch & Paint",
+  "Dallas (2323 Cedar Springs) - Hub Buildout",
+  "Dallas (6605 Warren Pkwy) - Frisco Spoke",
+  "DCLI (2501 Westlake) - FY26 Dark Days",
+  "Denver (1225 17th St) - Hub Strategy",
+  "Detroit (200 Renaissance Ctr) - AV Refresh",
+  "Hartford (185 Asylum St) - Spoke Consolidation",
+  "Houston (1111 Bagby St) - Hub Buildout",
+  "Houston (1111 Bagby St) - FY25 Furniture",
+  "Indianapolis (111 Monument Cir) - Workplace Refresh",
+  "Jacksonville (1301 Riverplace) - Spoke Buildout",
+  "Kansas City (1100 Walnut St) - AV Refresh",
+  "Las Vegas (3993 Howard Hughes) - Spoke Buildout",
+  "Los Angeles (555 W 5th St) - Hub 21st Floor",
+  "Los Angeles (555 W 5th St) - FY26 Dark Days",
+  "Memphis (6410 Poplar Ave) - Workplace Refresh",
+  "Miami (333 SE 2nd Ave) - Hub Strategy",
+  "Milwaukee (555 E Wells St) - Spoke Buildout",
+  "Minneapolis (50 S 6th St) - AV Refresh",
+  "Nashville (424 Church St) - Hub Buildout",
+  "New Orleans (701 Poydras St) - Workplace Refresh",
+  "New York (30 Rockefeller Plaza) - Hub 41st Floor",
+  "New York (30 Rockefeller Plaza) - FY26 Lighting",
+  "New York (30 Rockefeller Plaza) - DAS Patch & Paint",
+  "Philadelphia (1700 Market St) - Hub Buildout",
+  "Phoenix (2901 N Central Ave) - Spoke Buildout",
+  "Pittsburgh (600 Grant St) - AV Refresh",
+  "Portland (111 SW 5th Ave) - Workplace Refresh",
+  "Raleigh (150 Fayetteville St) - Spoke Buildout",
+  "Sacramento (400 Capitol Mall) - AV Refresh",
+  "Salt Lake City (111 S Main St) - Hub Strategy",
+  "San Diego (600 B St) - Spoke Buildout",
+  "San Francisco (555 Mission St) - Hub 30th Floor",
+  "Seattle (925 4th Ave) - Hub Buildout",
+  "St. Louis (100 S 4th St) - Workplace Refresh",
+  "Tampa (201 N Franklin St) - Spoke Buildout",
+  "Washington DC (655 New York Ave) - Hub Buildout"
+].map((name, i) => ({ id: i + 1, name }));
+
+let users = [
+  { id:1,  firstName:'Brian',  lastName:'Reynolds', email:'b.reynolds@deloitte.com', role:'Admin',        projects:[] },
+  { id:2,  firstName:'Rachel', lastName:'Kim',       email:'r.kim@deloitte.com',      role:'Admin',        projects:[] },
+  { id:3,  firstName:'Andy',   lastName:'Chen',      email:'a.chen@deloitte.com',     role:'Admin',        projects:[] },
+  { id:4,  firstName:'Laura',  lastName:'Scott',     email:'l.scott@deloitte.com',    role:'DeloitteUser', projects:[] },
+  { id:5,  firstName:'Andrew', lastName:'Miller',    email:'a.miller@deloitte.com',   role:'PGM',          projects:[] },
+  { id:6,  firstName:'Sophia', lastName:'Johnson',   email:'s.johnson@deloitte.com',  role:'PGM',          projects:[] },
+  { id:7,  firstName:'Sarah',  lastName:'Wilson',    email:'s.wilson@deloitte.com',   role:'EPM',          projects:[1,3,15,16,35] },
+  { id:8,  firstName:'James',  lastName:'Torres',    email:'j.torres@deloitte.com',   role:'EPM',          projects:[7,8,10,11,12,20,21,26,27,33,38,46,47,50] },
+  { id:9,  firstName:'Diana',  lastName:'Clark',     email:'d.clark@deloitte.com',    role:'EPM',          projects:[] },
+  { id:10, firstName:'Robert', lastName:'Lewis',     email:'r.lewis@deloitte.com',    role:'EPM',          projects:[2,5,9,14,17,19,22,23,25,28,30,31,34,36,37,39,40,42,44,45,48,49] }
+];
+
+function fullName(u) { return `${u.lastName}, ${u.firstName}`; }
+function sortUsers() { users.sort((a,b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)); }
+sortUsers();
+
+let editingId = null, originalRole = '', originalSnapshot = null;
+let sel = { a: new Set(), e: new Set() };
+let showSelOnly = { a: false, e: false };
+let pendingRoleChange = null;
+let nextId = 11;
+const PAGE_SIZE = 25;
+let currentPage = 1;
+let searchTimer = null;
+let deletingId = null;
+
+/* ---- SEARCH INPUT ---- */
+function onSearchInput() {
+  clearTimeout(searchTimer);
+  const val = document.getElementById('uSearch').value;
+  if (val.length === 0 || val.length >= 3) searchTimer = setTimeout(renderUsers, 300);
+}
+
+function onRoleFilterChange() {
+  const role = document.getElementById('uRole').value;
+  const wrap = document.getElementById('noProjectsWrap');
+  const check = document.getElementById('noProjectsCheck');
+  if (role === 'EPM') { wrap.classList.remove('hidden'); wrap.style.display = 'flex'; }
+  else { wrap.classList.add('hidden'); check.checked = false; }
+  currentPage = 1;
+  renderUsers();
+}
+
+function clearFilters() {
+  document.getElementById('uSearch').value = '';
+  document.getElementById('uRole').value = '';
+  document.getElementById('noProjectsCheck').checked = false;
+  document.getElementById('noProjectsWrap').classList.add('hidden');
+  currentPage = 1;
+  renderUsers();
+}
+
+/* ---- PROJ CELL ---- */
+function projCell(u) {
+  if (u.role !== 'EPM') return '<span class="proj-all">All projects</span>';
+  if (!u.projects.length) return '<span class="proj-none">None assigned</span>';
+  const names = u.projects.map(id => PROJECTS.find(p => p.id === id)?.name || '').filter(Boolean);
+  return `<div class="proj-count-wrap">
+    <span class="proj-count">${u.projects.length} of ${PROJECTS.length}</span>
+    <div class="tip">
+      <div class="tip-title">Assigned projects</div>
+      <ul class="tip-list">${names.map(n => `<li>${n}</li>`).join('')}</ul>
+    </div>
+  </div>`;
+}
+
+/* ---- RENDER USERS ---- */
+function renderRoleCounts() {
+  const roles = ['Admin','DeloitteUser','PGM','EPM'];
+  const counts = {};
+  roles.forEach(r => counts[r] = users.filter(u => u.role === r).length);
+  document.getElementById('roleCounts').innerHTML =
+    roles.map(r => `<div class="role-tile"><span class="role-tile-count">${counts[r]}</span><span class="role-tile-label">${r}</span></div>`).join('');
+}
+
+function renderUsers() {
+  const q = document.getElementById('uSearch').value.toLowerCase();
+  const rf = document.getElementById('uRole').value;
+  const noProj = document.getElementById('noProjectsCheck')?.checked;
+  const isFiltered = q || rf || noProj;
+
+  let list = users.filter(u => {
+    const matchQ = !q || fullName(u).toLowerCase().includes(q) ||
+                   u.firstName.toLowerCase().includes(q) ||
+                   u.lastName.toLowerCase().includes(q) ||
+                   u.email.toLowerCase().includes(q);
+    const matchR = !rf || u.role === rf;
+    return matchQ && matchR;
+  });
+  if (noProj && rf === 'EPM') list = list.filter(u => u.projects.length === 0);
+
+  const total = users.length;
+  const filtered = list.length;
+  document.getElementById('listSummary').textContent = isFiltered ? `Showing ${filtered} of ${total} users` : '';
+
+  const emptyEl = document.getElementById('emptyState');
+  const noMatchEl = document.getElementById('noMatchState');
+  const noMatchMsg = document.getElementById('noMatchMsg');
+  const tableEl = document.querySelector('table');
+
+  if (total === 0) {
+    emptyEl.classList.remove('hidden'); noMatchEl.classList.add('hidden'); tableEl.style.display = 'none';
+  } else if (filtered === 0) {
+    noMatchEl.classList.remove('hidden'); emptyEl.classList.add('hidden'); tableEl.style.display = 'none';
+    noMatchMsg.textContent = noProj ? 'All EPM users have projects assigned.' : 'No users match your search.';
+  } else {
+    emptyEl.classList.add('hidden'); noMatchEl.classList.add('hidden'); tableEl.style.display = '';
+  }
+
+  const totalPages = Math.ceil(filtered / PAGE_SIZE);
+  if (currentPage > totalPages) currentPage = 1;
+  const pagEl = document.getElementById('pagination');
+  if (filtered > PAGE_SIZE) {
+    pagEl.classList.remove('hidden');
+    document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages} (${filtered} users)`;
+    document.getElementById('pageBtns').innerHTML =
+      `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹ Prev</button>` +
+      Array.from({length:totalPages},(_,i)=>`<button class="page-btn ${i+1===currentPage?'active':''}" onclick="goPage(${i+1})">${i+1}</button>`).join('') +
+      `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>Next ›</button>`;
+  } else { pagEl.classList.add('hidden'); }
+
+  const tb = document.getElementById('uBody');
+  tb.innerHTML = '';
+  const shown = filtered > PAGE_SIZE ? list.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE) : list;
+  shown.forEach(u => {
+    const isOwn = u.id === 1;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><div class="user-name">${fullName(u)}</div><div class="user-email">${u.email}</div></td>
+      <td><span class="badge">${u.role}</span></td>
+      <td>${projCell(u)}</td>
+      <td><div class="row-actions">
+        <button class="icon-btn" title="Edit user" onclick="openEditModal(${u.id})" ${isOwn?'disabled':''}>&#9998;</button>
+        <button class="icon-btn" title="Remove user" onclick="openDeleteConfirm(${u.id})" ${isOwn?'disabled':''}>&#128465;</button>
+      </div></td>`;
+    tb.appendChild(tr);
+  });
+  renderRoleCounts();
+}
+
+function goPage(p) { currentPage = p; renderUsers(); }
+
+/* ---- DELETE ---- */
+function openDeleteConfirm(id) {
+  deletingId = id;
+  document.getElementById('deleteOverlay').classList.add('open');
+}
+function closeDeleteConfirm() {
+  document.getElementById('deleteOverlay').classList.remove('open');
+  deletingId = null;
+}
+function confirmDelete() {
+  users = users.filter(u => u.id !== deletingId);
+  closeDeleteConfirm(); renderUsers(); showToast('User removed.');
+}
+
+/* ---- PROJ SECTION ---- */
+function highlight(text, q) {
+  if (!q || q.length < 3) return text;
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if (idx === -1) return text;
+  return text.slice(0,idx) + '<mark>' + text.slice(idx, idx+q.length) + '</mark>' + text.slice(idx+q.length);
+}
+
+function initProjSection(prefix, preselected) {
+  sel[prefix] = new Set(preselected || []);
+  showSelOnly[prefix] = false;
+  const searchEl = document.getElementById(prefix + 'ProjSearch');
+  if (searchEl) searchEl.value = '';
+  updateProjCount(prefix);
+  renderProjList(prefix);
+}
+
+function renderProjList(prefix) {
+  const raw = document.getElementById(prefix + 'ProjSearch')?.value || '';
+  const q = raw.length >= 3 ? raw : '';
+  let list = q ? PROJECTS.filter(p => p.name.toLowerCase().includes(q.toLowerCase())) : PROJECTS;
+  if (showSelOnly[prefix]) list = list.filter(p => sel[prefix].has(p.id));
+  const el = document.getElementById(prefix + 'ProjList');
+  if (!list.length) {
+    el.innerHTML = `<div class="proj-empty">${q ? 'No results found. Refine your search.' : 'No projects selected yet.'}</div>`;
+  } else {
+    el.innerHTML = list.map(p => `
+      <label class="proj-item">
+        <input type="checkbox" ${sel[prefix].has(p.id)?'checked':''} onchange="toggleProj('${prefix}',${p.id},this.checked)">
+        <span>${highlight(p.name, q)}</span>
+      </label>`).join('');
+  }
+  updateProjCount(prefix);
+}
+
+function toggleProj(prefix, id, on) {
+  on ? sel[prefix].add(id) : sel[prefix].delete(id);
+  if (showSelOnly[prefix] && !on && sel[prefix].size === 0) {
+    showSelOnly[prefix] = false;
+    document.getElementById(prefix + 'ProjSearch').value = '';
+  }
+  updateProjCount(prefix);
+  renderProjList(prefix);
+  if (prefix === 'e') validateEdit();
+}
+
+function updateProjCount(prefix) {
+  const count = sel[prefix].size;
+  document.getElementById(prefix + 'ProjCount').textContent = `Selected: ${count}`;
+  const toggle = document.getElementById(prefix + 'Toggle');
+  if (!toggle) return;
+  if (count === 0 && !showSelOnly[prefix]) { toggle.classList.add('hidden'); }
+  else { toggle.classList.remove('hidden'); toggle.textContent = showSelOnly[prefix] ? 'Show all' : 'Show selected only'; }
+}
+
+function toggleSelOnly(prefix) {
+  showSelOnly[prefix] = !showSelOnly[prefix];
+  document.getElementById(prefix + 'ProjSearch').value = '';
+  renderProjList(prefix);
+}
+
+/* ---- VALIDATION ---- */
+function blurRequired(inputId, errId, msg, isSelect) {
+  const val = document.getElementById(inputId).value.trim();
+  const errEl = document.getElementById(errId);
+  const inEl = document.getElementById(inputId);
+  if (!val) { errEl.textContent = msg; errEl.classList.remove('hidden'); if (!isSelect) inEl.classList.add('error'); }
+  else { errEl.classList.add('hidden'); if (!isSelect) inEl.classList.remove('error'); }
+  validateAdd();
+}
+
+function blurEmail(inputId, errId) {
+  const val = document.getElementById(inputId).value.trim();
+  const errEl = document.getElementById(errId);
+  const inEl = document.getElementById(inputId);
+  inEl.classList.remove('error'); errEl.classList.add('hidden');
+  if (!val) { errEl.textContent = 'Email is required.'; errEl.classList.remove('hidden'); inEl.classList.add('error'); }
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { errEl.textContent = 'Please enter a valid email address.'; errEl.classList.remove('hidden'); inEl.classList.add('error'); }
+  else if (!/@deloitte\./i.test(val)) { errEl.textContent = 'Please use a Deloitte email address.'; errEl.classList.remove('hidden'); inEl.classList.add('error'); }
+  validateEdit();
+}
+
+function emailIsValid(inputId) {
+  const val = document.getElementById(inputId).value.trim();
+  return val && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) && /@deloitte\./i.test(val);
+}
+
+function validateAdd() {
+  const first = document.getElementById('aFirstName').value.trim();
+  const last = document.getElementById('aLastName').value.trim();
+  const role = document.getElementById('aRole').value;
+  document.getElementById('aSaveBtn').disabled = !(first && last && emailIsValid('aEmail') && role);
+}
+
+function validateEdit() {
+  if (!editingId) return;
+  const first = document.getElementById('eFirstName').value.trim();
+  const last = document.getElementById('eLastName').value.trim();
+  const email = document.getElementById('eEmailInput').value.trim();
+  const role = document.getElementById('eRole').value;
+  if (!first || !last || !emailIsValid('eEmailInput')) { document.getElementById('eSaveBtn').disabled = true; return; }
+  // disable save if nothing changed
+  const snap = originalSnapshot;
+  const projChanged = snap && JSON.stringify([...sel.e].sort()) !== JSON.stringify([...snap.projects].sort());
+  const changed = !snap ||
+    first !== snap.firstName || last !== snap.lastName ||
+    email !== snap.email || role !== snap.role || projChanged;
+  document.getElementById('eSaveBtn').disabled = !changed;
+}
+
+/* ---- ADD USER ---- */
+function openAddModal() {
+  ['aEmail','aFirstName','aLastName'].forEach(id => {
+    document.getElementById(id).value = '';
+    document.getElementById(id).classList.remove('error');
+  });
+  document.getElementById('aRole').value = '';
+  ['aEmailErr','aFirstNameErr','aLastNameErr','aRoleErr'].forEach(id => {
+    const el = document.getElementById(id); el.classList.add('hidden'); el.textContent = '';
+  });
+  document.getElementById('aProjSection').classList.add('hidden');
+  document.getElementById('aSaveBtn').disabled = true;
+  initProjSection('a', []);
+  document.getElementById('addModal').classList.add('open');
+  setTimeout(() => document.getElementById('aEmail').focus(), 100);
+}
+
+function onAddRoleChange() {
+  const role = document.getElementById('aRole').value;
+  const show = role === 'EPM';
+  document.getElementById('aProjSection').classList.toggle('hidden', !show);
+  if (show) initProjSection('a', []);
+  blurRequired('aRole','aRoleErr','Role is required.',true);
+  validateAdd();
+}
+
+function saveAdd() {
+  const first = document.getElementById('aFirstName').value.trim();
+  const last = document.getElementById('aLastName').value.trim();
+  const email = document.getElementById('aEmail').value.trim();
+  const role = document.getElementById('aRole').value;
+  const projects = role === 'EPM' ? [...sel.a] : [];
+  users.push({ id: nextId++, firstName: first, lastName: last, email, role, projects });
+  sortUsers();
+  closeAddModal();
+  renderUsers();
+  showToast('User added.');
+}
+
+function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
+
+/* ---- EDIT USER ---- */
+function openEditModal(id) {
+  const u = users.find(x => x.id === id); if (!u) return;
+  editingId = id; originalRole = u.role;
+  originalSnapshot = { firstName: u.firstName, lastName: u.lastName, email: u.email, role: u.role, projects: [...u.projects] };
+  document.getElementById('eEmailInput').value = u.email;
+  document.getElementById('eFirstName').value = u.firstName;
+  document.getElementById('eLastName').value = u.lastName;
+  document.getElementById('eRole').value = u.role;
+  ['eEmailErr','eFirstNameErr','eLastNameErr'].forEach(id => {
+    const el = document.getElementById(id); el.classList.add('hidden'); el.textContent = '';
+  });
+  ['eEmailInput','eFirstName','eLastName'].forEach(id => document.getElementById(id).classList.remove('error'));
+  const isEPM = u.role === 'EPM';
+  document.getElementById('eProjSection').classList.toggle('hidden', !isEPM);
+  initProjSection('e', isEPM ? u.projects : []);
+  document.getElementById('eSaveBtn').disabled = true;
+  document.getElementById('editModal').classList.add('open');
+}
+
+function onEditRoleChange() {
+  const role = document.getElementById('eRole').value;
+  const isEPM = role === 'EPM';
+  document.getElementById('eProjSection').classList.toggle('hidden', !isEPM);
+  if (isEPM) {
+    const u = users.find(x => x.id === editingId);
+    initProjSection('e', originalRole === 'EPM' ? u.projects : []);
+  }
+  validateEdit();
+}
+
+function saveEdit() {
+  const newRole = document.getElementById('eRole').value;
+  const u = users.find(x => x.id === editingId);
+  // show warning only if changing FROM EPM and user HAS assigned projects
+  if (originalRole === 'EPM' && newRole !== 'EPM' && u.projects.length > 0) {
+    pendingRoleChange = newRole;
+    document.getElementById('confirmOverlay').classList.add('open');
+    return;
+  }
+  applyEdit(newRole);
+}
+
+function confirmRoleChange() { closeConfirm(); applyEdit(pendingRoleChange); }
+
+function applyEdit(role) {
+  const u = users.find(x => x.id === editingId); if (!u) return;
+  u.firstName = document.getElementById('eFirstName').value.trim();
+  u.lastName = document.getElementById('eLastName').value.trim();
+  u.email = document.getElementById('eEmailInput').value.trim();
+  u.role = role;
+  u.projects = role === 'EPM' ? [...sel.e] : [];
+  sortUsers();
+  closeEditModal();
+  renderUsers();
+  showToast('User updated.');
+}
+
+function closeEditModal() { document.getElementById('editModal').classList.remove('open'); }
+function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('open'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 2500);
+}
+
+document.getElementById('addModal').addEventListener('click', e => { if(e.target.id==='addModal') closeAddModal(); });
+document.getElementById('editModal').addEventListener('click', e => { if(e.target.id==='editModal') closeEditModal(); });
+
+renderUsers();
+</script>
+</body>
+</html>
